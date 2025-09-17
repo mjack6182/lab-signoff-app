@@ -1,48 +1,52 @@
-# Lab Signoff Application
+# 📘 Lab Sign-Off App
 
-A comprehensive laboratory signoff system built as a modern web application with Spring Boot backend and React frontend, designed to streamline the process of student lab work validation and instructor signoffs in educational environments.
+## Overview  
+The Lab Sign-Off App is a **teacher-facing Canvas LTI 1.3 tool** for managing lab checkpoints.  
+Instructors and TAs can **Pass/Return student group checkpoints in real time**, with progress automatically synced to **Canvas Gradebook**.  
+The app is installable as a **PWA** and supports **multi-staff realtime collaboration** via WebSockets.  
 
-## 🎯 Overview
+---
 
-The Lab Signoff Application provides a digital solution for managing laboratory exercises, student submissions, and instructor evaluations. It supports LTI 1.3 integration for seamless LMS connectivity and offers real-time collaboration features through WebSockets.
+## 🎯 Features  
+- Launch app directly from Canvas using **LTI 1.3**.  
+- Import course roster via **NRPS** and auto-create groups.  
+- Teacher/TA **Pass or Return checkpoints** with instant updates.  
+- **Automatic grade sync** with Canvas using AGS.  
+- **Realtime updates** across teacher + TA devices.  
+- **PWA support** (installable on phone/tablet).  
+- MongoDB persistence + audit log export.  
 
-### Key Features
+---
 
-- **Student Portal**: Submit lab work, track progress, and receive feedback
-- **Instructor Dashboard**: Review submissions, provide signoffs, and manage labs
-- **Real-time Notifications**: WebSocket-powered updates for instant communication
-- **LTI 1.3 Integration**: Seamless integration with Learning Management Systems
-- **Progressive Web App**: Works offline and provides native app-like experience
-- **Responsive Design**: Optimized for desktop, tablet, and mobile devices
+## 🛠 Tech Stack  
+- **Frontend:** React + Vite + TypeScript, React Query, STOMP WebSockets, vite-plugin-pwa  
+- **Backend:** Spring Boot (Java 21), MongoDB Atlas, WebSockets (STOMP), Spring Security + LTI 1.3/OIDC  
+- **Database:** MongoDB (Docker locally, Atlas in production)  
+- **Infra:** Docker Compose, Railway/Render for deployment  
+- **CI/CD:** GitHub Actions (frontend & backend pipelines)  
 
-## 🛠 Technology Stack
+---
 
-### Backend
-- **Java 21** - Programming language
-- **Spring Boot 3.2** - Application framework
-- **Spring Security** - Authentication and authorization
-- **Spring Data MongoDB** - Database integration
-- **Spring WebSocket** - Real-time communication
-- **Maven** - Dependency management and build tool
-- **MongoDB** - NoSQL database
+## 👥 Team Roles  
+- **Backend Lead + Scrum Master (You)**  
+  - Owns Spring Boot APIs, MongoDB models, and LTI endpoints.  
+  - Facilitates Scrum ceremonies, backlog, and sprint planning.  
 
-### Frontend
-- **React 18** - UI library
-- **TypeScript** - Type-safe JavaScript
-- **Vite** - Build tool and dev server
-- **React Query** - Server state management
-- **React Router** - Client-side routing
-- **Vite PWA Plugin** - Progressive Web App capabilities
+- **LTI/Canvas Integration Lead**  
+  - Handles LTI launch flow, JWT validation, NRPS roster import, AGS grade sync.  
 
-### Infrastructure
-- **Docker & Docker Compose** - Containerization and orchestration
-- **MongoDB 7.0** - Database server
-- **Mongo Express** - Database administration interface
+- **Realtime/Infra Lead**  
+  - Builds WebSocket infrastructure, Docker Compose, and deployment pipelines.  
 
-### DevOps
-- **GitHub Actions** - CI/CD pipelines
-- **Maven** - Java build automation
-- **npm** - Node.js package management
+- **Frontend UX/PWA Lead**  
+  - Designs React + Vite dashboard UI, mobile-first layouts, and PWA install.  
+
+- **Frontend Features/Polish Lead**  
+  - Adds filters, group editing, audit logs, and ensures responsive UI polish.  
+
+*(Each role is responsible for testing & documenting their own work.)*  
+
+---
 
 ## 🚀 Getting Started
 
@@ -142,120 +146,6 @@ lab-signoff-app/
         └── frontend.yml     # Frontend workflow
 ```
 
-## 👥 Team Roles & Responsibilities
-
-### 🎯 Product Owner
-- Define requirements and user stories
-- Prioritize features and backlog
-- Accept/reject completed work
-- Liaise with stakeholders
-
-### 🛠 Tech Lead / Senior Developer
-- Architecture decisions and technical direction
-- Code review and quality standards
-- Mentoring junior developers
-- DevOps and deployment strategies
-
-### 💻 Backend Developer
-- Spring Boot application development
-- Database design and optimization
-- API design and implementation
-- Security and authentication
-
-### 🎨 Frontend Developer
-- React application development
-- UI/UX implementation
-- PWA features and optimization
-- Client-side state management
-
-### ⚙️ DevOps Engineer
-- CI/CD pipeline management
-- Infrastructure setup and monitoring
-- Docker containerization
-- Deployment automation
-
-### 🧪 QA Engineer
-- Test strategy and planning
-- Automated test implementation
-- Manual testing and bug reporting
-- Performance testing
-
-## 🔧 Development Workflow
-
-### Running Tests
-
-**Backend Tests:**
-```bash
-cd backend
-mvn test
-```
-
-**Frontend Tests:**
-```bash
-cd frontend
-npm run test
-```
-
-### Code Quality
-
-**Frontend Linting:**
-```bash
-cd frontend
-npm run lint
-```
-
-**TypeScript Check:**
-```bash
-cd frontend
-npx tsc --noEmit
-```
-
-### Building for Production
-
-```bash
-# Build everything
-./scripts/build-prod.sh
-
-# Or build individually
-cd backend && mvn clean package
-cd frontend && npm run build
-```
-
-## 🔐 Environment Configuration
-
-### Backend Configuration
-
-Create `backend/src/main/resources/application-local.yml`:
-
-```yaml
-spring:
-  data:
-    mongodb:
-      uri: mongodb://localhost:27017/labsignoff
-  security:
-    oauth2:
-      client:
-        registration:
-          lti:
-            client-id: your-lti-client-id
-            client-secret: your-lti-client-secret
-```
-
-### Frontend Configuration
-
-Create `frontend/.env.local`:
-
-```env
-VITE_API_BASE_URL=http://localhost:8080
-VITE_WS_URL=ws://localhost:8080/ws
-```
-
-## 📊 Monitoring & Observability
-
-- **Application Logs**: Check console output for both frontend and backend
-- **Database Monitoring**: Use Mongo Express at http://localhost:8081
-- **Health Checks**: Backend health endpoint at `/actuator/health`
-
 ## 🤝 Contributing
 
 1. Fork the repository
@@ -263,18 +153,3 @@ VITE_WS_URL=ws://localhost:8080/ws
 3. Commit your changes (`git commit -m 'Add amazing feature'`)
 4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
-
-## 📝 License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
-
-## 🆘 Support
-
-For support and questions:
-- Create an issue on GitHub
-- Check the documentation in the `/docs` folder
-- Contact the development team
-
----
-
-**Happy Coding! 🚀**
