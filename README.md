@@ -28,9 +28,8 @@ The app is installable as a **PWA** and supports **multi-staff realtime collabor
 ---
 
 ## 👥 Team Roles  
-- **Backend Lead + Scrum Master (You)**  
+- **Backend Lead**  
   - Owns Spring Boot APIs, MongoDB models, and LTI endpoints.  
-  - Facilitates Scrum ceremonies, backlog, and sprint planning.  
 
 - **LTI/Canvas Integration Lead**  
   - Handles LTI launch flow, JWT validation, NRPS roster import, AGS grade sync.  
@@ -145,6 +144,14 @@ lab-signoff-app/
         ├── backend.yml      # Backend workflow
         └── frontend.yml     # Frontend workflow
 ```
+## 📅 Sprint Timeline (2-Week Sprints)
+
+- **Sprint 1:** Repo setup, Mongo + API scaffold, React+Vite dashboard with mock groups.  
+- **Sprint 2:** Canvas LTI launch (JWT validation), groups from DB, role-based access.  
+- **Sprint 3:** Pass/Return checkpoints → DB + WebSocket broadcast.  
+- **Sprint 4:** Roster import via NRPS, auto group creation, group editing UI.  
+- **Sprint 5:** Canvas AGS grade sync, multi-TA realtime support, filters.  
+- **Sprint 6:** PWA polish (installable/offline), audit logs, deployment & final demo.  
 
 ## 🤝 Contributing
 
