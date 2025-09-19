@@ -1,0 +1,9 @@
+spring:
+  data:
+    mongodb:
+      uri: mongodb://localhost:27017/lab_signoff_dev
+  application:
+    name: lab-signoff-backend
+
+server:
+  port: 8080
