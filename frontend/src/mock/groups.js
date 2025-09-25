@@ -1,0 +1,40 @@
+export const groups = [
+    {
+        id: 'grp-101',
+        name: 'Period 2 – Lab A',
+        course: 'BIO 201: Lab Techniques',
+        section: 'Sec 02',
+        status: 'Active',
+        updatedAt: '2025-09-10',
+        members: [
+            { id: 'u1', name: 'Alex Rivera', role: 'Teacher' },
+            { id: 'u2', name: 'Jordan Kim', role: 'TA' },
+            { id: 'u3', name: 'Priya Shah', role: 'Student' },
+            { id: 'u4', name: 'Chris O’Neal', role: 'Student' },
+            { id: 'u5', name: 'Taylor Brooks', role: 'Student' },
+            { id: 'u6', name: 'Sam Lee', role: 'Student' },
+        ],
+    },
+    {
+        id: 'grp-102',
+        name: 'Period 3 – Dissection Team',
+        course: 'BIO 201: Lab Techniques',
+        section: 'Sec 03',
+        status: 'Active',
+        updatedAt: '2025-09-15',
+        members: [
+            { id: 'u7', name: 'Jean Park', role: 'Teacher' },
+            { id: 'u8', name: 'Morgan Chen', role: 'TA' },
+            { id: 'u9', name: 'Quincy Nguyen', role: 'Student' },
+        ],
+    },
+    {
+        id: 'grp-103',
+        name: 'Make-up Lab',
+        course: 'BIO 201: Lab Techniques',
+        section: 'Sec 99',
+        status: 'Archived',
+        updatedAt: '2025-08-30',
+        members: [{ id: 'u10', name: 'Riley Patel', role: 'Teacher' }],
+    },
+];
