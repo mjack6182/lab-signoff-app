@@ -1,0 +1,34 @@
+name: Backend CI
+
+# Trigger workflow on pushes or PRs to main or dev
+on:
+  push:
+    branches: [ main, dev ]
+  pull_request:
+    branches: [ main, dev ]
+
+jobs:
+  build-backend:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1️⃣ Checkout code
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      # 2️⃣ Set up Java 17
+      - name: Set up Java
+        uses: actions/setup-java@v3
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      # 3️⃣ Build backend
+      - name: Build backend
+        working-directory: ./backend
+        run: ./gradlew build      # Use ./mvnw package if your backend uses Maven
+
+      # 4️⃣ Run backend tests
+      - name: Run backend tests
+        working-directory: ./backend
+        run: ./gradlew test       # Use ./mvnw test if Maven
