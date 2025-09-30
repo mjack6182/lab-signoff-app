@@ -95,8 +95,8 @@ jobs:
 
             // 2) Decide reviewer pool based on branch family
             const isBackend = head.toLowerCase().startsWith('backend/');
-            const isFrontend = head.toLowerCase().startsWith('frontend/'); // allow Frontend/
-            const isDevOps   = head.toLowerCase().startsWith('devops/');   // allow devOps/
+            const isFrontend = head.toLowerCase().startsWith('frontend/'); // case-insensitive match (e.g., Frontend/, FRONTEND/)
+            const isDevOps   = head.toLowerCase().startsWith('devops/');   // case-insensitive match (e.g., devOps/, DEVOPS/)
 
             async function getAuthorsFromFamily(prefix) {
               // List all branches, filter by family, map to last commit author login
