@@ -51,7 +51,10 @@ jobs:
               `This PR was automatically opened/updated because **${head}** received a push.`,
               '',
               '### Recent commits',
-              ...commits.slice(0, 20).map(c => `- ${c.sha.slice(0,7)} ${c.commit.message.split('\n')[0]}${c.author?.login ? ` (@${c.author.login})` : ''}`),
+              ...commits.slice(0, 20).map(c => {
+                const username = c.author?.login ?? c.committer?.login;
+                return `- ${c.sha.slice(0,7)} ${c.commit.message.split('\n')[0]}${username ? ` (@${username})` : ''}`;
+              }),
               commits.length > 20 ? '\n…(truncated)' : ''
             ];
 
