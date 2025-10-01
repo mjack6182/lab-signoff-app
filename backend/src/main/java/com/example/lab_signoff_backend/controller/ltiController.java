@@ -17,38 +17,29 @@ public class ltiController {
     // Handles GET requests to /lti/login
     @GetMapping("/login")
     public void login(
-
-            // A fake "login_hint" parameter with default value if not provided
             @RequestParam(defaultValue = "demo-user") String login_hint,
-
-            // The endpoint where the login flow should redirect to (default: /lti/launch)
             @RequestParam(defaultValue = "/lti/launch") String target_link_uri,
-
-            // Used to build and send the response
             HttpServletResponse response
     ) throws IOException {
 
-        // Create mock id_token and state values (would normally come from the IdP in real LTI/OIDC flow)
+        // create a nonce, store (state -> nonce), and remember the state we just issued
+        String nonce = java.util.UUID.randomUUID().toString();
+        String state = StateNonceStore.issueState(nonce);  // <— IMPORTANT: issue() stores state->nonce
+
+        // auto-post to launch with the exact state/nonce pair we just stored
         String idToken = "mock-id-token-" + System.currentTimeMillis();
-        String state = "mock-state-" + System.nanoTime();
 
-        // Build an HTML page with a form that auto-submits via POST to the /lti/launch endpoint
-        // This simulates the OIDC redirect behavior of a real LMS
         String html = """
-            <html>
-              <body onload="document.forms[0].submit();">
-                <form action="%s" method="post">
-                  <input type="hidden" name="id_token" value="%s"/>
-                  <input type="hidden" name="state" value="%s"/>
-                  <noscript><button type="submit">Continue</button></noscript>
-                </form>
-              </body>
-            </html>
-            """.formatted(target_link_uri, idToken, state);
+        <html><body onload="document.forms[0].submit();">
+          <form action="%s" method="post">
+            <input type="hidden" name="id_token" value="%s"/>
+            <input type="hidden" name="state" value="%s"/>
+            <noscript><button type="submit">Continue</button></noscript>
+          </form>
+        </body></html>
+        """.formatted(target_link_uri, idToken, state);
 
-        // Tell the client browser that the response is HTML
         response.setContentType("text/html");
-        // Write the HTML directly to the HTTP response body
         response.getWriter().write(html);
     }
 
