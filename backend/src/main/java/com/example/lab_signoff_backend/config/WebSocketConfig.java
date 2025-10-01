@@ -20,6 +20,7 @@ public class WebSocketConfig implements WebSocketConfigurer {
     @Override
     public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
         registry.addHandler(myWebSocketHandler, "/ws")
-                .setAllowedOrigins("*"); // allows all clients to connect
+                // Restrict allowed origins to trusted domains only
+                .setAllowedOrigins("http://localhost:3000", "https://yourdomain.com");
     }
 }
