@@ -226,3 +226,5 @@ $RECYCLE.BIN/
 # === Docker ===
 # Exclude docker volumes
 docker-volumes/
+
+.env

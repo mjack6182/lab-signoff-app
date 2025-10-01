@@ -1,0 +1,8 @@
+spring:
+  data:
+    mongodb:
+      uri: mongodb://dummy:dummy@localhost:27017/dummy
+  application:
+    name: lab-signoff
+server:
+  port: 0
