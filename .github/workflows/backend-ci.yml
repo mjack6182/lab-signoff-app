@@ -23,10 +23,12 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      # 3️⃣ Build the backend
+      # 3️⃣ Build the backend (skip tests here)
       - name: Build backend
         working-directory: ./backend
-        run: ./gradlew build      # Use ./mvnw package if your backend uses Maven
+        run: ./gradlew build -x test
+        # -x test means "skip tests" so we don’t run them twice.
+        # This ensures tests only run in the dedicated step below.
 
       # 4️⃣ Run backend tests using the test-only MongoDB config
       - name: Run backend tests
