@@ -6,6 +6,12 @@ spring:
       uri: ${SPRING_DATA_MONGODB_URI}
   application:
     name: ${SPRING_APPLICATION_NAME}
+  web:
+    resources:
+      # Configure static resource handling
+      static-locations: classpath:/static/
+      cache-period: 3600
 
 server:
   port: ${SERVER_PORT}
+

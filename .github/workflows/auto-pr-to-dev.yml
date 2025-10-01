@@ -1,0 +1,179 @@
+name: Auto PR to dev on push
+
+on:
+  push:
+    branches-ignore:
+      - dev
+      - main
+      - "release/**"
+
+jobs:
+  auto-pr:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - name: Create or update PR to dev
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const base = 'dev';
+            const head = context.ref.replace('refs/heads/','');
+            const actor = context.actor;
+
+            if (['dev','main'].includes(head) || head.startsWith('release/')) {
+              core.info(`Skip: ${head} is ignored.`);
+              return;
+            }
+
+            // 1) Find or create PR
+            const { data: prs } = await github.rest.pulls.list({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              head: `${context.repo.owner}:${head}`,
+              base
+            });
+
+            const commits = await github.paginate(github.rest.repos.listCommits, {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              sha: head,
+              per_page: 100
+            });
+
+            const latest = commits[0];
+            const title = `Auto PR: ${head} → ${base} — ${latest?.commit?.message?.split('\n')[0] ?? 'update'}`;
+            const bodyLines = [
+              `This PR was automatically opened/updated because **${head}** received a push.`,
+              '',
+              '### Recent commits',
+              ...commits.slice(0, 20).map(c => {
+                const username = c.author?.login ?? c.committer?.login;
+                return `- ${c.sha.slice(0,7)} ${c.commit.message.split('\n')[0]}${username ? ` (@${username})` : ''}`;
+              }),
+              commits.length > 20 ? '\n…(truncated)' : ''
+            ];
+
+            let prNumber;
+            if (prs.length > 0) {
+              const pr = prs[0];
+              await github.rest.pulls.update({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                pull_number: pr.number,
+                title,
+                body: bodyLines.join('\n')
+              });
+              prNumber = pr.number;
+              core.info(`Updated PR #${pr.number}`);
+            } else {
+              const { data: pr } = await github.rest.pulls.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                head,
+                base,
+                title,
+                body: bodyLines.join('\n'),
+                draft: false,
+                maintainer_can_modify: true
+              });
+              prNumber = pr.number;
+              core.info(`Created PR #${pr.number}`);
+              try {
+                await github.rest.issues.addLabels({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: pr.number,
+                  labels: ['auto-pr']
+                });
+              } catch(e) {
+                core.info('No label added (label may not exist).');
+              }
+            }
+
+            // 2) Decide reviewer pool based on branch family
+            const isBackend = head.toLowerCase().startsWith('backend/');
+            const isFrontend = head.toLowerCase().startsWith('frontend/'); // case-insensitive match (e.g., Frontend/, FRONTEND/)
+            const isDevOps   = head.toLowerCase().startsWith('devops/');   // case-insensitive match (e.g., devOps/, DEVOPS/)
+
+            async function getAuthorsFromFamily(prefix) {
+              // List all branches, filter by family, map to last commit author login
+              const branches = await github.paginate(github.rest.repos.listBranches, {
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                per_page: 100,
+                protected: false,
+              });
+
+              const family = branches
+                .filter(b => b.name.startsWith(prefix) && b.name !== head);
+
+              // For each branch, fetch the commit to find an author login
+              const logins = [];
+              for (const b of family) {
+                try {
+                  const { data: commit } = await github.rest.repos.getCommit({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    ref: b.commit.sha
+                  });
+                  const login = commit.author?.login ?? commit.committer?.login ?? null;
+                  if (login) logins.push(login);
+                } catch (e) {
+                  core.info(`Could not resolve author for ${b.name}: ${e.message}`);
+                }
+              }
+
+              // Unique, exclude actor and GH actions bot
+              const unique = [...new Set(logins)]
+                .filter(u => u && u !== actor && u !== 'github-actions[bot]');
+              return unique;
+            }
+
+            async function getRandomCollaborators(count = 2) {
+              // Pull collaborators with at least write access and filter out bots and actor
+              const collabs = await github.paginate(github.rest.repos.listCollaborators, {
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                per_page: 100
+              });
+              const pool = collabs
+                .filter(c => (c.permissions?.push || c.permissions?.maintain || c.permissions?.admin))
+                .map(c => c.login)
+                .filter(u => u && u !== actor && u !== 'github-actions[bot]');
+
+              // Shuffle
+              for (let i = pool.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [pool[i], pool[j]] = [pool[j], pool[i]];
+              }
+              return pool.slice(0, count);
+            }
+
+            let reviewers = [];
+            if (isBackend) {
+              reviewers = await getAuthorsFromFamily('backend/');
+            } else if (isFrontend) {
+              reviewers = await getAuthorsFromFamily('frontend/');
+            } else if (isDevOps) {
+              reviewers = await getRandomCollaborators(2);
+            }
+
+            // 3) Request reviewers (no-ops safely if none)
+            if (reviewers.length) {
+              try {
+                await github.rest.pulls.requestReviewers({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  pull_number: prNumber,
+                  reviewers
+                });
+                core.info(`Requested reviewers: ${reviewers.join(', ')}`);
+              } catch (e) {
+                core.warning(`Could not request reviewers: ${e.message}`);
+              }
+            } else {
+              core.info('No eligible reviewers found for this branch family.');
+            }

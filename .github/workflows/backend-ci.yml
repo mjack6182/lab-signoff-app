@@ -1,0 +1,39 @@
+name: Backend CI
+
+# Trigger workflow on pushes or PRs to main or dev branches
+on:
+  push:
+    branches: [ main, dev ]
+  pull_request:
+    branches: [ main, dev ]
+
+jobs:
+  build-backend:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1️⃣ Checkout the repository
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      # 2️⃣ Set up Java 17
+      - name: Set up Java
+        uses: actions/setup-java@v3
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      # 3️⃣ Build the backend (skip tests here)
+      - name: Build backend
+        working-directory: ./backend
+        run: ./gradlew build -x test
+        # -x test means "skip tests" so we don’t run them twice.
+        # This ensures tests only run in the dedicated step below.
+
+      # 4️⃣ Run backend tests using the test-only MongoDB config
+      - name: Run backend tests
+        working-directory: ./backend
+        run: ./gradlew test -Dspring.config.location=classpath:/application-test.yml
+        # The -Dspring.config.location flag forces Spring Boot to use application-test.yml
+        # which contains dummy MongoDB credentials. This ensures tests pass in CI without
+        # needing real MongoDB credentials or Docker.
