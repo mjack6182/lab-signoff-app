@@ -21,4 +21,14 @@ public class LabService {
     public Lab upsert(Lab lab) {
         return repo.save(lab);
     }
+
+    /**
+     * Check if a lab exists by ID
+     *
+     * @param id The lab identifier
+     * @return true if the lab exists, false otherwise
+     */
+    public boolean labExists(String id) {
+        return repo.existsById(id);
+    }
 }
