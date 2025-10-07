@@ -7,14 +7,38 @@ import org.springframework.web.servlet.HandlerInterceptor;
 
 import java.util.Set;
 
+/**
+ * Interceptor that restricts access to instructor-only endpoints.
+ *
+ * This interceptor validates that the user has appropriate LTI roles
+ * (Instructor or optionally Teaching Assistant) before allowing access
+ * to protected endpoints.
+ *
+ * @author Lab Signoff App Team
+ * @version 1.0
+ */
 public class InstructorOnlyInterceptor implements HandlerInterceptor {
 
     private final boolean allowTAs;
 
+    /**
+     * Constructor for InstructorOnlyInterceptor.
+     *
+     * @param allowTAs Whether to allow Teaching Assistants access along with Instructors
+     */
     public InstructorOnlyInterceptor(boolean allowTAs) {
         this.allowTAs = allowTAs;
     }
 
+    /**
+     * Validates user's LTI roles before allowing access to protected endpoints.
+     *
+     * @param req     The HTTP request
+     * @param res     The HTTP response
+     * @param handler The handler being invoked
+     * @return true if the user has appropriate roles, false otherwise
+     * @throws Exception if an error occurs during processing
+     */
     @SuppressWarnings("unchecked")
     @Override
     public boolean preHandle(HttpServletRequest req, HttpServletResponse res, Object handler)

@@ -12,15 +12,43 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
 
+/**
+ * Controller for handling LTI 1.3 launch requests from Canvas.
+ *
+ * This controller validates incoming LTI launch requests, verifies JWT tokens,
+ * extracts user roles and context information, and establishes authenticated sessions.
+ *
+ * @author Lab Signoff App Team
+ * @version 1.0
+ */
 @RestController
 @RequestMapping("/lti")
 public class LtiLaunchController {
     private final LtiJwtValidator validator;
+    private final StateNonceStore stateNonceStore;
 
-    public LtiLaunchController(LtiJwtValidator validator) {
+    /**
+     * Constructor for LtiLaunchController.
+     *
+     * @param validator       The JWT validator for verifying LTI tokens
+     * @param stateNonceStore Store for managing state-nonce pairs
+     */
+    public LtiLaunchController(LtiJwtValidator validator, StateNonceStore stateNonceStore) {
         this.validator = validator;
+        this.stateNonceStore = stateNonceStore;
     }
 
+    /**
+     * Handles LTI launch requests from Canvas.
+     *
+     * Validates the ID token, verifies state and nonce, extracts user roles
+     * and context information, and stores them in the HTTP session.
+     *
+     * @param idToken The JWT ID token from Canvas
+     * @param state   The state parameter for CSRF protection
+     * @param session The HTTP session for storing user information
+     * @return ResponseEntity containing launch information or error details
+     */
     @PostMapping(value = "/launch", consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE,
             produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<?> launch(@RequestParam("id_token") String idToken,
@@ -28,7 +56,7 @@ public class LtiLaunchController {
                                     HttpSession session) {
         try {
             // In your real flow, you issued (state, nonce) at /lti/login and stored it
-            Optional<String> expectedNonce = StateNonceStore.consumeNonce(state);
+            Optional<String> expectedNonce = stateNonceStore.consumeNonce(state);
             if (expectedNonce.isEmpty()) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                         .body(Map.of("error", "invalid_or_expired_state"));
@@ -54,7 +82,7 @@ public class LtiLaunchController {
 
 
 
-            // Minimal response (you’ll likely redirect into your UI here)
+            // Minimal response (you'll likely redirect into your UI here)
             Map<String, Object> out = new LinkedHashMap<>();
             out.put("iss", claims.getIssuer());
             out.put("aud", claims.getAudience());

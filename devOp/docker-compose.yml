@@ -25,5 +25,16 @@ services:
     depends_on:
       - mongo
 
+  redis:
+    image: redis:7-alpine
+    container_name: lab-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+
 volumes:
   mongo_data:
+  redis_data:
