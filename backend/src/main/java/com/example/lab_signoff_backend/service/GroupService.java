@@ -6,10 +6,24 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 
+/**
+ * Service class for Group entity business logic.
+ *
+ * Provides methods for managing student groups including retrieval by lab,
+ * creation, and updates.
+ *
+ * @author Lab Signoff App Team
+ * @version 1.0
+ */
 @Service
 public class GroupService {
     private final GroupRepository repo;
 
+    /**
+     * Constructor for GroupService.
+     *
+     * @param repo The GroupRepository for database operations
+     */
     public GroupService(GroupRepository repo) {
         this.repo = repo;
     }

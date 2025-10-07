@@ -18,6 +18,16 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
 
+/**
+ * LTI JWT validator for authenticating LTI 1.3 launch requests.
+ *
+ * This component validates JWT tokens from Canvas LMS using the LTI 1.3 specification.
+ * It verifies token signatures using JWKS, validates standard claims (issuer, audience,
+ * expiration), and checks LTI-specific claims required by the specification.
+ *
+ * @author Lab Signoff App Team
+ * @version 1.0
+ */
 @Component
 public class LtiJwtValidator {
     private final String issuer;
@@ -25,6 +35,15 @@ public class LtiJwtValidator {
     private final long clockSkew;
     private final ConfigurableJWTProcessor<SecurityContext> processor;
 
+    /**
+     * Constructs an LtiJwtValidator with configuration from application properties.
+     *
+     * @param issuer    The expected issuer (Canvas instance URL)
+     * @param clientId  The LTI client ID registered with Canvas
+     * @param jwksUrl   The URL to Canvas's JWKS endpoint for key verification
+     * @param clockSkew Allowed clock skew in seconds for time-based validations (default: 120)
+     * @throws MalformedURLException if the JWKS URL is invalid
+     */
     public LtiJwtValidator(
             @Value("${lti.issuer}") String issuer,
             @Value("${lti.client-id}") String clientId,
@@ -46,6 +65,24 @@ public class LtiJwtValidator {
         // Optional: set clock-skew handler by wrapping time checks yourself (below)
     }
 
+    /**
+     * Validates an LTI ID token and returns the claims if valid.
+     *
+     * Performs the following validations:
+     * - Signature verification using JWKS
+     * - Issuer and audience (client_id) validation
+     * - Expiration and issue time checks with clock skew allowance
+     * - Nonce validation for replay attack prevention
+     * - LTI-required claims validation (version, message_type, deployment_id)
+     *
+     * @param idToken       The JWT ID token from the LTI launch
+     * @param expectedNonce The nonce value expected in the token
+     * @return The validated JWT claims set
+     * @throws ParseException         if the token cannot be parsed
+     * @throws JOSEException         if signature verification fails
+     * @throws IllegalArgumentException if any validation check fails
+     * @throws BadJOSEException      if the token structure is invalid
+     */
     public JWTClaimsSet validate(String idToken, String expectedNonce) throws ParseException, JOSEException, IllegalArgumentException, BadJOSEException {
         var claims = processor.process(idToken, null);
 
@@ -80,6 +117,13 @@ public class LtiJwtValidator {
         return claims;
     }
 
+    /**
+     * Validates that a required claim exists in the JWT claims set.
+     *
+     * @param c    The JWT claims set
+     * @param name The name of the required claim
+     * @throws IllegalArgumentException if the claim is missing
+     */
     private static void mustHave(JWTClaimsSet c, String name) {
         if (c.getClaim(name) == null) throw new IllegalArgumentException("Missing claim: " + name);
     }
