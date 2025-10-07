@@ -101,7 +101,11 @@ export default function CheckpointCard({
                                             ✓ Completed by {getCompletedByName(checkpoint.completedBy)}
                                         </span>
                                         <span className="completed-date">
-                                            on {new Date(checkpoint.completedAt).toLocaleDateString()}
+                                            on {
+                                                checkpoint.completedAt && !isNaN(new Date(checkpoint.completedAt).getTime())
+                                                    ? new Date(checkpoint.completedAt).toLocaleDateString()
+                                                    : "Unknown date"
+                                            }
                                         </span>
                                     </div>
                                 )}
