@@ -1,74 +1,86 @@
 package com.example.lab_signoff_backend.controller;
 
 import com.example.lab_signoff_backend.LtiJwtValidator;
+import com.example.lab_signoff_backend.security.StateNonceStore;
 import com.nimbusds.jwt.JWTClaimsSet;
-import jakarta.servlet.http.HttpSession;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.*;
+import org.springframework.lang.Nullable;          // <-- use Spring’s @Nullable
 import org.springframework.web.bind.annotation.*;
 
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.Optional;
+import jakarta.servlet.http.HttpSession;
+import java.util.*;
 
 @RestController
 @RequestMapping("/lti")
 public class LtiLaunchController {
-    private final LtiJwtValidator validator;
+    private final @Nullable LtiJwtValidator validator;   // may be null when disabled
+    private final boolean validationEnabled;
 
-    public LtiLaunchController(LtiJwtValidator validator) {
+    public LtiLaunchController(@Nullable LtiJwtValidator validator,
+                               @Value("${lti.validation-enabled:false}") boolean validationEnabled) {
         this.validator = validator;
+        this.validationEnabled = validationEnabled;
     }
 
-    @PostMapping(value = "/launch", consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE,
+    @PostMapping(value = "/launch",
+            consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE,
             produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<?> launch(@RequestParam("id_token") String idToken,
                                     @RequestParam("state") String state,
                                     HttpSession session) {
         try {
-            // In your real flow, you issued (state, nonce) at /lti/login and stored it
+            // Always consume state once (mock or real) to keep flow consistent
             Optional<String> expectedNonce = StateNonceStore.consumeNonce(state);
-            if (expectedNonce.isEmpty()) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                        .body(Map.of("error", "invalid_or_expired_state"));
+            if (validationEnabled) {
+                // REAL PATH: validator must exist and nonce must be present
+                if (validator == null) {
+                    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                            .body(Map.of("error", "validator_not_available"));
+                }
+                if (expectedNonce.isEmpty()) {
+                    return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                            .body(Map.of("error", "invalid_or_expired_state"));
+                }
+
+                JWTClaimsSet claims = validator.validate(idToken, expectedNonce.get());
+
+                @SuppressWarnings("unchecked")
+                List<String> rolesList = (List<String>) claims.getClaim(
+                        "https://purl.imsglobal.org/spec/lti/claim/roles");
+                if (rolesList == null) rolesList = List.of();
+                Set<String> roles = new HashSet<>(rolesList);
+                session.setAttribute("ltiRoles", roles);
+                session.setAttribute("ltiUserSub", claims.getSubject());
+                session.setAttribute("ltiDeploymentId",
+                        claims.getStringClaim("https://purl.imsglobal.org/spec/lti/claim/deployment_id"));
+                session.setAttribute("ltiContext",
+                        claims.getClaim("https://purl.imsglobal.org/spec/lti/claim/context"));
+
+                Map<String, Object> out = new LinkedHashMap<>();
+                out.put("iss", claims.getIssuer());
+                out.put("aud", claims.getAudience());
+                out.put("sub", claims.getSubject());
+                out.put("name", claims.getStringClaim("name"));
+                out.put("roles", roles);
+                out.put("context", claims.getClaim("https://purl.imsglobal.org/spec/lti/claim/context"));
+                out.put("deployment_id", claims.getClaim("https://purl.imsglobal.org/spec/lti/claim/deployment_id"));
+                out.put("message_type", claims.getClaim("https://purl.imsglobal.org/spec/lti/claim/message_type"));
+                return ResponseEntity.ok(out);
+            } else {
+                // MOCK/DEV PATH: validation disabled — don’t require a real JWT
+                // You can still allow your teacher console by seeding Instructor for the session:
+                Set<String> roles = Set.of("http://purl.imsglobal.org/vocab/lis/v2/membership#Instructor");
+                session.setAttribute("ltiRoles", roles);
+
+                Map<String, Object> out = new LinkedHashMap<>();
+                out.put("endpoint", "/lti/launch");
+                out.put("status", "ok (validation disabled)");
+                out.put("id_token", idToken);
+                out.put("state", state);
+                out.put("roles", roles);
+                return ResponseEntity.ok(out);
             }
-
-
-            JWTClaimsSet claims = validator.validate(idToken, expectedNonce.get());
-
-
-            @SuppressWarnings("unchecked")
-            java.util.List<String> rolesList = (java.util.List<String>)
-                    claims.getClaim("https://purl.imsglobal.org/spec/lti/claim/roles");
-            if (rolesList == null) rolesList = java.util.List.of();
-            java.util.Set<String> roles = new java.util.HashSet<>(rolesList);
-            session.setAttribute("ltiRoles", roles);
-
-            // (Optional) store other helpful bits for later requests:
-            session.setAttribute("ltiUserSub", claims.getSubject());
-            session.setAttribute("ltiDeploymentId",
-                    claims.getStringClaim("https://purl.imsglobal.org/spec/lti/claim/deployment_id"));
-            session.setAttribute("ltiContext",
-                    claims.getClaim("https://purl.imsglobal.org/spec/lti/claim/context"));
-
-
-
-            // Minimal response (you’ll likely redirect into your UI here)
-            Map<String, Object> out = new LinkedHashMap<>();
-            out.put("iss", claims.getIssuer());
-            out.put("aud", claims.getAudience());
-            out.put("sub", claims.getSubject());
-            out.put("name", claims.getStringClaim("name"));
-            out.put("roles", claims.getClaim("https://purl.imsglobal.org/spec/lti/claim/roles"));
-            out.put("context", claims.getClaim("https://purl.imsglobal.org/spec/lti/claim/context"));
-            out.put("deployment_id", claims.getClaim("https://purl.imsglobal.org/spec/lti/claim/deployment_id"));
-            out.put("message_type", claims.getClaim("https://purl.imsglobal.org/spec/lti/claim/message_type"));
-
-            return ResponseEntity.ok(out);
-
-
-
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(Map.of("error", "invalid_id_token", "details", e.getMessage()));

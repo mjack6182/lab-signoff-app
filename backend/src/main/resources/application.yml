@@ -3,6 +3,7 @@ lti:
   client-id: ${LTI_CLIENT_ID}                     # from Canvas Developer Key
   jwks-url: "https://canvas.instructure.com/api/lti/security/jwks" # Canvas JWKS
   allowed-clock-skew-seconds: 120
+  validation-enabled: false
 spring:
   config:
     import: optional:file:.env[.properties],optional:file:../.env[.properties]
