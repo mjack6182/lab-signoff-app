@@ -14,7 +14,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     public void registerStompEndpoints(StompEndpointRegistry registry) {
         // Client will connect here (React, etc.)
         registry.addEndpoint("/ws")
-                .setAllowedOriginPatterns("*")   // allow frontend
+                .setAllowedOrigins("http://localhost:3000")   // allow only trusted frontend
                 .withSockJS();                   // fallback for older browsers
     }
 
