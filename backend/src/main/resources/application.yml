@@ -1,12 +1,32 @@
+lti:
+  issuer: "https://canvas.instructure.com"        # or your institution's Canvas issuer
+  client-id: ${LTI_CLIENT_ID}                     # from Canvas Developer Key
+  jwks-url: "https://canvas.instructure.com/api/lti/security/jwks" # Canvas JWKS
+  allowed-clock-skew-seconds: 120
 spring:
   config:
     import: optional:file:.env[.properties],optional:file:../.env[.properties]
   data:
     mongodb:
       uri: ${SPRING_DATA_MONGODB_URI}
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      jedis:
+        pool:
+          max-active: 8
+          max-idle: 8
+          min-idle: 0
   application:
     name: ${SPRING_APPLICATION_NAME}
+  web:
+    resources:
+      # Configure static resource handling
+      static-locations: classpath:/static/
+      cache-period: 3600
 
 server:
   port: ${SERVER_PORT}
+
+
 

@@ -2,6 +2,9 @@ spring:
   data:
     mongodb:
       uri: mongodb://dummy:dummy@localhost:27017/dummy
+    redis:
+      host: localhost
+      port: 6379
   application:
     name: lab-signoff
 server:
