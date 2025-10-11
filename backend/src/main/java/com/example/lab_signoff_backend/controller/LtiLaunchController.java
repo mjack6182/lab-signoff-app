@@ -11,6 +11,15 @@ import org.springframework.web.bind.annotation.*;
 import jakarta.servlet.http.HttpSession;
 import java.util.*;
 
+/**
+ * Controller for handling LTI 1.3 launch requests from Canvas.
+ *
+ * This controller validates incoming LTI launch requests, verifies JWT tokens,
+ * extracts user roles and context information, and establishes authenticated sessions.
+ *
+ * @author Lab Signoff App Team
+ * @version 1.0
+ */
 @RestController
 @RequestMapping("/lti")
 public class LtiLaunchController {
