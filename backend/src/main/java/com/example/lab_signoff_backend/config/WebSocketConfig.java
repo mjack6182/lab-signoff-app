@@ -20,30 +20,18 @@ import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerCo
 @EnableWebSocketMessageBroker
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
-<<<<<<< HEAD
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
         // Client will connect here (React, etc.)
         registry.addEndpoint("/ws")
                 .setAllowedOrigins("http://localhost:3000")   // allow only trusted frontend
                 .withSockJS();                   // fallback for older browsers
-=======
-    private final MyWebSocketHandler myWebSocketHandler;
-
-    /**
-     * Constructor for WebSocketConfig.
-     *
-     * @param myWebSocketHandler The WebSocket handler for processing messages
-     */
-    public WebSocketConfig(MyWebSocketHandler myWebSocketHandler) {
-        this.myWebSocketHandler = myWebSocketHandler;
->>>>>>> dev
     }
 
     /**
-     * Registers WebSocket handlers and configures allowed origins.
+     * Configures the broker responsible for routing messages between clients and server.
      *
-     * @param registry The WebSocket handler registry
+     * @param registry The message broker registry
      */
     @Override
     public void configureMessageBroker(MessageBrokerRegistry registry) {
