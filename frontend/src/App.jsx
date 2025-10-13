@@ -4,10 +4,10 @@ import GroupList from './components/GroupList/GroupList'
 import LabSelector from './pages/lab-selector/lab-selector'
 import Dashboard from './pages/dashboard/dashboard'
 import CheckpointPage from './pages/checkpoints/checkpoint'
-import RoleDemo from './pages/role-demo/role-demo'
+// import RoleDemo from './pages/role-demo/role-demo'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { StaffOnly } from './components/RoleGuard/RoleGuard'
-import RoleSwitcher from './components/RoleSwitcher/RoleSwitcher'
+// import RoleSwitcher from './components/RoleSwitcher/RoleSwitcher'
 
 function AppContent() {
     const { user, loading } = useAuth();
@@ -50,7 +50,7 @@ function AppContent() {
                         <NavLink to="/dashboard">Dashboard</NavLink>
                         <NavLink to="/checkpoints">Checkpoints</NavLink>
                     </StaffOnly>
-                    <NavLink to="/role-demo">Role Demo</NavLink>
+                    {/* <NavLink to="/role-demo">Role Demo</NavLink> */}
                 </div>
                 
                 {user && (
@@ -69,7 +69,7 @@ function AppContent() {
             </nav>
 
             {/* Role Switcher for Demo */}
-            {user && (
+            {/* {user && (
                 <div style={{ 
                     position: 'fixed', 
                     top: 60, 
@@ -79,7 +79,7 @@ function AppContent() {
                 }}>
                     <RoleSwitcher />
                 </div>
-            )}
+            )} */}
 
             <Routes>
                 <Route path="/" element={<Navigate to="/login" replace />} />
@@ -96,7 +96,7 @@ function AppContent() {
                         <CheckpointPage />
                     </StaffOnly>
                 } />
-                <Route path="/role-demo" element={<RoleDemo />} />
+                {/* <Route path="/role-demo" element={<RoleDemo />} /> */}
 
                 {/* optional 404 */}
                 <Route path="*" element={<Navigate to="/login" replace />} />

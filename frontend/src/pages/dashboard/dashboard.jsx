@@ -1,5 +1,3 @@
-import './dashboard.css';
-
 const stats = [
     { id: 'students', label: 'Total Students', value: '127', helper: 'Enrolled students', icon: <span style={{ fontSize: 20 }}>👥</span> },
     { id: 'pending', label: 'Pending Check-offs', value: '23', helper: 'Awaiting review', icon: <span style={{ fontSize: 20 }}>⏰</span> },

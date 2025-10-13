@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
-import './CheckpointCard.css';
 
 export default function CheckpointCard({ 
     groupId, 
