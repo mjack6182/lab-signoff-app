@@ -1,4 +1,3 @@
-import { useMemo, useState } from 'react'
 import { useAuth } from '../../contexts/AuthContext'
 import './lab-selector.css';
 
@@ -73,17 +72,6 @@ const statusColors = {
 
 export default function LabSelector() {
   const { user, logout } = useAuth()
-  const [query, setQuery] = useState('')
-
-  const filteredLabs = useMemo(() => {
-    if (!query.trim()) return labs
-    const normalized = query.trim().toLowerCase()
-    return labs.filter(lab =>
-      lab.title.toLowerCase().includes(normalized) ||
-      lab.course.toLowerCase().includes(normalized) ||
-      lab.description.toLowerCase().includes(normalized)
-    )
-  }, [query])
 
   const handleLabOpen = (lab) => {
     if (lab.status === 'open') {
@@ -119,22 +107,10 @@ export default function LabSelector() {
         </div>
       </header>
 
-      {/* Search Controls */}
-      <section className="search-section">
-        <div className="search-controls">
-          <input
-            type="search"
-            className="search-input"
-            placeholder="Search labs..."
-            value={query}
-            onChange={e => setQuery(e.target.value)}
-          />
-        </div>
-      </section>
       {/* Lab Grid */}
       <section className="labs-grid-section">
         <div className="labs-grid">
-          {filteredLabs.map(lab => {
+          {labs.map(lab => {
             const statusStyle = statusColors[lab.status]
             const isOpen = lab.status === 'open'
             
