@@ -1,42 +1,31 @@
 package com.example.lab_signoff_backend.websocket;
 
+import com.example.lab_signoff_backend.model.CheckpointUpdate;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.SendTo;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Controller;
 
 @Controller
 public class LabWebSocketController {
 
-    // Example: client sends to /app/hello
+    @Autowired
+    private SimpMessagingTemplate messagingTemplate;
+
+    // Simple test message endpoint
     @MessageMapping("/hello")
     @SendTo("/topic/greetings")
     public String greeting(String message) {
         return "Hello from backend, you sent: " + message;
     }
-}
 
-//frontend react test code
-/**
- * import { Client } from "@stomp/stompjs";
- * import SockJS from "sockjs-client";
- *
- * const socket = new SockJS("http://localhost:8080/ws");
- * const stompClient = new Client({
- *   webSocketFactory: () => socket,
- * });
- *
- * stompClient.onConnect = () => {
- *   // Subscribe to server → client messages
- *   stompClient.subscribe("/topic/greetings", (msg) => {
- *     console.log("Received:", msg.body);
- *   });
- *
- *   // Send a test message
- *   stompClient.publish({
- *     destination: "/app/hello",
- *     body: "World",
- *   });
- * };
- *
- * stompClient.activate();
- */
+    // Broadcast checkpoint updates
+    public void broadcastCheckpointUpdate(String groupId, int checkpointNumber, String status) {
+        CheckpointUpdate update = new CheckpointUpdate(groupId, checkpointNumber, status);
+        messagingTemplate.convertAndSend("/topic/group-updates", update);
+
+        // Log broadcast for testing
+        System.out.println("Broadcasted update: " + groupId + " | Checkpoint: " + checkpointNumber + " | Status: " + status);
+    }
+}
