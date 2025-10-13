@@ -11,6 +11,27 @@ export default function CheckpointPage() {
     const [signOffNotes, setSignOffNotes] = useState('');
     const [signOffStatus, setSignOffStatus] = useState('pass'); // 'pass' or 'return'
     
+    // Track checkpoint completion status per group
+    const [groupCheckpoints, setGroupCheckpoints] = useState(() => {
+        // Initialize with some completed checkpoints for demo
+        const initial = {};
+        classData.sections.forEach(section => {
+            section.groups.forEach(group => {
+                initial[group.id] = {};
+                // Set some initial completed checkpoints based on checkpointProgress
+                for (let i = 0; i < group.checkpointProgress && i < mockCheckpoints.length; i++) {
+                    initial[group.id][mockCheckpoints[i].id] = {
+                        completed: true,
+                        completedAt: `2025-10-${10 + i}`,
+                        completedBy: 'instructor',
+                        notes: ''
+                    };
+                }
+            });
+        });
+        return initial;
+    });
+    
     const selectedSection = classData.sections.find(s => s.id === selectedSectionId);
     const selectedGroup = selectedSection?.groups?.find(g => g.id === selectedGroupId);
     const currentLab = "Lab 5"; // This would come from route params in real app
@@ -23,35 +44,76 @@ export default function CheckpointPage() {
     }, [selectedSectionId, selectedSection]);
 
     const handleSignOffClick = (checkpoint, status) => {
-        setSelectedCheckpoint(checkpoint);
-        setSignOffStatus(status);
-        setSignOffNotes('');
-        setShowSignOffModal(true);
+        if (status === 'return') {
+            // For undo, execute immediately without modal
+            handleUndoCheckpoint(checkpoint);
+        } else {
+            // For sign off, show modal
+            setSelectedCheckpoint(checkpoint);
+            setSignOffStatus(status);
+            setSignOffNotes('');
+            setShowSignOffModal(true);
+        }
+    };
+
+    const handleUndoCheckpoint = (checkpoint) => {
+        if (!selectedGroup) return;
+        
+        setGroupCheckpoints(prev => {
+            const updated = { ...prev };
+            if (updated[selectedGroup.id]) {
+                delete updated[selectedGroup.id][checkpoint.id];
+            }
+            return updated;
+        });
+        
+        console.log(`Group ${selectedGroup.name} undid checkpoint ${checkpoint.name}`);
     };
 
     const handleSignOffConfirm = () => {
-        if (!selectedCheckpoint) return;
+        if (!selectedCheckpoint || !selectedGroup) return;
         
         const isPassing = signOffStatus === 'pass';
-        // Update checkpoint progress for the selected group
-        if (isPassing && selectedGroup) {
-            const currentProgress = selectedGroup.checkpointProgress;
-            const checkpointIndex = mockCheckpoints.findIndex(cp => cp.id === selectedCheckpoint.id);
-            
-            // Only increment if this checkpoint hasn't been passed yet
-            if (checkpointIndex >= currentProgress) {
-                // Update the group's progress in the class data
-                // In a real app, this would be sent to the backend
-                console.log(`Group ${selectedGroup.name} passed checkpoint ${selectedCheckpoint.name}`);
-                
-                // For demo purposes, we could update local state here
-                // but since we're using mock data structure, we'll just log it
+        
+        setGroupCheckpoints(prev => {
+            const updated = { ...prev };
+            if (!updated[selectedGroup.id]) {
+                updated[selectedGroup.id] = {};
             }
-        }
+            
+            if (isPassing) {
+                // Mark checkpoint as completed
+                updated[selectedGroup.id][selectedCheckpoint.id] = {
+                    completed: true,
+                    completedAt: new Date().toISOString().split('T')[0],
+                    completedBy: 'instructor',
+                    notes: signOffNotes
+                };
+            } else {
+                // Remove completion (undo)
+                delete updated[selectedGroup.id][selectedCheckpoint.id];
+            }
+            
+            return updated;
+        });
+        
+        console.log(`Group ${selectedGroup.name} ${isPassing ? 'signed off' : 'undid'} checkpoint ${selectedCheckpoint.name}`);
         
         setShowSignOffModal(false);
         setSelectedCheckpoint(null);
         setSignOffNotes('');
+    };
+
+    // Helper function to check if a checkpoint is completed for the selected group
+    const isCheckpointCompleted = (checkpointId) => {
+        if (!selectedGroup) return false;
+        return groupCheckpoints[selectedGroup.id]?.[checkpointId]?.completed || false;
+    };
+
+    // Helper function to get completed checkpoints count for a group
+    const getCompletedCount = (groupId) => {
+        if (!groupCheckpoints[groupId]) return 0;
+        return Object.values(groupCheckpoints[groupId]).filter(cp => cp.completed).length;
     };
 
     const handleAddGroup = () => {
@@ -114,14 +176,14 @@ export default function CheckpointPage() {
                             Checkpoints
                         </h2>
                         <span className="checkpoint-count">
-                            {mockCheckpoints.filter(cp => cp.completed).length}/{mockCheckpoints.length}
+                            {selectedGroup ? getCompletedCount(selectedGroup.id) : 0}/{mockCheckpoints.length}
                         </span>
                     </header>
                     
                     <div className="checkpoint-list">
                         {mockCheckpoints.map((checkpoint, index) => {
-                            const isCompleted = checkpoint.completed;
-                            const completedUpToHere = mockCheckpoints.slice(0, index + 1).filter(cp => cp.completed).length;
+                            const isCompleted = isCheckpointCompleted(checkpoint.id);
+                            const completedUpToHere = mockCheckpoints.slice(0, index + 1).filter(cp => isCheckpointCompleted(cp.id)).length;
                             const progress = (completedUpToHere / mockCheckpoints.length) * 100;
                             
                             return (
@@ -133,7 +195,7 @@ export default function CheckpointPage() {
                                         <div className="checkpoint-progress-line" style={{ 
                                             background: isCompleted 
                                                 ? '#016836' 
-                                                : index < mockCheckpoints.findIndex(cp => !cp.completed) 
+                                                : index < mockCheckpoints.findIndex(cp => !isCheckpointCompleted(cp.id)) 
                                                     ? '#016836' 
                                                     : '#e5e7eb'
                                         }}></div>
@@ -144,29 +206,32 @@ export default function CheckpointPage() {
                                             <h3 className="checkpoint-name">{checkpoint.name}</h3>
                                             <p className="checkpoint-description">{checkpoint.description}</p>
                                             <div className="checkpoint-meta">
-                                                <span className="checkpoint-points">{checkpoint.points} pts</span>
-                                                {isCompleted && (
+                                                <span className="checkpoint-points">{checkpoint.points} pt</span>
+                                                {isCompleted && selectedGroup && (
                                                     <span className="checkpoint-completed-info">
-                                                        Completed {checkpoint.completedAt}
+                                                        Completed {groupCheckpoints[selectedGroup.id]?.[checkpoint.id]?.completedAt}
                                                     </span>
                                                 )}
                                             </div>
                                         </div>
                                         
-                                        {!isCompleted && selectedGroup && (
+                                        {selectedGroup && (
                                             <div className="checkpoint-actions">
-                                                <button 
-                                                    className="checkpoint-btn pass"
-                                                    onClick={() => handleSignOffClick(checkpoint, 'pass')}
-                                                >
-                                                    Pass
-                                                </button>
-                                                <button 
-                                                    className="checkpoint-btn return"
-                                                    onClick={() => handleSignOffClick(checkpoint, 'return')}
-                                                >
-                                                    Return
-                                                </button>
+                                                {!isCompleted ? (
+                                                    <button 
+                                                        className="checkpoint-btn pass"
+                                                        onClick={() => handleSignOffClick(checkpoint, 'pass')}
+                                                    >
+                                                        Sign Off
+                                                    </button>
+                                                ) : (
+                                                    <button 
+                                                        className="checkpoint-btn return"
+                                                        onClick={() => handleSignOffClick(checkpoint, 'return')}
+                                                    >
+                                                        Undo
+                                                    </button>
+                                                )}
                                             </div>
                                         )}
                                     </div>
@@ -187,7 +252,7 @@ export default function CheckpointPage() {
                     
                     <div className="groups-list">
                         {selectedSection?.groups.map(group => {
-                            const completedCount = group.checkpointProgress;
+                            const completedCount = getCompletedCount(group.id);
                             const totalCount = mockCheckpoints.length;
                             const progressPercent = Math.round((completedCount / totalCount) * 100);
                             const isSelected = group.id === selectedGroupId;
@@ -245,7 +310,7 @@ export default function CheckpointPage() {
                     <div className="modal-content" onClick={e => e.stopPropagation()}>
                         <header className="modal-header">
                             <h3 className="modal-title">
-                                {signOffStatus === 'pass' ? 'Pass' : 'Return'} Checkpoint
+                                {signOffStatus === 'pass' ? 'Sign Off' : 'Undo'} Checkpoint
                             </h3>
                             <button 
                                 className="modal-close"
@@ -260,20 +325,20 @@ export default function CheckpointPage() {
                                 <h4>{selectedCheckpoint?.name}</h4>
                                 <p>{selectedCheckpoint?.description}</p>
                                 <span className="checkpoint-points-badge">
-                                    {selectedCheckpoint?.points} points
+                                    {selectedCheckpoint?.points} point
                                 </span>
                             </div>
                             
                             <div className="notes-section">
                                 <label htmlFor="signoff-notes" className="notes-label">
-                                    Notes {signOffStatus === 'return' && <span className="required">*</span>}
+                                    Notes
                                 </label>
                                 <textarea
                                     id="signoff-notes"
                                     className="notes-textarea"
                                     placeholder={signOffStatus === 'pass' 
                                         ? "Optional feedback or comments..." 
-                                        : "Please explain what needs to be improved..."
+                                        : "Optional notes for undoing this checkpoint..."
                                     }
                                     value={signOffNotes}
                                     onChange={(e) => setSignOffNotes(e.target.value)}
@@ -292,9 +357,8 @@ export default function CheckpointPage() {
                             <button 
                                 className={`modal-btn primary ${signOffStatus}`}
                                 onClick={handleSignOffConfirm}
-                                disabled={signOffStatus === 'return' && !signOffNotes.trim()}
                             >
-                                {signOffStatus === 'pass' ? 'Confirm Pass' : 'Confirm Return'}
+                                {signOffStatus === 'pass' ? 'Confirm Sign Off' : 'Confirm Undo'}
                             </button>
                         </footer>
                     </div>

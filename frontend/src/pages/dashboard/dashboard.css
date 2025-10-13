@@ -319,6 +319,13 @@
     cursor: pointer;
     transition: all 0.2s;
     font-size: 13px;
+    width: 80px;
+    height: 36px;
+    text-align: center;
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .checkpoint-btn.pass {
@@ -333,14 +340,14 @@
 }
 
 .checkpoint-btn.return {
-    background: #ef4444;
+    background: #64748b;
     color: #fff;
 }
 
 .checkpoint-btn.return:hover {
-    background: #dc2626;
+    background: #475569;
     transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+    box-shadow: 0 4px 12px rgba(100, 116, 139, 0.3);
 }
 
 /* Groups Panel */
@@ -654,12 +661,12 @@
 }
 
 .modal-btn.primary.return {
-    background: #ef4444;
+    background: #64748b;
     color: #fff;
 }
 
 .modal-btn.primary.return:hover {
-    background: #dc2626;
+    background: #475569;
 }
 
 .modal-btn:disabled {
