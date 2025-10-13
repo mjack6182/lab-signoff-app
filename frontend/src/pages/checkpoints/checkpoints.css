@@ -1,0 +1,176 @@
+/* ===== Checkpoint Page ===== */
+.checkpoint-page {
+    min-height: calc(100vh - 49px);
+    background: #f6f8fc;
+    padding: 24px;
+}
+
+.checkpoint-page-header {
+    text-align: center;
+    margin-bottom: 32px;
+}
+
+.page-title {
+    margin: 0 0 8px 0;
+    font-size: 32px;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.page-subtitle {
+    margin: 0;
+    color: #64748b;
+    font-size: 16px;
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.checkpoint-page-content {
+    display: grid;
+    grid-template-columns: 300px 1fr;
+    gap: 32px;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.group-selector {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 14px;
+    padding: 20px;
+    box-shadow: 0 8px 22px rgba(2,6,23,.06);
+    height: fit-content;
+}
+
+.selector-title {
+    margin: 0 0 16px 0;
+    font-size: 18px;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.group-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.group-selector-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: 12px;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    background: #fff;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-align: left;
+    width: 100%;
+}
+
+.group-selector-item:hover {
+    border-color: #c7d2fe;
+    background: #f8faff;
+}
+
+.group-selector-item.active {
+    border-color: #6366f1;
+    background: #eef2ff;
+    box-shadow: 0 0 0 1px rgba(99, 102, 241, 0.2);
+}
+
+.group-info {
+    flex: 1;
+}
+
+.group-name {
+    margin: 0 0 4px 0;
+    font-size: 14px;
+    font-weight: 600;
+    color: #0f172a;
+    line-height: 1.3;
+}
+
+.group-details {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.group-course {
+    font-size: 12px;
+    color: #64748b;
+    line-height: 1.3;
+}
+
+.group-progress {
+    font-size: 12px;
+    color: #059669;
+    font-weight: 600;
+}
+
+.group-status-indicator {
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 6px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.group-status-indicator.active {
+    background: #eef2ff;
+    color: #3730a3;
+    border: 1px solid #c7d2fe;
+}
+
+.group-status-indicator.archived {
+    background: #fee2e2;
+    color: #991b1b;
+    border: 1px solid #fecaca;
+}
+
+.checkpoint-content {
+    display: flex;
+    justify-content: center;
+}
+
+.no-group-selected {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 14px;
+    padding: 60px 40px;
+    text-align: center;
+    color: #64748b;
+    font-style: italic;
+    box-shadow: 0 8px 22px rgba(2,6,23,.06);
+}
+
+/* Responsive design for checkpoint page */
+@media (max-width: 768px) {
+    .checkpoint-page {
+        padding: 16px;
+    }
+    
+    .checkpoint-page-content {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+    
+    .group-selector {
+        order: 2;
+    }
+    
+    .checkpoint-content {
+        order: 1;
+    }
+    
+    .page-title {
+        font-size: 24px;
+    }
+    
+    .selector-title {
+        font-size: 16px;
+    }
+}

@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import CheckpointCard from '../components/CheckpointCard';
-import { groups } from '../mock/groups';
+import CheckpointCard from '../../components/CheckpointCard/CheckpointCard';
+import { groups } from '../../mock/groups';
+import './checkpoints.css';
 
 export default function CheckpointPage() {
     const [groupsData, setGroupsData] = useState(groups);

@@ -1,0 +1,326 @@
+/* ===== Checkpoint Card ===== */
+.checkpoint-card {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 14px;
+    padding: 20px;
+    box-shadow: 0 8px 22px rgba(2,6,23,.06);
+    max-width: 500px;
+    margin: 0 auto;
+}
+
+.checkpoint-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 16px;
+}
+
+.checkpoint-title {
+    margin: 0 0 8px 0;
+    font-size: 20px;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.checkpoint-progress-summary {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    font-size: 14px;
+    color: #64748b;
+}
+
+.progress-text {
+    font-weight: 600;
+}
+
+.progress-percentage {
+    color: #059669;
+    font-weight: 600;
+}
+
+.readonly-badge {
+    background: #f1f5f9;
+    color: #475569;
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    border: 1px solid #cbd5e1;
+}
+
+.checkpoint-progress-bar {
+    height: 8px;
+    background: #f1f5f9;
+    border-radius: 6px;
+    margin-bottom: 20px;
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #22d3ee, #22c55e);
+    border-radius: 6px;
+    transition: width 0.3s ease;
+}
+
+.checkpoint-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.checkpoint-item {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    padding: 12px;
+    border-radius: 10px;
+    border: 1px solid #e5e7eb;
+    transition: all 0.2s ease;
+}
+
+.checkpoint-item:hover {
+    border-color: #c7d2fe;
+    background: #f8faff;
+}
+
+.checkpoint-item.completed {
+    background: #f0fdf4;
+    border-color: #bbf7d0;
+}
+
+.checkpoint-item.completed:hover {
+    background: #ecfdf5;
+    border-color: #86efac;
+}
+
+.checkpoint-main {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    flex: 1;
+}
+
+.checkpoint-indicator {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    position: relative;
+}
+
+.checkpoint-checkbox {
+    width: 18px;
+    height: 18px;
+    border: 2px solid #cbd5e1;
+    border-radius: 4px;
+    cursor: pointer;
+    appearance: none;
+    background: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.checkpoint-checkbox:checked {
+    background: #22c55e;
+    border-color: #22c55e;
+}
+
+.checkpoint-checkbox:checked::after {
+    content: '✓';
+    color: white;
+    font-weight: bold;
+    font-size: 12px;
+}
+
+.checkpoint-checkbox:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+.checkpoint-checkbox:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.2);
+}
+
+.checkpoint-number {
+    font-size: 12px;
+    font-weight: 700;
+    color: #64748b;
+    min-width: 16px;
+    text-align: center;
+}
+
+.checkpoint-content {
+    flex: 1;
+}
+
+.checkpoint-name {
+    display: block;
+    font-weight: 600;
+    color: #0f172a;
+    cursor: pointer;
+    margin-bottom: 4px;
+    line-height: 1.4;
+}
+
+.checkpoint-item.completed .checkpoint-name {
+    color: #059669;
+}
+
+.checkpoint-details {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    font-size: 12px;
+    color: #64748b;
+}
+
+.completed-by {
+    color: #059669;
+    font-weight: 600;
+}
+
+.completed-date {
+    color: #64748b;
+}
+
+.undo-button {
+    background: #fef3c7;
+    border: 1px solid #f59e0b;
+    color: #92400e;
+    border-radius: 6px;
+    padding: 4px 8px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    height: fit-content;
+}
+
+.undo-button:hover {
+    background: #fef08a;
+    border-color: #d97706;
+}
+
+.undo-button:active {
+    transform: scale(0.95);
+}
+
+.no-checkpoints {
+    text-align: center;
+    color: #64748b;
+    font-style: italic;
+    padding: 40px 20px;
+    border: 1px dashed #cbd5e1;
+    border-radius: 10px;
+    background: #f9fafb;
+}
+
+/* Accessibility improvements */
+@media (prefers-reduced-motion: reduce) {
+    .checkpoint-item,
+    .progress-fill,
+    .checkpoint-checkbox,
+    .undo-button {
+        transition: none;
+    }
+}
+
+/* Mobile responsiveness */
+@media (max-width: 520px) {
+    .checkpoint-card {
+        margin: 0;
+        border-radius: 0;
+        padding: 16px;
+    }
+    
+    .checkpoint-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+    
+    .checkpoint-item {
+        padding: 10px;
+    }
+    
+    .checkpoint-main {
+        gap: 10px;
+    }
+}
+
+
+/* ===== Role Switcher ===== */
+.role-switcher {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 16px;
+    box-shadow: 0 4px 12px rgba(2,6,23,.06);
+}
+
+.role-switcher-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.role-switcher-label {
+    font-size: 14px;
+    color: #64748b;
+    font-weight: 600;
+}
+
+.role-switcher-current {
+    font-size: 14px;
+    font-weight: 700;
+    padding: 2px 8px;
+    background: #f1f5f9;
+    border-radius: 6px;
+}
+
+.role-switcher-buttons {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+}
+
+.role-switch-btn {
+    padding: 6px 12px;
+    border: 1px solid;
+    border-radius: 8px;
+    background: transparent;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 600;
+    transition: all 0.2s ease;
+    flex: 1;
+    min-width: fit-content;
+}
+
+.role-switch-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.role-switch-btn.active {
+    transform: none;
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.role-switcher-info {
+    text-align: center;
+}
+
+.role-switcher-info small {
+    color: #64748b;
+    font-size: 11px;
+    font-style: italic;
+}

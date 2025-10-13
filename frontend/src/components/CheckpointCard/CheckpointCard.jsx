@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../../contexts/AuthContext';
+import './CheckpointCard.css';
 
 export default function CheckpointCard({ 
     groupId, 
@@ -101,11 +102,7 @@ export default function CheckpointCard({
                                             ✓ Completed by {getCompletedByName(checkpoint.completedBy)}
                                         </span>
                                         <span className="completed-date">
-                                            on {
-                                                checkpoint.completedAt && !isNaN(new Date(checkpoint.completedAt).getTime())
-                                                    ? new Date(checkpoint.completedAt).toLocaleDateString()
-                                                    : "Unknown date"
-                                            }
+                                            on {new Date(checkpoint.completedAt).toLocaleDateString()}
                                         </span>
                                     </div>
                                 )}

@@ -1,13 +1,13 @@
 import { Routes, Route, NavLink, Navigate } from 'react-router-dom'
-import Login from './pages/login'
-import GroupList from './components/GroupList'
-import LabSelector from './pages/lab-selector'
-import Dashboard from './pages/dashboard'
-import CheckpointPage from './pages/checkpoint'
-import RoleDemo from './pages/role-demo'
+import Login from './pages/login/login'
+import GroupList from './components/GroupList/GroupList'
+import LabSelector from './pages/lab-selector/lab-selector'
+import Dashboard from './pages/dashboard/dashboard'
+import CheckpointPage from './pages/checkpoints/checkpoint'
+import RoleDemo from './pages/role-demo/role-demo'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
-import { StaffOnly } from './components/RoleGuard'
-import RoleSwitcher from './components/RoleSwitcher'
+import { StaffOnly } from './components/RoleGuard/RoleGuard'
+import RoleSwitcher from './components/RoleSwitcher/RoleSwitcher'
 
 function AppContent() {
     const { user, loading } = useAuth();
