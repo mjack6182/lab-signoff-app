@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { classData } from '../../mock/classData';
 import { mockCheckpoints } from '../../mock/checkpoints';
-import '../dashboard/dashboard.css';
+import './checkpoints.css';
 
 export default function CheckpointPage() {
     const [selectedSectionId, setSelectedSectionId] = useState(classData.sections[0].id);
