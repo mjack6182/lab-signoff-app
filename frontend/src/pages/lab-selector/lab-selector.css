@@ -272,10 +272,6 @@
         justify-content: space-between;
     }
     
-    .search-section {
-        padding: 0 20px 20px;
-    }
-    
     .labs-grid-section {
         padding: 24px 20px 32px;
     }
@@ -293,10 +289,6 @@
 @media (max-width: 480px) {
     .lab-selector-header {
         padding: 12px 16px;
-    }
-    
-    .search-section {
-        padding: 0 16px 16px;
     }
     
     .labs-grid-section {
