@@ -1,0 +1,142 @@
+/* ===== Role Demo Page ===== */
+.role-demo-page {
+    min-height: calc(100vh - 49px);
+    background: #f6f8fc;
+    padding: 24px;
+    padding-right: 280px; /* Make room for role switcher */
+}
+
+.role-demo-header {
+    text-align: center;
+    margin-bottom: 32px;
+}
+
+.role-demo-header h1 {
+    margin: 0 0 8px 0;
+    font-size: 32px;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.role-demo-header p {
+    margin: 0 0 16px 0;
+    color: #64748b;
+    font-size: 16px;
+}
+
+.current-user-info {
+    background: #eef2ff;
+    color: #3730a3;
+    padding: 8px 16px;
+    border-radius: 8px;
+    display: inline-block;
+    border: 1px solid #c7d2fe;
+}
+
+.role-demo-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 24px;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.demo-section {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 4px 12px rgba(2,6,23,.06);
+}
+
+.demo-section.full-width {
+    grid-column: 1 / -1;
+}
+
+.demo-section h2 {
+    margin: 0 0 16px 0;
+    font-size: 18px;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.feature-card {
+    padding: 16px;
+    border-radius: 8px;
+    border: 1px solid #e5e7eb;
+}
+
+.feature-card.teacher {
+    background: #f0fdf4;
+    border-color: #bbf7d0;
+}
+
+.feature-card.ta {
+    background: #eff6ff;
+    border-color: #bfdbfe;
+}
+
+.feature-card.staff {
+    background: #fefbef;
+    border-color: #fed7aa;
+}
+
+.feature-card.student {
+    background: #f8fafc;
+    border-color: #cbd5e1;
+}
+
+.feature-card.conditional {
+    background: #faf5ff;
+    border-color: #e9d5ff;
+    margin-bottom: 12px;
+}
+
+.feature-card h3,
+.feature-card h4 {
+    margin: 0 0 12px 0;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.feature-card ul {
+    margin: 0;
+    padding-left: 20px;
+}
+
+.feature-card li {
+    margin-bottom: 4px;
+    color: #64748b;
+}
+
+.access-denied {
+    background: #fee2e2;
+    color: #991b1b;
+    padding: 16px;
+    border-radius: 8px;
+    border: 1px solid #fecaca;
+    text-align: center;
+    font-weight: 600;
+}
+
+.conditional-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 16px;
+}
+
+@media (max-width: 1024px) {
+    .role-demo-page {
+        padding-right: 24px;
+    }
+}
+
+@media (max-width: 768px) {
+    .role-demo-page {
+        padding: 16px;
+    }
+    
+    .role-demo-grid {
+        grid-template-columns: 1fr;
+    }
+}

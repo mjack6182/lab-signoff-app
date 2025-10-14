@@ -6,6 +6,13 @@ export const groups = [
         section: 'Sec 02',
         status: 'Active',
         updatedAt: '2025-09-10',
+        checkpoints: [
+            { id: 'cp-1', name: 'Setup Equipment', completed: true, completedAt: '2025-09-08', completedBy: 'u2' },
+            { id: 'cp-2', name: 'Initial Observations', completed: true, completedAt: '2025-09-09', completedBy: 'u2' },
+            { id: 'cp-3', name: 'Data Collection', completed: true, completedAt: '2025-09-10', completedBy: 'u1' },
+            { id: 'cp-4', name: 'Analysis & Calculations', completed: false },
+            { id: 'cp-5', name: 'Conclusion & Cleanup', completed: false },
+        ],
         members: [
             { id: 'u1', name: 'Alex Rivera', role: 'Teacher' },
             { id: 'u2', name: 'Jordan Kim', role: 'TA' },
@@ -22,6 +29,12 @@ export const groups = [
         section: 'Sec 03',
         status: 'Active',
         updatedAt: '2025-09-15',
+        checkpoints: [
+            { id: 'cp-1', name: 'Setup Equipment', completed: true, completedAt: '2025-09-14', completedBy: 'u7' },
+            { id: 'cp-2', name: 'Initial Observations', completed: true, completedAt: '2025-09-15', completedBy: 'u8' },
+            { id: 'cp-3', name: 'Data Collection', completed: false },
+            { id: 'cp-4', name: 'Analysis & Calculations', completed: false },
+        ],
         members: [
             { id: 'u7', name: 'Jean Park', role: 'Teacher' },
             { id: 'u8', name: 'Morgan Chen', role: 'TA' },
@@ -35,6 +48,14 @@ export const groups = [
         section: 'Sec 99',
         status: 'Archived',
         updatedAt: '2025-08-30',
+        checkpoints: [
+            { id: 'cp-1', name: 'Setup Equipment', completed: true, completedAt: '2025-08-28', completedBy: 'u10' },
+            { id: 'cp-2', name: 'Initial Observations', completed: true, completedAt: '2025-08-29', completedBy: 'u10' },
+            { id: 'cp-3', name: 'Data Collection', completed: true, completedAt: '2025-08-30', completedBy: 'u10' },
+            { id: 'cp-4', name: 'Analysis & Calculations', completed: true, completedAt: '2025-08-30', completedBy: 'u10' },
+            { id: 'cp-5', name: 'Conclusion & Cleanup', completed: true, completedAt: '2025-08-30', completedBy: 'u10' },
+            { id: 'cp-6', name: 'Final Report', completed: true, completedAt: '2025-08-30', completedBy: 'u10' },
+        ],
         members: [{ id: 'u10', name: 'Riley Patel', role: 'Teacher' }],
     },
 ];
