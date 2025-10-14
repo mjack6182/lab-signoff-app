@@ -1,25 +1,33 @@
-import GroupCard from './GroupCard';
-import { groups } from '../mock/groups';
+import React, { useEffect, useState } from "react";
 
 export default function GroupList() {
-    function openGroup(id) {
-        // replace with router navigate or Canvas LTI deep link
-        alert(`Open group ${id}`);
-    }
+  const [groups, setGroups] = useState([]);
 
-    return (
-        <main className="gc-grid-wrap">
-            <h2 className="gc-page-title">Groups</h2>
+useEffect(() => {
+  fetch("http://localhost:8080/groups")
+    .then((res) => {
+      if (!res.ok) throw new Error("Failed to fetch groups");
+      return res.json();
+    })
+    .then((data) => Array.isArray(data) ? setGroups(data) : setGroups([]))
+    .catch((err) => {
+      console.error("Error fetching groups:", err);
+      setGroups([]);
+    });
+}, []);
 
-            <div className="gc-grid">
-                {groups.map((g) => (
-                    <GroupCard
-                        key={g.id}
-                        {...g}
-                        onOpen={() => openGroup(g.id)}
-                    />
-                ))}
-            </div>
-        </main>
-    );
+  return (
+    <main className="gc-grid-wrap">
+      <h2 className="gc-page-title">Groups</h2>
+      <div className="gc-grid">
+        {groups.map((g) => (
+          <div key={g.id} className="card">
+            <h3>{g.groupId}</h3>
+            <p>Status: {g.status}</p>
+            <p>Members: {g.members.join(", ")}</p>
+          </div>
+        ))}
+      </div>
+    </main>
+  );
 }

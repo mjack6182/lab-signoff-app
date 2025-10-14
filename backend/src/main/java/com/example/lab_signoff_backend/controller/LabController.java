@@ -13,6 +13,15 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+/**
+ * REST controller for lab and group management operations.
+ *
+ * Provides endpoints for retrieving labs, creating/updating labs,
+ * and fetching groups associated with specific labs.
+ *
+ * @author Lab Signoff App Team
+ * @version 1.0
+ */
 @RestController
 @RequestMapping("/lti")
 public class LabController {
@@ -20,21 +29,44 @@ public class LabController {
     private final LabService labService;
     private final GroupService groupService;
 
+    /**
+     * Constructor for LabController.
+     *
+     * @param labService   Service for lab operations
+     * @param groupService Service for group operations
+     */
     public LabController(LabService labService, GroupService groupService) {
         this.labService = labService;
         this.groupService = groupService;
     }
 
+    /**
+     * Retrieves all labs.
+     *
+     * @return List of all labs
+     */
     @GetMapping("/labs")
     public List<Lab> getLabs() {
         return labService.getAll();
     }
 
+    /**
+     * Creates or updates a lab.
+     *
+     * @param lab The lab to create or update
+     * @return The created or updated lab
+     */
     @PostMapping("/labs")
     public Lab createOrUpdateLab(@RequestBody Lab lab) {
         return labService.upsert(lab);
     }
 
+    /**
+     * Retrieves all groups associated with a specific lab.
+     *
+     * @param id The lab identifier
+     * @return ResponseEntity containing the list of groups or an error message
+     */
     @GetMapping("/labs/{id}/groups")
     public ResponseEntity<?> getGroupsByLabId(@PathVariable String id) {
         // Validate that the id is not empty

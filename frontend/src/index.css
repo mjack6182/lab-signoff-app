@@ -68,6 +68,54 @@ a.active { color: #4f46e5; }
 .gc-btn { height: 36px; padding: 0 12px; border-radius: 10px; border: 0; cursor: pointer; background: linear-gradient(90deg, #6366f1, #22d3ee); color: white; font-weight: 700; }
 .gc-btn.ghost { background: transparent; color:#0f172a; border:1px solid #cbd5e1; font-weight:600; }
 
+/* ===== GroupCard Progress Section ===== */
+.gc-progress-section {
+    padding: 12px 0;
+    border-top: 1px solid #f1f5f9;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.gc-progress-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.gc-progress-label {
+    font-size: 14px;
+    font-weight: 600;
+    color: #374151;
+}
+
+.gc-progress-text {
+    font-size: 13px;
+    color: #64748b;
+    font-weight: 600;
+}
+
+.gc-progress-bar {
+    height: 6px;
+    background: #f1f5f9;
+    border-radius: 4px;
+    margin-bottom: 6px;
+    overflow: hidden;
+}
+
+.gc-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #22d3ee, #22c55e);
+    border-radius: 4px;
+    transition: width 0.3s ease;
+}
+
+.gc-progress-percentage {
+    font-size: 12px;
+    color: #059669;
+    font-weight: 600;
+    text-align: right;
+}
+
 /* ===== Lab selector ===== */
 .lab-shell {
     min-height: calc(100% - 49px);
@@ -572,5 +620,651 @@ a.active { color: #4f46e5; }
 
     .dash-schedule-status {
         justify-self: flex-start;
+    }
+}
+
+/* ===== Checkpoint Card ===== */
+.checkpoint-card {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 14px;
+    padding: 20px;
+    box-shadow: 0 8px 22px rgba(2,6,23,.06);
+    max-width: 500px;
+    margin: 0 auto;
+}
+
+.checkpoint-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 16px;
+}
+
+.checkpoint-title {
+    margin: 0 0 8px 0;
+    font-size: 20px;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.checkpoint-progress-summary {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    font-size: 14px;
+    color: #64748b;
+}
+
+.progress-text {
+    font-weight: 600;
+}
+
+.progress-percentage {
+    color: #059669;
+    font-weight: 600;
+}
+
+.readonly-badge {
+    background: #f1f5f9;
+    color: #475569;
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    border: 1px solid #cbd5e1;
+}
+
+.checkpoint-progress-bar {
+    height: 8px;
+    background: #f1f5f9;
+    border-radius: 6px;
+    margin-bottom: 20px;
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #22d3ee, #22c55e);
+    border-radius: 6px;
+    transition: width 0.3s ease;
+}
+
+.checkpoint-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.checkpoint-item {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    padding: 12px;
+    border-radius: 10px;
+    border: 1px solid #e5e7eb;
+    transition: all 0.2s ease;
+}
+
+.checkpoint-item:hover {
+    border-color: #c7d2fe;
+    background: #f8faff;
+}
+
+.checkpoint-item.completed {
+    background: #f0fdf4;
+    border-color: #bbf7d0;
+}
+
+.checkpoint-item.completed:hover {
+    background: #ecfdf5;
+    border-color: #86efac;
+}
+
+.checkpoint-main {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    flex: 1;
+}
+
+.checkpoint-indicator {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    position: relative;
+}
+
+.checkpoint-checkbox {
+    width: 18px;
+    height: 18px;
+    border: 2px solid #cbd5e1;
+    border-radius: 4px;
+    cursor: pointer;
+    appearance: none;
+    background: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.checkpoint-checkbox:checked {
+    background: #22c55e;
+    border-color: #22c55e;
+}
+
+.checkpoint-checkbox:checked::after {
+    content: '✓';
+    color: white;
+    font-weight: bold;
+    font-size: 12px;
+}
+
+.checkpoint-checkbox:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+.checkpoint-checkbox:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.2);
+}
+
+.checkpoint-number {
+    font-size: 12px;
+    font-weight: 700;
+    color: #64748b;
+    min-width: 16px;
+    text-align: center;
+}
+
+.checkpoint-content {
+    flex: 1;
+}
+
+.checkpoint-name {
+    display: block;
+    font-weight: 600;
+    color: #0f172a;
+    cursor: pointer;
+    margin-bottom: 4px;
+    line-height: 1.4;
+}
+
+.checkpoint-item.completed .checkpoint-name {
+    color: #059669;
+}
+
+.checkpoint-details {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    font-size: 12px;
+    color: #64748b;
+}
+
+.completed-by {
+    color: #059669;
+    font-weight: 600;
+}
+
+.completed-date {
+    color: #64748b;
+}
+
+.undo-button {
+    background: #fef3c7;
+    border: 1px solid #f59e0b;
+    color: #92400e;
+    border-radius: 6px;
+    padding: 4px 8px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    height: fit-content;
+}
+
+.undo-button:hover {
+    background: #fef08a;
+    border-color: #d97706;
+}
+
+.undo-button:active {
+    transform: scale(0.95);
+}
+
+.no-checkpoints {
+    text-align: center;
+    color: #64748b;
+    font-style: italic;
+    padding: 40px 20px;
+    border: 1px dashed #cbd5e1;
+    border-radius: 10px;
+    background: #f9fafb;
+}
+
+/* Accessibility improvements */
+@media (prefers-reduced-motion: reduce) {
+    .checkpoint-item,
+    .progress-fill,
+    .checkpoint-checkbox,
+    .undo-button {
+        transition: none;
+    }
+}
+
+/* Mobile responsiveness */
+@media (max-width: 520px) {
+    .checkpoint-card {
+        margin: 0;
+        border-radius: 0;
+        padding: 16px;
+    }
+    
+    .checkpoint-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+    
+    .checkpoint-item {
+        padding: 10px;
+    }
+    
+    .checkpoint-main {
+        gap: 10px;
+    }
+}
+
+/* ===== Checkpoint Page ===== */
+.checkpoint-page {
+    min-height: calc(100vh - 49px);
+    background: #f6f8fc;
+    padding: 24px;
+}
+
+.checkpoint-page-header {
+    text-align: center;
+    margin-bottom: 32px;
+}
+
+.page-title {
+    margin: 0 0 8px 0;
+    font-size: 32px;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.page-subtitle {
+    margin: 0;
+    color: #64748b;
+    font-size: 16px;
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.checkpoint-page-content {
+    display: grid;
+    grid-template-columns: 300px 1fr;
+    gap: 32px;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.group-selector {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 14px;
+    padding: 20px;
+    box-shadow: 0 8px 22px rgba(2,6,23,.06);
+    height: fit-content;
+}
+
+.selector-title {
+    margin: 0 0 16px 0;
+    font-size: 18px;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.group-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.group-selector-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: 12px;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    background: #fff;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-align: left;
+    width: 100%;
+}
+
+.group-selector-item:hover {
+    border-color: #c7d2fe;
+    background: #f8faff;
+}
+
+.group-selector-item.active {
+    border-color: #6366f1;
+    background: #eef2ff;
+    box-shadow: 0 0 0 1px rgba(99, 102, 241, 0.2);
+}
+
+.group-info {
+    flex: 1;
+}
+
+.group-name {
+    margin: 0 0 4px 0;
+    font-size: 14px;
+    font-weight: 600;
+    color: #0f172a;
+    line-height: 1.3;
+}
+
+.group-details {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.group-course {
+    font-size: 12px;
+    color: #64748b;
+    line-height: 1.3;
+}
+
+.group-progress {
+    font-size: 12px;
+    color: #059669;
+    font-weight: 600;
+}
+
+.group-status-indicator {
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 6px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.group-status-indicator.active {
+    background: #eef2ff;
+    color: #3730a3;
+    border: 1px solid #c7d2fe;
+}
+
+.group-status-indicator.archived {
+    background: #fee2e2;
+    color: #991b1b;
+    border: 1px solid #fecaca;
+}
+
+.checkpoint-content {
+    display: flex;
+    justify-content: center;
+}
+
+.no-group-selected {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 14px;
+    padding: 60px 40px;
+    text-align: center;
+    color: #64748b;
+    font-style: italic;
+    box-shadow: 0 8px 22px rgba(2,6,23,.06);
+}
+
+/* Responsive design for checkpoint page */
+@media (max-width: 768px) {
+    .checkpoint-page {
+        padding: 16px;
+    }
+    
+    .checkpoint-page-content {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+    
+    .group-selector {
+        order: 2;
+    }
+    
+    .checkpoint-content {
+        order: 1;
+    }
+    
+    .page-title {
+        font-size: 24px;
+    }
+    
+    .selector-title {
+        font-size: 16px;
+    }
+}
+
+/* ===== Role Switcher ===== */
+.role-switcher {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 16px;
+    box-shadow: 0 4px 12px rgba(2,6,23,.06);
+}
+
+.role-switcher-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.role-switcher-label {
+    font-size: 14px;
+    color: #64748b;
+    font-weight: 600;
+}
+
+.role-switcher-current {
+    font-size: 14px;
+    font-weight: 700;
+    padding: 2px 8px;
+    background: #f1f5f9;
+    border-radius: 6px;
+}
+
+.role-switcher-buttons {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+}
+
+.role-switch-btn {
+    padding: 6px 12px;
+    border: 1px solid;
+    border-radius: 8px;
+    background: transparent;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 600;
+    transition: all 0.2s ease;
+    flex: 1;
+    min-width: fit-content;
+}
+
+.role-switch-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.role-switch-btn.active {
+    transform: none;
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.role-switcher-info {
+    text-align: center;
+}
+
+.role-switcher-info small {
+    color: #64748b;
+    font-size: 11px;
+    font-style: italic;
+}
+
+/* ===== Role Demo Page ===== */
+.role-demo-page {
+    min-height: calc(100vh - 49px);
+    background: #f6f8fc;
+    padding: 24px;
+    padding-right: 280px; /* Make room for role switcher */
+}
+
+.role-demo-header {
+    text-align: center;
+    margin-bottom: 32px;
+}
+
+.role-demo-header h1 {
+    margin: 0 0 8px 0;
+    font-size: 32px;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.role-demo-header p {
+    margin: 0 0 16px 0;
+    color: #64748b;
+    font-size: 16px;
+}
+
+.current-user-info {
+    background: #eef2ff;
+    color: #3730a3;
+    padding: 8px 16px;
+    border-radius: 8px;
+    display: inline-block;
+    border: 1px solid #c7d2fe;
+}
+
+.role-demo-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 24px;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.demo-section {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 4px 12px rgba(2,6,23,.06);
+}
+
+.demo-section.full-width {
+    grid-column: 1 / -1;
+}
+
+.demo-section h2 {
+    margin: 0 0 16px 0;
+    font-size: 18px;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.feature-card {
+    padding: 16px;
+    border-radius: 8px;
+    border: 1px solid #e5e7eb;
+}
+
+.feature-card.teacher {
+    background: #f0fdf4;
+    border-color: #bbf7d0;
+}
+
+.feature-card.ta {
+    background: #eff6ff;
+    border-color: #bfdbfe;
+}
+
+.feature-card.staff {
+    background: #fefbef;
+    border-color: #fed7aa;
+}
+
+.feature-card.student {
+    background: #f8fafc;
+    border-color: #cbd5e1;
+}
+
+.feature-card.conditional {
+    background: #faf5ff;
+    border-color: #e9d5ff;
+    margin-bottom: 12px;
+}
+
+.feature-card h3,
+.feature-card h4 {
+    margin: 0 0 12px 0;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.feature-card ul {
+    margin: 0;
+    padding-left: 20px;
+}
+
+.feature-card li {
+    margin-bottom: 4px;
+    color: #64748b;
+}
+
+.access-denied {
+    background: #fee2e2;
+    color: #991b1b;
+    padding: 16px;
+    border-radius: 8px;
+    border: 1px solid #fecaca;
+    text-align: center;
+    font-weight: 600;
+}
+
+.conditional-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 16px;
+}
+
+@media (max-width: 1024px) {
+    .role-demo-page {
+        padding-right: 24px;
+    }
+}
+
+@media (max-width: 768px) {
+    .role-demo-page {
+        padding: 16px;
+    }
+    
+    .role-demo-grid {
+        grid-template-columns: 1fr;
     }
 }
