@@ -6,6 +6,10 @@ body {
     font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans";
     color: #0f172a;
     background: #f6f8fc;
+    transform: scale(1.25);
+    transform-origin: top left;
+    width: 80%;
+    height: 80%;
 }
 a { color: #0f172a; text-decoration: none; }
 a.active { color: #4f46e5; }
