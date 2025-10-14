@@ -2,21 +2,24 @@ import { useState, useEffect } from 'react';
 import { classData } from '../../mock/classData';
 import { mockCheckpoints } from '../../mock/checkpoints';
 import SignOffModal from '../../components/SignOffModal';
+import GroupManagementModal from '../../components/GroupManagementModal';
 import './checkpoints.css';
 
 export default function CheckpointPage() {
+    const [classState, setClassState] = useState(classData);
     const [selectedSectionId, setSelectedSectionId] = useState(classData.sections[0].id);
     const [selectedGroupId, setSelectedGroupId] = useState(null);
     const [showSignOffModal, setShowSignOffModal] = useState(false);
     const [selectedCheckpoint, setSelectedCheckpoint] = useState(null);
     const [signOffNotes, setSignOffNotes] = useState('');
     const [signOffStatus, setSignOffStatus] = useState('pass'); // 'pass' or 'return'
+    const [showGroupManagement, setShowGroupManagement] = useState(false);
     
     // Track checkpoint completion status per group
     const [groupCheckpoints, setGroupCheckpoints] = useState(() => {
         // Initialize with some completed checkpoints for demo
         const initial = {};
-        classData.sections.forEach(section => {
+        classState.sections.forEach(section => {
             section.groups.forEach(group => {
                 initial[group.id] = {};
                 // Set some initial completed checkpoints based on checkpointProgress
@@ -33,7 +36,7 @@ export default function CheckpointPage() {
         return initial;
     });
     
-    const selectedSection = classData.sections.find(s => s.id === selectedSectionId);
+    const selectedSection = classState.sections.find(s => s.id === selectedSectionId);
     const selectedGroup = selectedSection?.groups?.find(g => g.id === selectedGroupId);
     const currentLab = "Lab 5"; // This would come from route params in real app
     
@@ -117,12 +120,20 @@ export default function CheckpointPage() {
         return Object.values(groupCheckpoints[groupId]).filter(cp => cp.completed).length;
     };
 
-    const handleAddGroup = () => {
-        alert('Add Group functionality - opens group creation modal');
+    const handleEditGroups = () => {
+        setShowGroupManagement(true);
     };
 
-    const handleEditGroups = () => {
-        alert('Edit Groups functionality - opens group management interface');
+    const handleUpdateGroups = (updatedSectionData) => {
+        // Update the class state with the modified section data
+        setClassState(prev => ({
+            ...prev,
+            sections: prev.sections.map(section => 
+                section.id === updatedSectionData.id ? updatedSectionData : section
+            )
+        }));
+        
+        console.log('Groups updated successfully!', updatedSectionData);
     };
     
     return (
@@ -138,13 +149,9 @@ export default function CheckpointPage() {
                     <h1 className="checkpoint-title">{currentLab}</h1>
                 </div>
                 <div className="checkpoint-actions">
-                    <button className="action-btn secondary" onClick={handleAddGroup}>
-                        <span className="btn-icon">+</span>
-                        Add Group
-                    </button>
                     <button className="action-btn secondary" onClick={handleEditGroups}>
                         <span className="btn-icon">✏️</span>
-                        Edit Groups
+                        Manage Groups
                     </button>
                 </div>
             </header>
@@ -152,10 +159,10 @@ export default function CheckpointPage() {
             {/* Class and Section Selection */}
             <section className="class-section-selector">
                 <div className="class-info">
-                    <h2 className="class-title">{classData.name}</h2>
+                    <h2 className="class-title">{classState.name}</h2>
                 </div>
                 <div className="section-tabs">
-                    {classData.sections.map(section => (
+                    {classState.sections.map(section => (
                         <button
                             key={section.id}
                             className={`section-tab ${selectedSectionId === section.id ? 'active' : ''}`}
@@ -314,6 +321,14 @@ export default function CheckpointPage() {
                 signOffNotes={signOffNotes}
                 setSignOffNotes={setSignOffNotes}
                 onConfirm={handleSignOffConfirm}
+            />
+
+            {/* Group Management Modal */}
+            <GroupManagementModal
+                isOpen={showGroupManagement}
+                onClose={() => setShowGroupManagement(false)}
+                sectionData={selectedSection}
+                onUpdateGroups={handleUpdateGroups}
             />
         </main>
     );

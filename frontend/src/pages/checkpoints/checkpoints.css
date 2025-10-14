@@ -142,13 +142,29 @@
     border-bottom: 3px solid transparent;
 }
 
-.section-tab:hover {
-    background: #f1f5f9;
+.section-tab:hover:not(.active) {
+    background: linear-gradient(90deg, rgba(107, 114, 128, 0.12) 0%, rgba(107, 114, 128, 0.06) 100%);
+    border-color: rgba(107, 114, 128, 0.2);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
 
 .section-tab.active {
-    background: #fff;
+    background: linear-gradient(90deg, rgba(1, 104, 54, 0.12) 0%, rgba(1, 104, 54, 0.06) 100%);
     border-bottom-color: #016836;
+    border-color: rgba(1, 104, 54, 0.2);
+    position: relative;
+}
+
+.section-tab.active::after {
+    content: '';
+    position: absolute;
+    bottom: -1px;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: #016836;
+    border-radius: 2px 2px 0 0;
 }
 
 .section-name {
@@ -382,13 +398,40 @@
     border-bottom: none;
 }
 
-.group-card:hover {
-    background: #f8fafc;
+.group-card:hover:not(.selected) {
+    background: linear-gradient(90deg, rgba(107, 114, 128, 0.12) 0%, rgba(107, 114, 128, 0.06) 100%);
+    border-color: rgba(107, 114, 128, 0.2);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    position: relative;
+}
+
+.group-card:hover:not(.selected)::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: rgba(107, 114, 128, 0.4);
+    border-radius: 16px 0 0 16px;
 }
 
 .group-card.selected {
-    background: linear-gradient(90deg, rgba(1, 104, 54, 0.05) 0%, rgba(1, 104, 54, 0.02) 100%);
-    border-left: 4px solid #016836;
+    background: linear-gradient(90deg, rgba(1, 104, 54, 0.12) 0%, rgba(1, 104, 54, 0.06) 100%);
+    position: relative;
+    border-color: rgba(1, 104, 54, 0.2);
+}
+
+.group-card.selected::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 4px;
+    background: #016836;
+    border-radius: 16px 0 0 16px;
 }
 
 /* === Group Card Content === */
@@ -451,9 +494,10 @@
 
 /* === Group Members === */
 .member-name {
-    color: #374151;
-    font-size: 13px;
-    font-weight: 500;
+    color: #1f2937;
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
 }
 
 .members-count {
@@ -585,9 +629,13 @@
         border-bottom: 1px solid #f1f5f9;
         border-right: none;
     }
-}
     
-.section-tab.active {
-    border-bottom-color: #f1f5f9;
-    border-left: 4px solid #016836;
+    .section-tab.active {
+        border-bottom-color: #f1f5f9;
+        border-left: 4px solid #016836;
+    }
+    
+    .section-tab.active::after {
+        display: none;
+    }
 }
