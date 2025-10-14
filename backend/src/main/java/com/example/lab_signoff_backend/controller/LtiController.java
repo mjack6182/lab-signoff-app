@@ -1,9 +1,23 @@
 package com.example.lab_signoff_backend.controller;
+<<<<<<< HEAD:backend/src/main/java/com/example/lab_signoff_backend/controller/LtiController.java
 import org.springframework.beans.factory.annotation.Autowired;
 import com.example.lab_signoff_backend.controller.StateNonceStore;
 import org.springframework.web.bind.annotation.*;
 import jakarta.servlet.http.HttpServletResponse;
+=======
+>>>>>>> f840cde (Update ltiController.java):backend/src/main/java/com/example/lab_signoff_backend/controller/ltiController.java
 import java.io.IOException;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.example.lab_signoff_backend.security.StateNonceStore;
+
+import jakarta.servlet.http.HttpServletResponse;
 
 /**
  * Mock LTI controller for simulating the OIDC login and launch flow.
