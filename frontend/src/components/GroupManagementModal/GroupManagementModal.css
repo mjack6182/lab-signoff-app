@@ -1,0 +1,667 @@
+/* === GROUP MANAGEMENT MODAL === */
+
+/* === Modal Overlay === */
+.group-management-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, rgba(0, 0, 0, 0.4) 0%, rgba(0, 0, 0, 0.6) 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 20px;
+    backdrop-filter: blur(8px);
+    animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.group-management-modal {
+    background: #fff;
+    border-radius: 20px;
+    width: 100%;
+    max-width: 1200px;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 25px 60px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(255, 255, 255, 0.1);
+    overflow: hidden;
+    animation: slideIn 0.4s ease-out;
+    position: relative;
+}
+
+@keyframes slideIn {
+    from { 
+        opacity: 0;
+        transform: translateY(20px) scale(0.95);
+    }
+    to { 
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+/* === Modal Header === */
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 28px 32px;
+    border-bottom: 1px solid #e5e7eb;
+    background: linear-gradient(135deg, #016836 0%, #014a28 100%);
+    position: relative;
+}
+
+.modal-header::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%);
+    pointer-events: none;
+}
+
+.modal-title {
+    margin: 0;
+    font-size: 26px;
+    font-weight: 700;
+    color: #fff;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    position: relative;
+    z-index: 1;
+}
+
+.modal-close {
+    background: rgba(255, 255, 255, 0.15);
+    border: none;
+    font-size: 24px;
+    color: #fff;
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    z-index: 1;
+    backdrop-filter: blur(10px);
+}
+
+.modal-close:hover {
+    background: rgba(255, 255, 255, 0.25);
+    transform: scale(1.05);
+}
+
+/* === Modal Body === */
+.modal-body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+/* === Section Headers === */
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.section-title {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.student-count {
+    background: #f1f5f9;
+    color: #64748b;
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+/* === Add Group Button === */
+.add-group-btn {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 20px;
+    background: #016836;
+    color: #fff;
+    border: none;
+    border-radius: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    font-size: 14px;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 4px 15px rgba(1, 104, 54, 0.2);
+}
+
+.add-group-btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: left 0.5s ease;
+}
+
+.add-group-btn:hover::before {
+    left: 100%;
+}
+
+.add-group-btn:hover {
+    background: #014a28;
+    transform: translateY(-2px) scale(1.02);
+    box-shadow: 0 8px 25px rgba(1, 104, 54, 0.3);
+}
+
+.add-group-btn:active {
+    transform: translateY(0) scale(0.98);
+}
+
+.plus-icon {
+    font-size: 18px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    backdrop-filter: blur(10px);
+}
+
+/* === Unassigned Students Section === */
+.unassigned-section {
+    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+    border: 2px dashed #cbd5e1;
+    border-radius: 16px;
+    padding: 24px;
+    margin: 32px 32px 0 32px;
+    min-height: 140px;
+    max-height: 400px;
+    position: relative;
+    transition: all 0.3s ease;
+    overflow: visible;
+    flex-shrink: 0;
+}
+
+.unassigned-section::before {
+    display: none;
+}
+
+.unassigned-section:hover {
+    border-color: #016836;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(1, 104, 54, 0.1);
+}
+
+.unassigned-grid {
+    max-height: 100px;
+    min-height: 120px;
+    padding: 20px;
+    padding-right: 15px;
+    background: rgba(255, 255, 255, 0.8);
+    border-radius: 12px;
+    border: 1px solid rgba(229, 231, 235, 0.6);
+    backdrop-filter: blur(10px);
+    transition: all 0.2s ease;
+    overflow-y: auto;
+    overflow-x: hidden;
+    position: relative;
+    scrollbar-gutter: stable;
+    box-sizing: border-box;
+}
+
+/* Override the flex behavior specifically for unassigned grid */
+.students-grid.unassigned-grid {
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: wrap !important;
+    align-content: flex-start !important;
+    gap: 12px;
+}
+
+/* Custom scrollbar for unassigned grid */
+.unassigned-grid::-webkit-scrollbar {
+    width: 10px;
+}
+
+.unassigned-grid::-webkit-scrollbar-track {
+    background: rgba(241, 245, 249, 0.8);
+    border-radius: 5px;
+    margin: 2px;
+}
+
+.unassigned-grid::-webkit-scrollbar-thumb {
+    background: linear-gradient(135deg, rgba(1, 104, 54, 0.6) 0%, rgba(1, 104, 54, 0.8) 100%);
+    border-radius: 5px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    transition: all 0.2s ease;
+}
+
+.unassigned-grid::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(135deg, rgba(1, 104, 54, 0.8) 0%, rgba(1, 104, 54, 1) 100%);
+    transform: scaleX(1.1);
+}
+
+/* Fallback for Firefox and other browsers */
+.unassigned-grid {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(1, 104, 54, 0.7) rgba(241, 245, 249, 0.8);
+}
+
+/* === Students Grid === */
+.students-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    align-items: flex-start;
+    justify-content: flex-start;
+}
+
+/* === Student Cards === */
+.student-card {
+    background: linear-gradient(135deg, #fff 0%, #f8fafc 100%);
+    border: 2px solid #e5e7eb;
+    border-radius: 16px;
+    padding: 16px 20px;
+    cursor: grab;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    user-select: none;
+    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.08);
+    position: relative;
+    overflow: hidden;
+    min-width: 120px;
+    text-align: center;
+}
+
+.student-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(1, 104, 54, 0.15), transparent);
+    transition: left 0.5s ease;
+}
+
+.student-card::after {
+    display: none;
+}
+
+.student-card:hover::before {
+    left: 100%;
+}
+
+.student-card:hover::after {
+    opacity: 0.6;
+    transform: scale(1.1);
+}
+
+.student-card:hover {
+    border-color: #016836;
+    transform: translateY(-6px) scale(1.03);
+    box-shadow: 0 10px 30px rgba(1, 104, 54, 0.25);
+    background: linear-gradient(135deg, #fff 0%, #f0fdf4 100%);
+}
+
+.student-card:active {
+    cursor: grabbing;
+    transform: rotate(3deg) scale(1.05) translateY(-8px);
+    box-shadow: 0 12px 30px rgba(1, 104, 54, 0.3);
+    z-index: 1000;
+}
+
+.student-name {
+    font-size: 15px;
+    font-weight: 700;
+    color: #0f172a;
+    position: relative;
+    z-index: 1;
+    line-height: 1.2;
+    letter-spacing: -0.01em;
+}
+
+/* === Groups Section === */
+.groups-section {
+    flex: 1;
+    padding: 32px;
+    padding-top: 24px;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+.groups-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 20px;
+}
+
+/* === Group Container === */
+.group-container {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 16px;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+    overflow: hidden;
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.group-container::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #016836, #22d3ee);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.group-container:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.15);
+    border-color: #a3a3a3;
+}
+
+.group-container:hover::before {
+    opacity: 1;
+}
+
+.group-container:hover .group-members {
+    background: #f8fafc;
+    border-color: #cbd5e1;
+}
+
+.group-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 18px 24px;
+    background: linear-gradient(135deg, #016836 0%, #014a28 100%);
+    color: #fff;
+    position: relative;
+}
+
+.group-header::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%);
+    pointer-events: none;
+}
+
+.group-name {
+    margin: 0;
+    font-size: 17px;
+    font-weight: 700;
+    position: relative;
+    z-index: 1;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.group-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    position: relative;
+    z-index: 1;
+}
+
+.member-count {
+    background: rgba(255, 255, 255, 0.25);
+    padding: 4px 10px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 600;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.delete-group-btn {
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    color: #fff;
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    transition: all 0.2s ease;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.delete-group-btn:hover {
+    background: rgba(220, 38, 38, 0.9);
+    transform: scale(1.1);
+    box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
+}
+
+/* === Group Members Area === */
+.group-members {
+    padding: 24px;
+    min-height: 140px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    align-content: flex-start;
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.group-members::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 40px;
+    height: 40px;
+    background: rgba(1, 104, 54, 0.1);
+    border-radius: 50%;
+    opacity: 0;
+    transition: all 0.3s ease;
+}
+
+/* Hover effects moved to group-container for entire card */
+
+.group-member {
+    background: linear-gradient(135deg, #fff 0%, #f0fdf4 100%);
+    border: 2px solid #016836;
+    box-shadow: 0 3px 12px rgba(1, 104, 54, 0.15);
+}
+
+.empty-group,
+.empty-message {
+    width: 100%;
+    text-align: center;
+    color: #9ca3af;
+    font-style: italic;
+    padding: 32px 20px;
+    font-size: 14px;
+    position: relative;
+    z-index: 1;
+}
+
+.empty-group {
+    background: rgba(255, 255, 255, 0.6);
+    border-radius: 12px;
+    border: 1px dashed #cbd5e1;
+    backdrop-filter: blur(5px);
+}
+
+.empty-message {
+    background: rgba(255, 255, 255, 0.8);
+    border-radius: 12px;
+    border: 1px solid #e5e7eb;
+    backdrop-filter: blur(10px);
+    margin: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 80px;
+}
+
+/* === Modal Footer === */
+.modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 16px;
+    padding: 28px 32px;
+    border-top: 1px solid #e5e7eb;
+    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+}
+
+.btn-cancel,
+.btn-save {
+    padding: 14px 28px;
+    border-radius: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    font-size: 14px;
+    position: relative;
+    overflow: hidden;
+}
+
+.btn-cancel {
+    background: #fff;
+    color: #374151;
+    border: 2px solid #d1d5db;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.btn-cancel::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(156, 163, 175, 0.1), transparent);
+    transition: left 0.5s ease;
+}
+
+.btn-cancel:hover::before {
+    left: 100%;
+}
+
+.btn-cancel:hover {
+    background: #f9fafb;
+    border-color: #9ca3af;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.btn-save {
+    background: linear-gradient(135deg, #016836 0%, #014a28 100%);
+    color: #fff;
+    border: none;
+    box-shadow: 0 4px 15px rgba(1, 104, 54, 0.3);
+}
+
+.btn-save::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: left 0.5s ease;
+}
+
+.btn-save:hover::before {
+    left: 100%;
+}
+
+.btn-save:hover {
+    transform: translateY(-2px) scale(1.02);
+    box-shadow: 0 8px 25px rgba(1, 104, 54, 0.4);
+}
+
+/* === Drag and Drop States === */
+.group-members.drag-over {
+    border-color: #016836;
+    background: rgba(1, 104, 54, 0.05);
+}
+
+.unassigned-grid.drag-over {
+    border-color: #016836;
+    background: rgba(1, 104, 54, 0.05);
+}
+
+/* === Responsive Design === */
+@media (max-width: 768px) {
+    .group-management-overlay {
+        padding: 10px;
+    }
+    
+    .group-management-modal {
+        max-height: 95vh;
+    }
+    
+    .modal-header,
+    .modal-body,
+    .modal-footer {
+        padding: 20px;
+    }
+    
+    .modal-body {
+        gap: 24px;
+    }
+    
+    .groups-grid {
+        grid-template-columns: 1fr;
+        gap: 16px;
+    }
+    
+    .section-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+    
+    .students-grid {
+        gap: 8px;
+    }
+    
+    .student-card {
+        padding: 10px 12px;
+    }
+}

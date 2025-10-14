@@ -1,0 +1,444 @@
+/* ===== Dashboard Page ===== */
+.dash-shell {
+    min-height: calc(100vh - 49px);
+    background: #f6f8fc;
+    padding: 32px 24px;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+/* Dashboard Header */
+.dash-header {
+    margin-bottom: 32px;
+}
+
+.dash-title {
+    font-size: 32px;
+    font-weight: 700;
+    color: #0f172a;
+    margin: 0 0 8px 0;
+    background: linear-gradient(135deg, #016836, #014a28);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.dash-subtitle {
+    color: #64748b;
+    font-size: 16px;
+    margin: 0;
+}
+
+/* Stats Section */
+.dash-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+    margin-bottom: 32px;
+}
+
+.dash-card-stat {
+    background: #fff;
+    border: 2px solid transparent;
+    background-clip: padding-box;
+    border-radius: 16px;
+    padding: 24px;
+    box-shadow: 0 4px 18px rgba(2, 6, 23, 0.06);
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+.dash-card-stat::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #016836, #014a28);
+    border-radius: 16px 16px 0 0;
+}
+
+.dash-card-stat:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(2, 6, 23, 0.12);
+}
+
+.dash-card-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.dash-card-info {
+    flex: 1;
+}
+
+.dash-card-label {
+    font-size: 14px;
+    font-weight: 600;
+    color: #64748b;
+    margin: 0 0 8px 0;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.dash-card-value {
+    font-size: 28px;
+    font-weight: 700;
+    color: #0f172a;
+    margin: 0 0 4px 0;
+}
+
+.dash-card-helper {
+    font-size: 13px;
+    color: #64748b;
+    margin: 0;
+}
+
+.dash-card-icon {
+    font-size: 28px;
+    color: #016836;
+    margin-left: 16px;
+}
+
+/* Main Content */
+.dash-main {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 24px;
+    margin-bottom: 32px;
+}
+
+/* Panel Styles */
+.dash-panel {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 16px;
+    padding: 24px;
+    box-shadow: 0 4px 18px rgba(2, 6, 23, 0.06);
+    transition: all 0.3s ease;
+}
+
+.dash-panel:hover {
+    box-shadow: 0 8px 25px rgba(2, 6, 23, 0.1);
+}
+
+.dash-panel-header {
+    margin-bottom: 20px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.dash-panel-title {
+    font-size: 20px;
+    font-weight: 700;
+    color: #0f172a;
+    margin: 0 0 4px 0;
+}
+
+.dash-panel-subtitle {
+    font-size: 14px;
+    color: #64748b;
+    margin: 0;
+}
+
+/* Activity Feed */
+.dash-activity {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.dash-activity-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 12px 0;
+}
+
+.dash-activity-indicator {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    margin-top: 4px;
+    flex-shrink: 0;
+}
+
+.dash-activity-indicator.pass {
+    background: #016836;
+}
+
+.dash-activity-indicator.return {
+    background: #ef4444;
+}
+
+.dash-activity-indicator.info {
+    background: #38bdf8;
+}
+
+.dash-activity-content {
+    flex: 1;
+}
+
+.dash-activity-label {
+    font-size: 14px;
+    font-weight: 600;
+    color: #0f172a;
+    margin: 0 0 4px 0;
+    line-height: 1.4;
+}
+
+.activity-result {
+    font-weight: 700;
+    text-transform: uppercase;
+    font-size: 13px;
+    letter-spacing: 0.5px;
+}
+
+.activity-result.pass {
+    color: #016836;
+}
+
+.activity-result.return {
+    color: #ef4444;
+}
+
+.activity-result.info {
+    color: #38bdf8;
+}
+
+.action-count {
+    color: #016836;
+    font-weight: 600;
+}
+
+.dash-activity-time {
+    font-size: 13px;
+    color: #64748b;
+    margin: 0;
+}
+
+/* Quick Actions */
+.dash-actions {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.dash-action {
+    width: 100%;
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    text-align: left;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-family: inherit;
+    position: relative;
+    overflow: hidden;
+}
+
+.dash-action::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 4px;
+    background: linear-gradient(180deg, #016836, #014a28);
+    transform: scaleY(0);
+    transition: transform 0.2s ease;
+}
+
+.dash-action:hover::before {
+    transform: scaleY(1);
+}
+
+.dash-action:hover {
+    border-color: #016836;
+    box-shadow: 0 4px 12px rgba(1, 104, 54, 0.15);
+    transform: translateX(2px);
+}
+
+.dash-action-icon {
+    font-size: 20px;
+    flex-shrink: 0;
+}
+
+.dash-action-content {
+    flex: 1;
+}
+
+.dash-action-label {
+    font-size: 14px;
+    font-weight: 600;
+    color: #0f172a;
+    margin: 0 0 4px 0;
+}
+
+.dash-action-description {
+    font-size: 13px;
+    color: #64748b;
+    margin: 0;
+}
+
+/* Schedule Section */
+.dash-schedule {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.dash-schedule-row {
+    display: grid;
+    grid-template-columns: 80px 1fr auto;
+    gap: 18px;
+    align-items: center;
+    padding: 16px 0;
+    border-bottom: 1px solid #f1f5f9;
+    transition: all 0.2s ease;
+}
+
+.dash-schedule-row:hover {
+    background: #f8fafc;
+    border-radius: 8px;
+    margin: 0 -12px;
+    padding: 16px 12px;
+}
+
+.dash-schedule-row:last-child {
+    border-bottom: none;
+}
+
+.dash-schedule-time {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+}
+
+.dash-schedule-hour {
+    font-size: 18px;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.dash-schedule-meridiem {
+    font-size: 12px;
+    color: #64748b;
+    text-transform: uppercase;
+}
+
+.dash-schedule-details {
+    flex: 1;
+}
+
+.dash-schedule-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: #0f172a;
+    margin: 0 0 4px 0;
+}
+
+.dash-schedule-meta {
+    font-size: 13px;
+    color: #64748b;
+    margin: 0;
+}
+
+.dash-schedule-status {
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border: 1px solid transparent;
+    transition: all 0.2s ease;
+}
+
+.dash-schedule-status.in-progress {
+    background: linear-gradient(90deg, #016836, #014a28);
+    color: #fff;
+}
+
+.dash-schedule-status.upcoming {
+    background: #f8fafc;
+    color: #0f172a;
+    border-color: #e5e7eb;
+}
+
+.dash-schedule-status.scheduled {
+    background: #f1f5f9;
+    color: #64748b;
+    border-color: #e2e8f0;
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+    .dash-main {
+        grid-template-columns: 1fr;
+    }
+    
+    .dash-stats {
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    }
+}
+
+@media (max-width: 768px) {
+    .dash-shell {
+        padding: 20px 16px;
+    }
+    
+    .dash-title {
+        font-size: 28px;
+    }
+    
+    .dash-stats {
+        grid-template-columns: 1fr;
+    }
+    
+    .dash-schedule-row {
+        grid-template-columns: 60px 1fr;
+        gap: 12px;
+    }
+    
+    .dash-schedule-status {
+        grid-column: 2;
+        justify-self: start;
+        margin-top: 8px;
+    }
+}
+
+@media (max-width: 480px) {
+    .dash-shell {
+        padding: 16px 12px;
+    }
+    
+    .dash-title {
+        font-size: 24px;
+    }
+    
+    .dash-card-stat {
+        padding: 20px;
+    }
+    
+    .dash-panel {
+        padding: 20px;
+    }
+}
