@@ -1,34 +1,38 @@
 package com.example.lab_signoff_backend.controller;
 
 import com.example.lab_signoff_backend.LtiJwtValidator;
-import com.example.lab_signoff_backend.security.StateNonceStore;
+import com.example.lab_signoff_backend.controller.StateNonceStore;
 import com.nimbusds.jwt.JWTClaimsSet;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
-import org.springframework.lang.Nullable;          // <-- use Spring’s @Nullable
+import org.springframework.lang.Nullable;
 import org.springframework.web.bind.annotation.*;
-
 import jakarta.servlet.http.HttpSession;
 import java.util.*;
 
 /**
  * Controller for handling LTI 1.3 launch requests from Canvas.
  *
- * This controller validates incoming LTI launch requests, verifies JWT tokens,
- * extracts user roles and context information, and establishes authenticated sessions.
+ * Validates incoming LTI launch requests, verifies JWT tokens,
+ * extracts user roles and context information, and sets authenticated sessions.
  *
- * @author Lab Signoff App Team
- * @version 1.0
+ * Supports both real validation and mock mode (for local dev).
  */
 @RestController
 @RequestMapping("/lti")
 public class LtiLaunchController {
-    private final @Nullable LtiJwtValidator validator;   // may be null when disabled
+
+    private final @Nullable LtiJwtValidator validator;   // may be null when validation is off
+    private final StateNonceStore stateNonceStore;       // ✅ now defined
     private final boolean validationEnabled;
 
-    public LtiLaunchController(@Nullable LtiJwtValidator validator,
-                               @Value("${lti.validation-enabled:false}") boolean validationEnabled) {
+    // ✅ Add StateNonceStore as a constructor dependency
+    public LtiLaunchController(
+            @Nullable LtiJwtValidator validator,
+            StateNonceStore stateNonceStore,
+            @Value("${lti.validation-enabled:false}") boolean validationEnabled) {
         this.validator = validator;
+        this.stateNonceStore = stateNonceStore;
         this.validationEnabled = validationEnabled;
     }
 
@@ -39,10 +43,11 @@ public class LtiLaunchController {
                                     @RequestParam("state") String state,
                                     HttpSession session) {
         try {
-            // Always consume state once (mock or real) to keep flow consistent
-            Optional<String> expectedNonce = StateNonceStore.consumeNonce(state);
+            // Always consume state once (mock or real)
+            Optional<String> expectedNonce = stateNonceStore.consumeNonce(state);
+
             if (validationEnabled) {
-                // REAL PATH: validator must exist and nonce must be present
+                // ===== REAL VALIDATION =====
                 if (validator == null) {
                     return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                             .body(Map.of("error", "validator_not_available"));
@@ -77,8 +82,7 @@ public class LtiLaunchController {
                 out.put("message_type", claims.getClaim("https://purl.imsglobal.org/spec/lti/claim/message_type"));
                 return ResponseEntity.ok(out);
             } else {
-                // MOCK/DEV PATH: validation disabled — don’t require a real JWT
-                // You can still allow your teacher console by seeding Instructor for the session:
+                // ===== MOCK / DEV MODE =====
                 Set<String> roles = Set.of("http://purl.imsglobal.org/vocab/lis/v2/membership#Instructor");
                 session.setAttribute("ltiRoles", roles);
 

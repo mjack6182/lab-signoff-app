@@ -1,15 +1,7 @@
 package com.example.lab_signoff_backend.controller;
-import java.io.IOException;
-
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
-
-import com.example.lab_signoff_backend.security.StateNonceStore;
-
+import com.example.lab_signoff_backend.controller.StateNonceStore;
+import org.springframework.web.bind.annotation.*;
 import jakarta.servlet.http.HttpServletResponse;
 
 /**
@@ -24,7 +16,7 @@ import jakarta.servlet.http.HttpServletResponse;
  */
 @RestController
 @RequestMapping("/lti")
-public class ltiController {
+public class LtiController {
 
     private final StateNonceStore stateNonceStore;
 
@@ -34,7 +26,7 @@ public class ltiController {
      * @param stateNonceStore Store for managing state-nonce pairs
      */
     @Autowired
-    public ltiController(StateNonceStore stateNonceStore) {
+    public LtiController(StateNonceStore stateNonceStore) {
         this.stateNonceStore = stateNonceStore;
     }
 
