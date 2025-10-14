@@ -1,22 +1,27 @@
 package com.example.lab_signoff_backend.controller;
 
-import com.example.lab_signoff_backend.model.Group;
-import com.example.lab_signoff_backend.service.GroupService;
+import com.example.lab_signoff_backend.websocket.LabWebSocketController;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
-import java.util.List;
 
 @RestController
-@RequestMapping("/groups")
+@RequestMapping("/group")
 public class GroupController {
 
-    private final GroupService groupService;
+    @Autowired
+    private LabWebSocketController wsController;
 
-    public GroupController(GroupService groupService) {
-        this.groupService = groupService;
+    // Test "Pass" endpoint
+    @PostMapping("/{groupId}/pass")
+    public void passCheckpoint(@PathVariable String groupId) {
+        int checkpointNumber = 1;
+        wsController.broadcastCheckpointUpdate(groupId, checkpointNumber, "PASS");
     }
 
-    @GetMapping
-    public List<Group> getAllGroups() {
-        return groupService.getAll();
+    // Test "Return" endpoint
+    @PostMapping("/{groupId}/return")
+    public void returnCheckpoint(@PathVariable String groupId) {
+        int checkpointNumber = 1;
+        wsController.broadcastCheckpointUpdate(groupId, checkpointNumber, "RETURN");
     }
 }
