@@ -33,9 +33,9 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     }
 
     /**
-     * Registers WebSocket handlers and configures allowed origins.
+     * Configures the broker responsible for routing messages between clients and server.
      *
-     * @param registry The WebSocket handler registry
+     * @param registry The message broker registry
      */
     @Override
     public void configureMessageBroker(@NonNull MessageBrokerRegistry registry) {

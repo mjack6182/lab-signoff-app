@@ -1,5 +1,5 @@
-import { TeacherOnly, TAOnly, StaffOnly, StudentOnly, useRoleGuard } from '../components/RoleGuard';
-import { useAuth } from '../contexts/AuthContext';
+import { TeacherOnly, TAOnly, StaffOnly, StudentOnly, useRoleGuard } from '../../components/RoleGuard/RoleGuard';
+import { useAuth } from '../../contexts/AuthContext';
 
 export default function RoleDemo() {
     const { user } = useAuth();

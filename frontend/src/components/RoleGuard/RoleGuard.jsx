@@ -1,4 +1,4 @@
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../../contexts/AuthContext';
 
 /**
  * Role-based guard component that conditionally renders children based on user roles

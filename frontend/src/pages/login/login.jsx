@@ -1,4 +1,5 @@
 import { useMemo, useRef, useState } from 'react';
+import './login.css';
 
 export default function Login() {
     const [role, setRole] = useState('teacher');
@@ -79,7 +80,7 @@ export default function Login() {
 
                     <div className="field">
                         <label htmlFor="password" className="label">Password</label>
-                        <div style={{ position: 'relative' }}>
+                        <div className="password-container">
                             <input
                                 ref={pwRef}
                                 id="password"
@@ -97,11 +98,7 @@ export default function Login() {
                                 type="button"
                                 onClick={() => setShowPw(s => !s)}
                                 aria-pressed={showPw}
-                                style={{
-                                    position: 'absolute', right: 6, top: 6, height: 32,
-                                    padding: '0 10px', borderRadius: 8, border: '1px solid #cbd5e1',
-                                    background: '#f8fafc', cursor: 'pointer'
-                                }}
+                                className="password-toggle"
                             >
                                 {showPw ? 'Hide' : 'Show'}
                             </button>
