@@ -1,15 +1,47 @@
+import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
-import { labs, statusLabels, statusColors } from '../../mock/labs'
+import Header from '../../components/Header/Header'
 import './lab-selector.css';
 
+/**
+ * LabSelector Component
+ *
+ * Displays a list of all available labs fetched from the backend.
+ * Each lab card shows the course ID and allows navigation to view groups for that lab.
+ *
+ * Backend Integration:
+ * - Fetches labs from GET /lti/labs endpoint
+ * - Displays lab information including courseId and lineItemId
+ */
 export default function LabSelector() {
   const { user, logout } = useAuth()
+  const navigate = useNavigate()
+  const [labs, setLabs] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
+
+  // Fetch labs from backend on component mount
+  useEffect(() => {
+    fetch('http://localhost:8080/lti/labs')
+      .then((res) => {
+        if (!res.ok) throw new Error('Failed to fetch labs')
+        return res.json()
+      })
+      .then((data) => {
+        setLabs(Array.isArray(data) ? data : [])
+        setLoading(false)
+      })
+      .catch((err) => {
+        console.error('Error fetching labs:', err)
+        setError(err.message)
+        setLoading(false)
+      })
+  }, [])
 
   const handleLabOpen = (lab) => {
-    if (lab.status === 'open') {
-      // Navigate to checkpoints page for this lab
-      window.location.href = '/checkpoints'
-    }
+    // Navigate to groups page for this lab
+    navigate(`/labs/${lab.id}/groups`)
   }
 
   const handleLogout = () => {
@@ -17,85 +49,116 @@ export default function LabSelector() {
     window.location.href = '/login'
   }
 
-  return (
-    <main className="lab-selector-shell">
-      {/* Header */}
-      <header className="lab-selector-header">
-        <div className="header-left">
-          <h1 className="app-title">Lab-Signoff-App</h1>
-        </div>
-        <div className="header-right">
-          {user && (
-            <>
-              <div className="user-profile">
-                <span className="user-name">{user.name}</span>
-                <span className="user-role">({user.role})</span>
-              </div>
-              <button className="logout-btn" onClick={handleLogout}>
-                Logout
-              </button>
-            </>
-          )}
-        </div>
-      </header>
+  if (loading) {
+    return (
+      <>
+        <Header />
+        <main className="lab-selector-shell">
+          <div style={{
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            height: '50vh',
+            fontSize: '18px',
+            color: '#64748b'
+          }}>
+            Loading labs...
+          </div>
+        </main>
+      </>
+    )
+  }
 
-      {/* Lab Grid */}
-      <section className="labs-grid-section">
+  if (error) {
+    return (
+      <>
+        <Header />
+        <main className="lab-selector-shell">
+          <div style={{
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            height: '50vh',
+            fontSize: '18px',
+            color: '#ef4444',
+            flexDirection: 'column',
+            gap: '12px'
+          }}>
+            <div>Error loading labs: {error}</div>
+            <button
+              onClick={() => window.location.reload()}
+              style={{
+                padding: '8px 16px',
+                fontSize: '14px',
+                cursor: 'pointer'
+              }}
+            >
+              Retry
+            </button>
+          </div>
+        </main>
+      </>
+    )
+  }
+
+  return (
+    <>
+      <Header />
+      <main className="lab-selector-shell">
+        {/* Lab Grid */}
+        <section className="labs-grid-section">
         <div className="labs-grid">
-          {labs.map(lab => {
-            const statusStyle = statusColors[lab.status]
-            const isOpen = lab.status === 'open'
-            
-            return (
+          {labs.length === 0 ? (
+            <div style={{
+              gridColumn: '1 / -1',
+              textAlign: 'center',
+              padding: '40px',
+              color: '#64748b'
+            }}>
+              No labs available
+            </div>
+          ) : (
+            labs.map(lab => (
               <div key={lab.id} className="lab-card">
                 <div className="lab-card-header">
                   <h3 className="lab-card-title">
-                    {lab.title}
+                    {lab.courseId}
                   </h3>
-                  <span 
+                  <span
                     className="lab-card-status"
                     style={{
-                      backgroundColor: statusStyle.bg,
-                      color: statusStyle.color,
-                      borderColor: statusStyle.border,
+                      backgroundColor: '#dcfce7',
+                      color: '#166534',
+                      borderColor: '#bbf7d0',
+                      padding: '4px 12px',
+                      borderRadius: '12px',
+                      fontSize: '12px',
+                      fontWeight: '500'
                     }}
                   >
-                    {statusLabels[lab.status]}
+                    Available
                   </span>
                 </div>
-                
+
                 <div className="lab-card-body">
-                  <p className="lab-card-course">{lab.course}</p>
-                  <p className="lab-card-description">{lab.description}</p>
-                  
-                  <div className="lab-card-progress">
-                    <div className="progress-header">
-                      <span className="progress-label">Progress</span>
-                      <span className="progress-value">{lab.progress}%</span>
-                    </div>
-                    <div className="progress-bar">
-                      <div 
-                        className="progress-fill"
-                        style={{ width: `${lab.progress}%` }}
-                      ></div>
-                    </div>
-                  </div>
+                  <p className="lab-card-course">Line Item: {lab.lineItemId}</p>
+                  <p className="lab-card-description">Click to view groups for this lab</p>
                 </div>
-                
+
                 <div className="lab-card-footer">
-                  <button 
-                    className={`lab-card-button ${isOpen ? 'open' : 'disabled'}`}
+                  <button
+                    className="lab-card-button open"
                     onClick={() => handleLabOpen(lab)}
-                    disabled={!isOpen}
                   >
-                    {isOpen ? 'Open' : statusLabels[lab.status]}
+                    View Groups
                   </button>
                 </div>
               </div>
-            )
-          })}
+            ))
+          )}
         </div>
       </section>
     </main>
+    </>
   )
 }
