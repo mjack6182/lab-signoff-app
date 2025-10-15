@@ -33,7 +33,7 @@ public class ScoreFormulaService {
         for (CheckpointDto cp : cps) {
             if (cp == null || cp.state == null) continue;
 
-            boolean required = cp.required == null ? true : cp.required.booleanValue();
+            // boolean required = cp.required == null ? true : cp.required.booleanValue();
 //            double weight = cp.weight == null || cp.weight <= 0 ? DEFAULT_WEIGHT : cp.weight;
 //
 //            if (cp.state != CheckpointState.Exempt && required) {
@@ -44,6 +44,7 @@ public class ScoreFormulaService {
 //                case Passed -> earned += (required ? weight : 0.0);
                 case Returned, InProgress, NotStarted -> allDone = false;
                 case Exempt -> { /* contributes nothing to max or earned */ }
+                default -> throw new IllegalArgumentException("Unexpected value: " + cp.state);
             }
         }
 
