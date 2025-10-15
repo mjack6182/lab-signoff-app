@@ -1,9 +1,10 @@
 /* ===== Lab Selector Page ===== */
 .lab-selector-shell {
-    min-height: calc(100% - 49px);
+    min-height: 100vh;
     background: #f6f8fc;
     display: flex;
     flex-direction: column;
+    padding-top: 64px; /* Account for fixed header */
 }
 
 /* Header */
