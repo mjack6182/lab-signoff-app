@@ -22,7 +22,7 @@ public class LtiController {
     private final StateNonceStore stateNonceStore;
 
     /**
-     * Constructor for ltiController.
+     * Constructor for LtiController.
      *
      * @param stateNonceStore Store for managing state-nonce pairs
      */
