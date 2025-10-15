@@ -1,19 +1,35 @@
 import { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import { classData } from '../../mock/classData';
 import { mockCheckpoints } from '../../mock/checkpoints';
 import SignOffModal from '../../components/SignOffModal';
 import GroupManagementModal from '../../components/GroupManagementModal';
+import Header from '../../components/Header/Header';
 import './checkpoints.css';
 
+/**
+ * CheckpointPage Component
+ *
+ * Displays checkpoints for a specific group within a lab.
+ * This is the third step in the user flow: Labs -> Groups -> Checkpoints
+ *
+ * URL Parameters:
+ * - labId: The ID of the lab
+ * - groupId: The ID of the group
+ */
 export default function CheckpointPage() {
+    const { labId, groupId } = useParams();
+    const navigate = useNavigate();
     const [classState, setClassState] = useState(classData);
     const [selectedSectionId, setSelectedSectionId] = useState(classData.sections[0].id);
-    const [selectedGroupId, setSelectedGroupId] = useState(null);
+    const [selectedGroupId, setSelectedGroupId] = useState(groupId || null);
     const [showSignOffModal, setShowSignOffModal] = useState(false);
     const [selectedCheckpoint, setSelectedCheckpoint] = useState(null);
     const [signOffNotes, setSignOffNotes] = useState('');
     const [signOffStatus, setSignOffStatus] = useState('pass'); // 'pass' or 'return'
     const [showGroupManagement, setShowGroupManagement] = useState(false);
+    const [group, setGroup] = useState(null);
+    const [lab, setLab] = useState(null);
     
     // Track checkpoint completion status per group
     const [groupCheckpoints, setGroupCheckpoints] = useState(() => {
@@ -38,14 +54,37 @@ export default function CheckpointPage() {
     
     const selectedSection = classState.sections.find(s => s.id === selectedSectionId);
     const selectedGroup = selectedSection?.groups?.find(g => g.id === selectedGroupId);
-    const currentLab = "Lab 5"; // This would come from route params in real app
-    
+    const currentLab = lab?.courseId || "Lab"; // Use actual lab data
+
+    // Fetch lab and group data when component mounts
+    useEffect(() => {
+        if (labId && groupId) {
+            // Fetch lab info
+            fetch(`http://localhost:8080/lti/labs`)
+                .then(res => res.json())
+                .then(labs => {
+                    const foundLab = labs.find(l => l.id === labId);
+                    setLab(foundLab);
+                })
+                .catch(err => console.error('Error fetching lab:', err));
+
+            // Fetch group info
+            fetch(`http://localhost:8080/lti/labs/${labId}/groups`)
+                .then(res => res.json())
+                .then(groups => {
+                    const foundGroup = groups.find(g => g.id === groupId);
+                    setGroup(foundGroup);
+                })
+                .catch(err => console.error('Error fetching group:', err));
+        }
+    }, [labId, groupId]);
+
     // Auto-select first group when section changes
     useEffect(() => {
-        if (selectedSection && selectedSection.groups.length > 0) {
+        if (selectedSection && selectedSection.groups.length > 0 && !groupId) {
             setSelectedGroupId(selectedSection.groups[0].id);
         }
-    }, [selectedSectionId, selectedSection]);
+    }, [selectedSectionId, selectedSection, groupId]);
 
     const handleSignOffClick = (checkpoint, status) => {
         if (status === 'return') {
@@ -137,16 +176,19 @@ export default function CheckpointPage() {
     };
     
     return (
+        <>
+        <Header />
         <main className="checkpoint-shell">
             {/* Header with breadcrumb and actions */}
-            <header className="checkpoint-header">
+            <div className="checkpoint-page-header">
                 <div className="checkpoint-nav">
-                    <button className="breadcrumb-back" onClick={() => window.history.back()}>
+                    <button className="breadcrumb-back" onClick={() => labId ? navigate(`/labs/${labId}/groups`) : navigate('/lab-selector')}>
                         <span className="back-arrow">←</span>
-                        <span>Labs</span>
+                        <span>Back to Groups</span>
                     </button>
                     <span className="breadcrumb-separator">/</span>
                     <h1 className="checkpoint-title">{currentLab}</h1>
+                    {group && <span className="checkpoint-subtitle"> - {group.groupId}</span>}
                 </div>
                 <div className="checkpoint-actions">
                     <button className="action-btn secondary" onClick={handleEditGroups}>
@@ -154,7 +196,7 @@ export default function CheckpointPage() {
                         Manage Groups
                     </button>
                 </div>
-            </header>
+            </div>
 
             {/* Class and Section Selection */}
             <section className="class-section-selector">
@@ -331,5 +373,6 @@ export default function CheckpointPage() {
                 onUpdateGroups={handleUpdateGroups}
             />
         </main>
+        </>
     );
 }
