@@ -1,5 +1,6 @@
 package com.example.lab_signoff_backend.controller;
 import com.example.lab_signoff_backend.security.StateNonceStore;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
@@ -18,8 +19,6 @@ import java.io.IOException;
 @RequestMapping("/lti")
 public class ltiController {
 
-    private final StateNonceStore stateNonceStore;
-
     /**
      * Constructor for ltiController.
      *
@@ -27,7 +26,6 @@ public class ltiController {
      */
     @Autowired
     public ltiController(StateNonceStore stateNonceStore) {
-        this.stateNonceStore = stateNonceStore;
     }
 
     /**
@@ -50,7 +48,7 @@ public class ltiController {
 
         // create a nonce, store (state -> nonce), and remember the state we just issued
         String nonce = java.util.UUID.randomUUID().toString();
-        String state = stateNonceStore.issueState(nonce);  // <— IMPORTANT: issue() stores state->nonce
+        String state = StateNonceStore.issueState(nonce);  // <— IMPORTANT: issue() stores state->nonce
 
         // auto-post to launch with the exact state/nonce pair we just stored
         String idToken = "mock-id-token-" + System.currentTimeMillis();

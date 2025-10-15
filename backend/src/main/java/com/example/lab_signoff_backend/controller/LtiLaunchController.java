@@ -52,6 +52,7 @@ public class LtiLaunchController {
                             .body(Map.of("error", "invalid_or_expired_state"));
                 }
 
+                @SuppressWarnings("null")
                 JWTClaimsSet claims = validator.validate(idToken, expectedNonce.get());
 
                 @SuppressWarnings("unchecked")

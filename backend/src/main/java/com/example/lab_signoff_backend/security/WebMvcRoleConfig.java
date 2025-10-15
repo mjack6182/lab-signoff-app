@@ -25,6 +25,7 @@ public class WebMvcRoleConfig implements WebMvcConfigurer {
      *
      * @param registry The interceptor registry
      */
+    @SuppressWarnings("null")
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
         // Protect ALL teacher APIs (adjust the path pattern to your routes)

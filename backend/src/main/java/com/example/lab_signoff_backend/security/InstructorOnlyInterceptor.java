@@ -41,7 +41,9 @@ public class InstructorOnlyInterceptor implements HandlerInterceptor {
      */
     @SuppressWarnings("unchecked")
     @Override
-    public boolean preHandle(HttpServletRequest req, HttpServletResponse res, Object handler)
+    public boolean preHandle(@org.springframework.lang.NonNull HttpServletRequest req,
+                             @org.springframework.lang.NonNull HttpServletResponse res,
+                             @org.springframework.lang.NonNull Object handler)
             throws Exception {
         HttpSession session = req.getSession(false);
         if (session == null) {
