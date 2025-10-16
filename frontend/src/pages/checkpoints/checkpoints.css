@@ -4,7 +4,8 @@
 .checkpoint-shell {
     min-height: 100vh;
     padding: 32px 24px 48px;
-    padding-top: 96px; /* 64px header + 32px spacing */
+    padding-top: 96px;
+    /* 64px header + 32px spacing */
     display: flex;
     flex-direction: column;
     gap: 24px;
@@ -383,28 +384,51 @@
 .groups-list {
     padding: 0;
     margin: 0;
-    max-height: 600px;
-    overflow-y: auto;
+    display: flex;
+    gap: 16px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding-bottom: 8px;
+    scroll-behavior: smooth;
+}
+
+.groups-list::-webkit-scrollbar {
+    height: 6px;
+}
+
+.groups-list::-webkit-scrollbar-track {
+    background: #f1f5f9;
+    border-radius: 3px;
+}
+
+.groups-list::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 3px;
+}
+
+.groups-list::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
 }
 
 /* === Group Cards === */
 .group-card {
-    padding: 20px;
-    border-bottom: 1px solid #f1f5f9;
+    padding: 16px;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
     cursor: pointer;
     transition: all 0.2s ease;
-}
-
-.group-card:last-child {
-    border-bottom: none;
+    background: white;
+    min-width: 280px;
+    max-width: 280px;
+    flex-shrink: 0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .group-card:hover:not(.selected) {
     background: linear-gradient(90deg, rgba(107, 114, 128, 0.12) 0%, rgba(107, 114, 128, 0.06) 100%);
-    border-color: rgba(107, 114, 128, 0.2);
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-    position: relative;
+    border-color: rgba(107, 114, 128, 0.3);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
 }
 
 .group-card:hover:not(.selected)::before {
@@ -413,15 +437,16 @@
     left: 0;
     top: 0;
     bottom: 0;
-    width: 2px;
+    width: 3px;
     background: rgba(107, 114, 128, 0.4);
-    border-radius: 16px 0 0 16px;
+    border-radius: 0 16px 16px 0;
 }
 
 .group-card.selected {
     background: linear-gradient(90deg, rgba(1, 104, 54, 0.12) 0%, rgba(1, 104, 54, 0.06) 100%);
     position: relative;
-    border-color: rgba(1, 104, 54, 0.2);
+    border-color: rgba(1, 104, 54, 0.3);
+    box-shadow: 0 4px 16px rgba(1, 104, 54, 0.15);
 }
 
 .group-card.selected::after {
@@ -432,7 +457,7 @@
     bottom: 0;
     width: 4px;
     background: #016836;
-    border-radius: 16px 0 0 16px;
+    border-radius: 0 16px 16px 0;
 }
 
 /* === Group Card Content === */
@@ -440,20 +465,21 @@
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
-    margin-bottom: 12px;
+    margin-bottom: 10px;
 }
 
 .group-name {
     margin: 0;
-    font-size: 16px;
+    font-size: 15px;
     font-weight: 600;
     color: #0f172a;
+    line-height: 1.3;
 }
 
 .group-status {
-    padding: 2px 8px;
-    border-radius: 6px;
-    font-size: 11px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 10px;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.05em;
@@ -469,10 +495,31 @@
     color: #6b7280;
 }
 
+/* Additional status styles for backend data */
+.group-status.pending {
+    background: #fef3c7;
+    color: #d97706;
+}
+
+.group-status.in-progress {
+    background: #dbeafe;
+    color: #1d4ed8;
+}
+
+.group-status.completed {
+    background: #d1fae5;
+    color: #047857;
+}
+
+.group-status.signed-off {
+    background: #dcfce7;
+    color: #16a34a;
+}
+
 .group-card-body {
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 6px;
 }
 
 .group-course {
@@ -490,48 +537,50 @@
 .members-list {
     display: flex;
     flex-wrap: wrap;
-    gap: 4px;
+    gap: 2px;
+    margin-bottom: 4px;
 }
 
 /* === Group Members === */
 .member-name {
     color: #1f2937;
-    font-size: 14px;
-    font-weight: 600;
+    font-size: 13px;
+    font-weight: 500;
     letter-spacing: -0.01em;
 }
 
 .members-count {
     color: #64748b;
-    font-size: 12px;
+    font-size: 11px;
+    margin-top: 2px;
 }
 
 /* === Group Progress === */
 .group-progress {
-    margin-top: 8px;
+    margin-top: 6px;
 }
 
 .progress-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 6px;
+    margin-bottom: 4px;
 }
 
 .progress-text {
-    font-size: 12px;
+    font-size: 11px;
     color: #64748b;
     font-weight: 600;
 }
 
 .progress-value {
-    font-size: 12px;
+    font-size: 11px;
     color: #0f172a;
     font-weight: 600;
 }
 
 .progress-bar {
-    height: 6px;
+    height: 4px;
     background: #f1f5f9;
     border-radius: 3px;
     overflow: hidden;
@@ -554,13 +603,14 @@
         grid-template-columns: 1fr;
         gap: 20px;
     }
-    
+
     .groups-panel {
         order: -1;
     }
-    
-    .groups-list {
-        max-height: 400px;
+
+    .group-card {
+        min-width: 260px;
+        max-width: 260px;
     }
 }
 
@@ -568,27 +618,42 @@
 @media (max-width: 768px) {
     .checkpoint-shell {
         padding: 20px 16px 32px;
-        padding-top: 84px; /* 64px header + 20px spacing */
+        padding-top: 84px;
+        /* 64px header + 20px spacing */
+    }
+
+    .group-card {
+        min-width: 240px;
+        max-width: 240px;
+        padding: 12px;
+    }
+
+    .group-name {
+        font-size: 14px;
+    }
+
+    .member-name {
+        font-size: 12px;
     }
 
     .checkpoint-page-header {
         flex-direction: column;
         align-items: stretch;
     }
-    
+
     .checkpoint-actions {
         justify-content: flex-start;
     }
-    
+
     .checkpoint-item {
         padding: 16px 20px;
     }
-    
+
     .checkpoint-details {
         flex-direction: column;
         gap: 12px;
     }
-    
+
     .checkpoint-actions {
         margin-left: 0;
         align-self: flex-start;
@@ -600,29 +665,29 @@
     .checkpoint-shell {
         padding: 16px 12px 24px;
     }
-    
+
     .checkpoint-title {
         font-size: 24px;
     }
-    
+
     .action-btn {
         padding: 8px 12px;
         font-size: 13px;
     }
-    
+
     .checkpoint-actions {
         flex-wrap: wrap;
     }
-    
+
     .checkpoint-btn {
         padding: 6px 12px;
         font-size: 12px;
     }
-    
+
     .section-tabs {
         flex-direction: column;
     }
-    
+
     .section-tab {
         flex-direction: row;
         justify-content: space-between;
@@ -631,12 +696,12 @@
         border-bottom: 1px solid #f1f5f9;
         border-right: none;
     }
-    
+
     .section-tab.active {
         border-bottom-color: #f1f5f9;
         border-left: 4px solid #016836;
     }
-    
+
     .section-tab.active::after {
         display: none;
     }
