@@ -5,7 +5,7 @@ import com.example.lab_signoff_backend.ags.GradingProgress;
 
 import java.util.List;
 
-public class ScorePublishRquest {
+public class ScorePublishRequest {
     public String status = "ok";
     public boolean mock = true;
 
@@ -26,5 +26,5 @@ public class ScorePublishRquest {
 
     public String mockSyncId;
 
-    public ScorePublishRquest() {}
+    public ScorePublishRequest() {}
 }  // simple server-generated id
