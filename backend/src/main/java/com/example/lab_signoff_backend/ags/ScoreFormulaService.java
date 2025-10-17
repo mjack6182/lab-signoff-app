@@ -14,6 +14,14 @@ public class ScoreFormulaService {
     ) {}
 
     public Result computeFrom(ScorePublishRequest req) {
+        if (req == null) {
+            // Not computing; caller should use provided scores (all defaulted)
+            double given = 0.0;
+            double max   = 0.0;
+            String ap = "InProgress";
+            String gp = "Pending";
+            return new Result(given, max, ap, gp);
+        }
         List<CheckpointDto> cps = req.checkpoints;
         if (cps == null || cps.isEmpty()) {
             // Not computing; caller should use provided scores
