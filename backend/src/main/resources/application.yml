@@ -25,7 +25,11 @@ spring:
       # Configure static resource handling
       static-locations: classpath:/static/
       cache-period: 3600
-
+app:
+  mocks:
+    ags:
+      enabled: true
+      
 server:
   port: ${SERVER_PORT}
 
