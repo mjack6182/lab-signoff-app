@@ -10,6 +10,9 @@ import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { StaffOnly } from './components/RoleGuard/RoleGuard'
 // import RoleSwitcher from './components/RoleSwitcher/RoleSwitcher'
 
+import { useEffect } from 'react';
+import { createWebSocketClient } from "./services/websocketClient.js"; // ✅ import your WebSocket setup
+
 function AppContent() {
     const { user, loading } = useAuth();
     
@@ -65,6 +68,19 @@ function AppContent() {
 }
 
 export default function App() {
+
+    useEffect(() => {
+    // 🟢 Create and connect the WebSocket client when the app starts
+    const client = createWebSocketClient();
+    client.activate();
+
+    // 🔴 Clean up connection when the app is closed or refreshed
+    return () => {
+      client.deactivate();
+    };
+  }, []); // ← runs only once when the app loads
+
+
     return (
         <AuthProvider>
             <AppContent />
