@@ -1,11 +1,11 @@
-//package com.example.lab_signoff_backend.controller;
-//
-//import org.springframework.web.bind.annotation.*;
-//import java.util.Map;
-//
-//@RestController
-//@RequestMapping("/lti")
-//public class launchController {
+// package com.example.lab_signoff_backend.controller;
+
+// import org.springframework.web.bind.annotation.*;
+// import java.util.Map;
+
+// @RestController
+// @RequestMapping("/lti")
+// public class launchController {c
 //    @PostMapping("/launch")
 //    public Map<String, Object> launch(
 //            @RequestParam(defaultValue = "mock-token") String id_token,
@@ -19,4 +19,4 @@
 //                "note", "This is a mock LTI launch endpoint"
 //        );
 //    }
-//}
+// }

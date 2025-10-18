@@ -2,23 +2,41 @@
 
 echo "🚀 Starting Lab Signoff App..."
 
-# Go to backend folder and start Spring Boot
-cd backend
-./gradlew bootRun &
-BACK_PID=$!
+# ---------------------------
+# Step 1: Kill old processes
+# ---------------------------
+echo "🧹 Cleaning up old processes..."
+pkill -f "vite" >/dev/null 2>&1
+pkill -f "java" >/dev/null 2>&1
+sudo pkill nginx >/dev/null 2>&1
+sudo rm -f /opt/homebrew/var/run/nginx.pid
 
-# Go to frontend folder and start Vite
-cd ../frontend
-npm run dev &
-FRONT_PID=$!
+# ---------------------------
+# Step 2: Build frontend
+# ---------------------------
+echo "🛠 Building frontend..."
+cd "$(dirname "$0")/frontend" || exit 1
+npm install >/dev/null 2>&1
+npm run build
 
-# Start or reload Nginx
-sudo nginx -s reload || sudo nginx
+# ---------------------------
+# Step 3: Start Nginx (foreground)
+# ---------------------------
+echo "🌐 Starting Nginx..."
+sudo nginx -g "daemon off;" &
+NGINX_PID=$!
 
-echo ""
-echo "✅ Backend running on port 8080"
-echo "✅ Frontend running on port 5173"
-echo "✅ Access the app at: http://localhost"
-echo ""
-echo "To stop servers later, run: ./stop.sh"
 
+# ---------------------------
+# Step 4: Start backend (foreground)
+# ---------------------------
+echo "🚀 Starting backend..."
+cd ../backend || exit 1
+./gradlew bootRun
+
+
+# ---------------------------
+# Step 5: Cleanup on exit
+# ---------------------------
+echo "🛑 Stopping Nginx..."
+sudo kill $NGINX_PID >/dev/null 2>&1
