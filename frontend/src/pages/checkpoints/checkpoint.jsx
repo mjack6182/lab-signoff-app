@@ -9,12 +9,18 @@ import './checkpoints.css';
 /**
  * CheckpointPage Component
  *
- * Displays checkpoints for a specific group within a lab.
- * This is the third step in the user flow: Labs -> Groups -> Checkpoints
+ * Displays checkpoints for a specific lab with group selection.
+ * This is the second step in the simplified user flow: Labs -> Checkpoints
  *
  * URL Parameters:
- * - labId: The ID of the lab
- * - groupId: The ID of the group
+ * - labId: The ID of the lab (required)
+ * - groupId: The ID of the group (optional - for backward compatibility and direct group access)
+ *
+ * Features:
+ * - Auto-selects first group if no groupId is provided
+ * - Displays all groups for the lab with progress indicators
+ * - Allows switching between groups without navigation
+ * - Supports both new simplified flow and legacy group-specific URLs
  */
 export default function CheckpointPage() {
     const { labId, groupId } = useParams();
@@ -214,14 +220,14 @@ export default function CheckpointPage() {
                     }}>
                         <div>Error loading data: {error}</div>
                         <button
-                            onClick={() => navigate(`/labs/${labId}/groups`)}
+                            onClick={() => navigate('/lab-selector')}
                             style={{
                                 padding: '8px 16px',
                                 fontSize: '14px',
                                 cursor: 'pointer'
                             }}
                         >
-                            Back to Groups
+                            Back to Labs
                         </button>
                     </div>
                 </main>
@@ -236,9 +242,9 @@ export default function CheckpointPage() {
                 {/* Header with breadcrumb and actions */}
                 <div className="checkpoint-page-header">
                     <div className="checkpoint-nav">
-                        <button className="breadcrumb-back" onClick={() => labId ? navigate(`/labs/${labId}/groups`) : navigate('/lab-selector')}>
+                        <button className="breadcrumb-back" onClick={() => navigate('/lab-selector')}>
                             <span className="back-arrow">←</span>
-                            <span>Back to Groups</span>
+                            <span>Back to Labs</span>
                         </button>
                         <span className="breadcrumb-separator">/</span>
                         <h1 className="checkpoint-title">{currentLab}</h1>

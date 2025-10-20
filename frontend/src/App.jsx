@@ -43,8 +43,12 @@ function AppContent() {
                 <Route path="/login" element={<Login />} />
                 <Route path="/groups" element={<GroupList />} />
                 <Route path="/lab-selector" element={<LabSelector />} />
-                <Route path="/labs/:labId/groups" element={<LabGroups />} />
+                {/* Direct route from lab selector to checkpoints */}
+                <Route path="/labs/:labId/checkpoints" element={<CheckpointPage />} />
+                {/* Keep the old group-specific route for backward compatibility */}
                 <Route path="/labs/:labId/groups/:groupId/checkpoints" element={<CheckpointPage />} />
+                {/* Keep the groups page for potential admin functionality */}
+                <Route path="/labs/:labId/groups" element={<LabGroups />} />
                 <Route path="/dashboard" element={
                     <StaffOnly fallback={<Navigate to="/lab-selector" replace />}>
                         <Dashboard />
