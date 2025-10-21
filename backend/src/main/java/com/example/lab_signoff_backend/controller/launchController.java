@@ -5,7 +5,7 @@
 
 // @RestController
 // @RequestMapping("/lti")
-// public class launchController {c
+// public class launchController {
 //    @PostMapping("/launch")
 //    public Map<String, Object> launch(
 //            @RequestParam(defaultValue = "mock-token") String id_token,
