@@ -13,6 +13,8 @@ public class ScorePublishResponse {
     public String lineItemId;
     public List<String> resultIds;
     public int syncedCount;
+    public double scoreGiven;
+    public double scoreMaximum;
 
     public String checkpointId;
     public GradingProgress gradingProgress;
