@@ -8,11 +8,18 @@ import './lab-selector.css';
  * LabSelector Component
  *
  * Displays a list of all available labs fetched from the backend.
- * Each lab card shows the course ID and allows navigation to view groups for that lab.
+ * Each lab card shows the course ID and allows direct navigation to the checkpoints page for that lab.
+ * This is the first step in the simplified user flow: Labs -> Checkpoints
  *
  * Backend Integration:
  * - Fetches labs from GET /lti/labs endpoint
  * - Displays lab information including courseId and lineItemId
+ *
+ * User Flow:
+ * 1. User sees list of available labs
+ * 2. User clicks on a lab card
+ * 3. User is taken directly to the checkpoints page for that lab
+ * 4. Group selection happens within the checkpoints page
  */
 export default function LabSelector() {
   const { user, logout } = useAuth()
@@ -40,8 +47,8 @@ export default function LabSelector() {
   }, [])
 
   const handleLabOpen = (lab) => {
-    // Navigate to groups page for this lab
-    navigate(`/labs/${lab.id}/groups`)
+    // Navigate directly to checkpoints page for this lab
+    navigate(`/labs/${lab.id}/checkpoints`)
   }
 
   const handleLogout = () => {
@@ -142,7 +149,7 @@ export default function LabSelector() {
 
                 <div className="lab-card-body">
                   <p className="lab-card-course">Line Item: {lab.lineItemId}</p>
-                  <p className="lab-card-description">Click to view groups for this lab</p>
+                  <p className="lab-card-description">Click to view checkpoints for this lab</p>
                 </div>
 
                 <div className="lab-card-footer">
@@ -150,7 +157,7 @@ export default function LabSelector() {
                     className="lab-card-button open"
                     onClick={() => handleLabOpen(lab)}
                   >
-                    View Groups
+                    View Checkpoints
                   </button>
                 </div>
               </div>
