@@ -10,6 +10,9 @@ import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { StaffOnly } from './components/RoleGuard/RoleGuard'
 // import RoleSwitcher from './components/RoleSwitcher/RoleSwitcher'
 
+import { useEffect } from 'react';
+import { createWebSocketClient } from "./services/websocketClient.js"; // ✅ import your WebSocket setup
+
 function AppContent() {
     const { user, loading } = useAuth();
     
@@ -43,8 +46,12 @@ function AppContent() {
                 <Route path="/login" element={<Login />} />
                 <Route path="/groups" element={<GroupList />} />
                 <Route path="/lab-selector" element={<LabSelector />} />
-                <Route path="/labs/:labId/groups" element={<LabGroups />} />
+                {/* Direct route from lab selector to checkpoints */}
+                <Route path="/labs/:labId/checkpoints" element={<CheckpointPage />} />
+                {/* Keep the old group-specific route for backward compatibility */}
                 <Route path="/labs/:labId/groups/:groupId/checkpoints" element={<CheckpointPage />} />
+                {/* Keep the groups page for potential admin functionality */}
+                <Route path="/labs/:labId/groups" element={<LabGroups />} />
                 <Route path="/dashboard" element={
                     <StaffOnly fallback={<Navigate to="/lab-selector" replace />}>
                         <Dashboard />
@@ -65,6 +72,19 @@ function AppContent() {
 }
 
 export default function App() {
+
+    useEffect(() => {
+    // 🟢 Create and connect the WebSocket client when the app starts
+    const client = createWebSocketClient();
+    client.activate();
+
+    // 🔴 Clean up connection when the app is closed or refreshed
+    return () => {
+      client.deactivate();
+    };
+  }, []); // ← runs only once when the app loads
+
+
     return (
         <AuthProvider>
             <AppContent />

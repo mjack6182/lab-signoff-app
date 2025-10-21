@@ -33,7 +33,6 @@ jobs:
       # 4️⃣ Run backend tests using the test-only MongoDB config
       - name: Run backend tests
         working-directory: ./backend
-        run: ./gradlew test -Dspring.config.location=classpath:/application-test.yml
-        # The -Dspring.config.location flag forces Spring Boot to use application-test.yml
+        run: ./gradlew test -Dspring.config.location=classpath:/application-test.properties # The -Dspring.config.location flag forces Spring Boot to use application-test.yml
         # which contains dummy MongoDB credentials. This ensures tests pass in CI without
         # needing real MongoDB credentials or Docker.

@@ -228,3 +228,6 @@ $RECYCLE.BIN/
 docker-volumes/
 
 .env
+
+# Ignore claude.ai local files
+.claude/
