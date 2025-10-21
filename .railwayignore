@@ -1,0 +1,34 @@
+# Node modules
+node_modules/
+frontend/node_modules/
+
+# Build outputs
+frontend/dist/
+backend/build/
+backend/.gradle/
+
+# IDE files
+.idea/
+.vscode/
+*.iml
+.DS_Store
+
+# Environment files (these should be set in Railway dashboard)
+.env
+.env.local
+.env.*.local
+
+# Logs
+*.log
+logs/
+
+# Test files
+backend/src/test/
+
+# Git
+.git/
+.gitignore
+
+# Documentation (optional, keep if you want docs in deployment)
+*.md
+!README.md
