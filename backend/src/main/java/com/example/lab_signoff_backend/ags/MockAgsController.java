@@ -105,8 +105,8 @@ public class MockAgsController {
         resp.resultIds = resultIds;
         resp.syncedCount = resultIds.size();
         resp.checkpointId = req.checkpointId;
-        // resp.scoreGiven = res.scoreGiven();
-        // resp.scoreMaximum = res.scoreMaximum();
+        resp.scoreGiven = res.scoreGiven();
+        resp.scoreMaximum = res.scoreMaximum();
         resp.activityProgress = ActivityOrDefault(res.activityProgress());
         resp.gradingProgress  = GradingOrDefault(res.gradingProgress());
         resp.timestamp = ts;
