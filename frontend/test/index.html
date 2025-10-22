@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Lab Broadcast Test</title>
+</head>
+<body>
+    <h1>Lab Checkpoint Updates</h1>
+    <ul id="updates"></ul>
+
+    <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
+    <script>
+        // Connect to backend WebSocket
+        const socket = new SockJS('http://localhost:8080/ws');
+        const stompClient = Stomp.over(socket);
+
+        stompClient.connect({}, function(frame) {
+            console.log('Connected: ' + frame);
+
+            // Subscribe to topic
+            stompClient.subscribe('/topic/group-updates', function(message) {
+                const data = JSON.parse(message.body);
+                const li = document.createElement('li');
+                li.textContent = `Group: ${data.groupId}, Checkpoint: ${data.checkpointNumber}, Status: ${data.status}`;
+                document.getElementById('updates').appendChild(li);
+            });
+        });
+    </script>
+</body>
+</html>
