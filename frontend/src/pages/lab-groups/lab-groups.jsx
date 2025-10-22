@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
 import Header from '../../components/Header/Header'
+import { api } from '../../config/api'
 import './lab-groups.css'
 
 /**
@@ -35,8 +36,8 @@ export default function LabGroups() {
   useEffect(() => {
     // Fetch lab information
     Promise.all([
-      fetch(`http://localhost:8080/lti/labs`).then(res => res.json()),
-      fetch(`http://localhost:8080/lti/labs/${labId}/groups`).then(res => {
+      fetch(api.labs()).then(res => res.json()),
+      fetch(api.labGroups(labId)).then(res => {
         if (!res.ok) throw new Error('Failed to fetch groups')
         return res.json()
       })
