@@ -21,6 +21,9 @@ COPY src src
 # Build the application (skip tests for faster builds)
 RUN ./gradlew clean bootJar --no-daemon -x test
 
+# Verify JAR was created
+RUN ls -la /app/build/libs/
+
 # Runtime stage
 FROM eclipse-temurin:21-jre-alpine
 
@@ -35,5 +38,6 @@ EXPOSE 8080
 # Set Java options for production
 ENV JAVA_OPTS="-Xmx512m -Xms256m"
 
+# Railway provides PORT environment variable - Spring Boot will use SERVER_PORT
 # Run the application
-ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar app.jar"]
+CMD ["sh", "-c", "java $JAVA_OPTS -Dserver.port=${PORT:-8080} -jar app.jar"]
