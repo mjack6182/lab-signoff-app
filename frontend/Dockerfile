@@ -7,48 +7,31 @@ WORKDIR /app
 COPY package*.json ./
 
 # Install dependencies
-# Use npm install instead of npm ci for more flexibility
 RUN npm install --frozen-lockfile
 
 # Copy source code
 COPY . .
 
-# Build argument for API URL (passed from Railway environment variable)
+# Build argument for API URL (passed from Railway)
 ARG VITE_API_URL
 ENV VITE_API_URL=$VITE_API_URL
 
-# Build the application with the API URL baked in
+# Build the application
 RUN npm run build
 
-# Production stage with nginx
-FROM nginx:alpine
+# Production stage - simple Node.js server
+FROM node:20-alpine
 
-# Copy built assets from build stage
-COPY --from=build /app/dist /usr/share/nginx/html
+WORKDIR /app
 
-# Create nginx configuration for SPA routing
-RUN echo 'server { \
-    listen 80; \
-    server_name _; \
-    root /usr/share/nginx/html; \
-    index index.html; \
-    \
-    # Enable gzip compression \
-    gzip on; \
-    gzip_types text/plain text/css application/json application/javascript text/xml application/xml application/xml+rss text/javascript; \
-    \
-    # SPA routing - serve index.html for all routes \
-    location / { \
-        try_files $uri $uri/ /index.html; \
-    } \
-    \
-    # Cache static assets \
-    location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$ { \
-        expires 1y; \
-        add_header Cache-Control "public, immutable"; \
-    } \
-}' > /etc/nginx/conf.d/default.conf
+# Install serve to host static files
+RUN npm install -g serve
 
-EXPOSE 80
+# Copy built files from build stage
+COPY --from=build /app/dist ./dist
 
-CMD ["nginx", "-g", "daemon off;"]
+# Expose port
+EXPOSE 3000
+
+# Serve the static files with SPA support
+CMD ["serve", "-s", "dist", "-l", "3000"]
