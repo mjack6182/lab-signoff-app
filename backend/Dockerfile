@@ -1,43 +1,51 @@
-# Use Eclipse Temurin JDK 21 for building
+# Build stage
 FROM eclipse-temurin:21-jdk-alpine AS build
 
 WORKDIR /app
 
-# Copy Gradle wrapper and build files
+# Copy Gradle wrapper and build configuration
+COPY gradle gradle/
 COPY gradlew .
-COPY gradle gradle
 COPY build.gradle .
 COPY settings.gradle .
 
 # Make gradlew executable
-RUN chmod +x gradlew
+RUN chmod +x ./gradlew
 
 # Download dependencies (cached layer)
 RUN ./gradlew dependencies --no-daemon || true
 
-# Copy source code
-COPY src src
+# Copy application source
+COPY src src/
 
-# Build the application (skip tests for faster builds)
+# Build the application
 RUN ./gradlew clean bootJar --no-daemon -x test
 
-# Verify JAR was created
-RUN ls -la /app/build/libs/
+# Verify build output
+RUN echo "Build artifacts:" && ls -lh build/libs/
 
 # Runtime stage
 FROM eclipse-temurin:21-jre-alpine
 
 WORKDIR /app
 
-# Copy the built JAR from build stage
+# Install curl for health checks (optional but useful)
+RUN apk add --no-cache curl
+
+# Copy JAR from build stage
 COPY --from=build /app/build/libs/*.jar app.jar
 
-# Expose the port (Railway will provide PORT env var)
+# Verify JAR exists
+RUN ls -lh app.jar && echo "JAR file ready"
+
+# Expose port
 EXPOSE 8080
 
-# Set Java options for production
-ENV JAVA_OPTS="-Xmx512m -Xms256m"
+# Set JVM options
+ENV JAVA_OPTS="-Xmx512m -Xms256m -XX:+UseContainerSupport"
 
-# Railway provides PORT environment variable - Spring Boot will use SERVER_PORT
-# Run the application
-CMD ["sh", "-c", "java $JAVA_OPTS -Dserver.port=${PORT:-8080} -jar app.jar"]
+# Run application
+# Use exec form to ensure proper signal handling
+CMD exec java $JAVA_OPTS \
+  -Dserver.port=${PORT:-8080} \
+  -jar app.jar
