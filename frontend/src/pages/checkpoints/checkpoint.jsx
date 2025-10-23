@@ -127,32 +127,50 @@ export default function CheckpointPage() {
         console.log(`Group ${selectedGroup.name} undid checkpoint ${checkpoint.name}`);
     };
 
-    const handleSignOffConfirm = () => {
+    const handleSignOffConfirm = async () => {
         if (!selectedCheckpoint || !selectedGroup) return;
 
         const isPassing = signOffStatus === 'pass';
 
-        setGroupCheckpoints(prev => {
-            const updated = { ...prev };
-            if (!updated[selectedGroup.id]) {
-                updated[selectedGroup.id] = {};
-            }
+        // Build next state to check completion before setting it
+        const next = { ...groupCheckpoints };
+        if (!next[selectedGroup.id]) next[selectedGroup.id] = {};
 
-            if (isPassing) {
-                // Mark checkpoint as completed
-                updated[selectedGroup.id][selectedCheckpoint.id] = {
-                    completed: true,
-                    completedAt: new Date().toISOString().split('T')[0],
-                    completedBy: 'instructor',
-                    notes: signOffNotes
-                };
-            } else {
-                // Remove completion (undo)
-                delete updated[selectedGroup.id][selectedCheckpoint.id];
-            }
+        if (isPassing) {
+            next[selectedGroup.id][selectedCheckpoint.id] = {
+                completed: true,
+                completedAt: new Date().toISOString().split('T')[0],
+                completedBy: 'instructor',
+                notes: signOffNotes
+            };
+        } else {
+            delete next[selectedGroup.id][selectedCheckpoint.id];
+        }
 
-            return updated;
-        });
+        // Determine if all checkpoints are completed for this group
+        const allCompleted = mockCheckpoints.every(cp => next[selectedGroup.id]?.[cp.id]?.completed);
+
+        // Commit local state
+        setGroupCheckpoints(next);
+
+        // If we just completed the last checkpoint, mark group as completed in backend
+        if (isPassing && allCompleted) {
+            try {
+                const res = await fetch(`http://localhost:8080/lti/labs/${labId}/groups/${selectedGroup.groupId}/pass`, {
+                    method: 'POST'
+                });
+                if (!res.ok) {
+                    console.error('Failed to update group status to completed');
+                } else {
+                    // Update local groups list to reflect completed status
+                    setGroups(prev => prev.map(g => (
+                        g.id === selectedGroup.id ? { ...g, status: 'passed' } : g
+                    )));
+                }
+            } catch (e) {
+                console.error('Error updating group status:', e);
+            }
+        }
 
         console.log(`Group ${selectedGroup.name} ${isPassing ? 'signed off' : 'undid'} checkpoint ${selectedCheckpoint.name}`);
 
