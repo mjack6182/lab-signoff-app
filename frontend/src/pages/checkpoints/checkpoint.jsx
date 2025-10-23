@@ -163,7 +163,7 @@ export default function CheckpointPage() {
                 } else {
                     // Update local groups list to reflect completed status
                     setGroups(prev => prev.map(g => (
-                        g.id === selectedGroup.id ? { ...g, status: 'completed' } : g
+                        g.id === selectedGroup.id ? { ...g, status: 'passed' } : g
                     )));
                 }
             } catch (e) {
