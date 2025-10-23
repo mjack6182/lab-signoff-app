@@ -1,4 +1,5 @@
 import { useMemo, useRef, useState } from 'react';
+import { api } from '../../config/api';
 import './login.css';
 
 export default function Login() {
@@ -36,7 +37,7 @@ export default function Login() {
         try {
             // Swap this with your real call. If you use cookie sessions in Canvas (iframe),
             // your server must set cookies with SameSite=None; Secure and you should pass credentials: 'include'.
-            const res = await fetch('/api/auth/login', {
+            const res = await fetch(api.auth.login(), {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 credentials: 'include',

@@ -2,22 +2,26 @@ import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
 import Header from '../../components/Header/Header'
+import { api } from '../../config/api'
 import './lab-groups.css'
 
 /**
  * LabGroups Component
  *
- * Displays all groups for a specific lab. Shows group information including
- * members and status. This is the second step in the user flow: Labs -> Groups -> Checkpoints
+ * LEGACY/ADMIN COMPONENT: Displays all groups for a specific lab with detailed group management.
+ * This component is now primarily used for administrative purposes, as the main user flow
+ * has been simplified to go directly from Labs -> Checkpoints.
  *
  * Backend Integration:
  * - Fetches lab info from GET /lti/labs endpoint
  * - Fetches groups for the lab from GET /lti/labs/:labId/groups endpoint
  *
- * User Flow:
- * 1. User selects a lab from the lab selector
- * 2. This page displays all groups for that lab
- * 3. User can click on a group to view/manage checkpoints (future feature)
+ * User Flow (Admin/Legacy):
+ * 1. Admin navigates directly to /labs/:labId/groups
+ * 2. This page displays all groups for that lab with detailed information
+ * 3. Admin can click on a group to view/manage checkpoints for that specific group
+ *
+ * Note: Regular users now go directly from lab selector to checkpoints page.
  */
 export default function LabGroups() {
   const { labId } = useParams()
@@ -32,8 +36,8 @@ export default function LabGroups() {
   useEffect(() => {
     // Fetch lab information
     Promise.all([
-      fetch(`http://localhost:8080/lti/labs`).then(res => res.json()),
-      fetch(`http://localhost:8080/lti/labs/${labId}/groups`).then(res => {
+      fetch(api.labs()).then(res => res.json()),
+      fetch(api.labGroups(labId)).then(res => {
         if (!res.ok) throw new Error('Failed to fetch groups')
         return res.json()
       })
