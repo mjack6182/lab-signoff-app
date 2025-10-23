@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
 import Header from '../../components/Header/Header'
+import { api } from '../../config/api'
 import './lab-selector.css';
 
 /**
@@ -30,7 +31,7 @@ export default function LabSelector() {
 
   // Fetch labs from backend on component mount
   useEffect(() => {
-    fetch('http://localhost:8080/lti/labs')
+    fetch(api.labs())
       .then((res) => {
         if (!res.ok) throw new Error('Failed to fetch labs')
         return res.json()

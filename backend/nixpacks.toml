@@ -1,0 +1,17 @@
+[phases.setup]
+nixPkgs = ["jdk21"]
+
+[phases.install]
+cmds = [
+  "chmod +x ./gradlew",
+  "./gradlew dependencies --no-daemon"
+]
+
+[phases.build]
+cmds = [
+  "./gradlew clean bootJar --no-daemon -x test",
+  "ls -lh build/libs/"
+]
+
+[start]
+cmd = "java -Xmx512m -Xms256m -XX:+UseContainerSupport -Dserver.port=${PORT} -jar build/libs/lab-signoff-backend-0.0.1-SNAPSHOT.jar"

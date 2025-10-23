@@ -1,10 +1,11 @@
 import { Client } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
+import { api } from '../config/api';
 
 let client;
 
 export const createWebSocketClient = () => {
-  const socketFactory = () => new SockJS('http://localhost:8080/ws'); // matches backend endpoint
+  const socketFactory = () => new SockJS(api.ws()); // matches backend endpoint
 
   client = new Client({
     webSocketFactory: socketFactory,

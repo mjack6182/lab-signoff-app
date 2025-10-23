@@ -6,6 +6,7 @@ import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.GetMapping;
 
 @Controller
 public class LabWebSocketController {
@@ -13,7 +14,7 @@ public class LabWebSocketController {
     @Autowired
     private SimpMessagingTemplate messagingTemplate;
 
-    // Simple test message endpoint
+    // Simple test message endpoint for WebSocket
     @MessageMapping("/hello")
     @SendTo("/topic/greetings")
     public String greeting(String message) {
@@ -27,5 +28,16 @@ public class LabWebSocketController {
 
         // Log broadcast for testing
         System.out.println("Broadcasted update: " + groupId + " | Checkpoint: " + checkpointNumber + " | Status: " + status);
+    }
+
+    // Updated HTTP endpoint with unique path to avoid conflict
+    @GetMapping("/ws-test-broadcast")
+    public String testBroadcast() {
+        // Sends a real-time WebSocket update to everyone listening on the frontend.
+        // Simulating that "Group-1" has passed checkpoint 1.
+        broadcastCheckpointUpdate("Group-1", 1, "PASS");
+
+        // Returns a confirmation message to whoever triggered this endpoint
+        return "Broadcast sent!";
     }
 }
