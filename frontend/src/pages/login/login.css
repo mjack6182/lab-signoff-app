@@ -2,11 +2,12 @@
 
 /* === Main Layout === */
 .center {
-    min-height: calc(100vh - 49px); /* leaves space for demo nav */
-    display: grid;
-    place-items: center;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     padding: 24px;
-    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+    background: #f6f8fc;
 }
 
 /* === Login Card === */
@@ -15,10 +16,9 @@
     max-width: 440px;
     background: #ffffff;
     border: 1px solid #e5e7eb;
-    border-radius: 20px;
+    border-radius: 16px;
     padding: 32px;
-    box-shadow: 0 20px 50px rgba(2, 6, 23, 0.08);
-    backdrop-filter: blur(10px);
+    box-shadow: 0 4px 18px rgba(2, 6, 23, 0.06);
     position: relative;
     overflow: hidden;
 }
@@ -30,14 +30,14 @@
     left: 0;
     right: 0;
     height: 4px;
-    background: linear-gradient(90deg, #016836, #014a28);
-    border-radius: 20px 20px 0 0;
+    background: #016836;
+    border-radius: 16px 16px 0 0;
 }
 
 /* === Header === */
 .h1 {
     margin: 0 0 8px 0;
-    font-size: 32px;
+    font-size: 28px;
     font-weight: 700;
     line-height: 1.2;
     color: #0f172a;
@@ -59,7 +59,7 @@
     display: block;
     font-weight: 600;
     margin-bottom: 8px;
-    color: #374151;
+    color: #0f172a;
     font-size: 14px;
 }
 
@@ -68,8 +68,8 @@
     width: 100%;
     height: 48px;
     padding: 0 16px;
-    border: 2px solid #e5e7eb;
-    border-radius: 12px;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
     background: #fff;
     outline: none;
     transition: all 0.2s ease;
@@ -81,8 +81,7 @@
 .input:focus,
 .select:focus {
     border-color: #016836;
-    box-shadow: 0 0 0 4px rgba(1, 104, 54, 0.1);
-    transform: translateY(-1px);
+    box-shadow: 0 0 0 3px rgba(1, 104, 54, 0.1);
 }
 
 .input:hover,
@@ -91,7 +90,7 @@
 }
 
 .input::placeholder {
-    color: #9ca3af;
+    color: #64748b;
 }
 
 /* === Password Field === */
@@ -106,7 +105,7 @@
     height: 32px;
     padding: 0 12px;
     border-radius: 8px;
-    border: 1px solid #d1d5db;
+    border: 1px solid #e5e7eb;
     background: #f8fafc;
     cursor: pointer;
     transition: all 0.2s ease;
@@ -117,7 +116,7 @@
 
 .password-toggle:hover {
     background: #f1f5f9;
-    border-color: #9ca3af;
+    border-color: #d1d5db;
 }
 
 /* === Actions === */
@@ -129,11 +128,11 @@
     width: 100%;
     height: 52px;
     border: 0;
-    border-radius: 12px;
-    font-weight: 700;
+    border-radius: 10px;
+    font-weight: 600;
     font-size: 16px;
     cursor: pointer;
-    background: linear-gradient(90deg, #016836, #014a28);
+    background: #016836;
     color: white;
     transition: all 0.2s ease;
     position: relative;
@@ -141,8 +140,9 @@
 }
 
 .button:hover:not(:disabled) {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(1, 104, 54, 0.3);
+    background: #014a28;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(1, 104, 54, 0.2);
 }
 
 .button:active:not(:disabled) {
@@ -165,6 +165,10 @@
     display: flex;
     align-items: center;
     gap: 4px;
+    padding: 8px 12px;
+    background: rgba(220, 38, 38, 0.05);
+    border: 1px solid rgba(220, 38, 38, 0.2);
+    border-radius: 8px;
 }
 
 .error::before {
@@ -181,7 +185,7 @@
 .input[aria-invalid="true"]:focus,
 .select[aria-invalid="true"]:focus {
     border-color: #dc2626;
-    box-shadow: 0 0 0 4px rgba(220, 38, 38, 0.1);
+    box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1);
 }
 
 /* === Responsive Design === */
@@ -190,25 +194,26 @@
         padding: 16px;
         min-height: 100vh;
     }
-    
+
     .card {
         border-radius: 16px;
         max-width: 100%;
         padding: 24px;
     }
-    
+
     .h1 {
         font-size: 28px;
     }
-    
+
     .button {
         height: 48px;
         font-size: 15px;
     }
-    
+
     .input,
     .select {
         height: 44px;
-        font-size: 16px; /* Prevents zoom on iOS */
+        font-size: 16px;
+        /* Prevents zoom on iOS */
     }
 }

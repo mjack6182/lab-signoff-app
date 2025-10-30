@@ -22,21 +22,14 @@ export const AuthProvider = ({ children }) => {
             try {
                 // Simulate API call delay
                 await new Promise(resolve => setTimeout(resolve, 500));
-                
-                // For demo, get user from localStorage or use default teacher
+
+                // Check if user exists in localStorage
                 const storedUser = localStorage.getItem('labSignoffUser');
                 if (storedUser) {
                     setUser(JSON.parse(storedUser));
                 } else {
-                    // Default to teacher for demo
-                    const defaultUser = {
-                        id: 'u1',
-                        name: 'Alex Rivera',
-                        email: 'alex.rivera@university.edu',
-                        role: 'Teacher'
-                    };
-                    setUser(defaultUser);
-                    localStorage.setItem('labSignoffUser', JSON.stringify(defaultUser));
+                    // No stored user, redirect to login
+                    setUser(null);
                 }
             } catch (error) {
                 console.error('Auth check failed:', error);
@@ -58,7 +51,7 @@ export const AuthProvider = ({ children }) => {
                 email: credentials.email,
                 role: credentials.role || 'Student'
             };
-            
+
             setUser(response);
             localStorage.setItem('labSignoffUser', JSON.stringify(response));
             return response;

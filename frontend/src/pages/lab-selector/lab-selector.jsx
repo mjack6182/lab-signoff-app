@@ -54,7 +54,7 @@ export default function LabSelector() {
 
   const handleLogout = () => {
     logout()
-    window.location.href = '/login'
+    navigate('/login')
   }
 
   if (loading) {
@@ -115,58 +115,58 @@ export default function LabSelector() {
       <main className="lab-selector-shell">
         {/* Lab Grid */}
         <section className="labs-grid-section">
-        <div className="labs-grid">
-          {labs.length === 0 ? (
-            <div style={{
-              gridColumn: '1 / -1',
-              textAlign: 'center',
-              padding: '40px',
-              color: '#64748b'
-            }}>
-              No labs available
-            </div>
-          ) : (
-            labs.map(lab => (
-              <div key={lab.id} className="lab-card">
-                <div className="lab-card-header">
-                  <h3 className="lab-card-title">
-                    {lab.courseId}
-                  </h3>
-                  <span
-                    className="lab-card-status"
-                    style={{
-                      backgroundColor: '#dcfce7',
-                      color: '#166534',
-                      borderColor: '#bbf7d0',
-                      padding: '4px 12px',
-                      borderRadius: '12px',
-                      fontSize: '12px',
-                      fontWeight: '500'
-                    }}
-                  >
-                    Available
-                  </span>
-                </div>
-
-                <div className="lab-card-body">
-                  <p className="lab-card-course">Line Item: {lab.lineItemId}</p>
-                  <p className="lab-card-description">Click to view checkpoints for this lab</p>
-                </div>
-
-                <div className="lab-card-footer">
-                  <button
-                    className="lab-card-button open"
-                    onClick={() => handleLabOpen(lab)}
-                  >
-                    View Checkpoints
-                  </button>
-                </div>
+          <div className="labs-grid">
+            {labs.length === 0 ? (
+              <div style={{
+                gridColumn: '1 / -1',
+                textAlign: 'center',
+                padding: '40px',
+                color: '#64748b'
+              }}>
+                No labs available
               </div>
-            ))
-          )}
-        </div>
-      </section>
-    </main>
+            ) : (
+              labs.map(lab => (
+                <div key={lab.id} className="lab-card">
+                  <div className="lab-card-header">
+                    <h3 className="lab-card-title">
+                      {lab.courseId}
+                    </h3>
+                    <span
+                      className="lab-card-status"
+                      style={{
+                        backgroundColor: '#dcfce7',
+                        color: '#166534',
+                        borderColor: '#bbf7d0',
+                        padding: '4px 12px',
+                        borderRadius: '12px',
+                        fontSize: '12px',
+                        fontWeight: '500'
+                      }}
+                    >
+                      Available
+                    </span>
+                  </div>
+
+                  <div className="lab-card-body">
+                    <p className="lab-card-course">Line Item: {lab.lineItemId}</p>
+                    <p className="lab-card-description">Click to view checkpoints for this lab</p>
+                  </div>
+
+                  <div className="lab-card-footer">
+                    <button
+                      className="lab-card-button open"
+                      onClick={() => handleLabOpen(lab)}
+                    >
+                      View Checkpoints
+                    </button>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </section>
+      </main>
     </>
   )
 }

@@ -20,7 +20,7 @@ export default function Header() {
 
   const handleLogout = () => {
     logout()
-    navigate('/lab-selector')
+    navigate('/login')
   }
 
   return (
