@@ -34,8 +34,20 @@ export default function SelectStudent() {
         setTimeout(() => {
             setSubmitting(false);
             console.log('Joining lab:', { labCode, selectedStudent });
-            // Navigate to next page (you'll tell me about this)
-            // navigate('/lab-dashboard');
+
+            // Create a mock group ID based on lab code and student name
+            // In a real app, this would come from the backend after joining
+            const mockGroupId = `${labCode}-group-${Math.floor(Math.random() * 10) + 1}`;
+            const mockLabId = labCode.toLowerCase();
+
+            // Navigate to student checkpoints page
+            navigate(`/student-checkpoints/${mockLabId}/${mockGroupId}`, {
+                state: {
+                    studentName: selectedStudent,
+                    labCode: labCode,
+                    groupId: mockGroupId
+                }
+            });
         }, 1000);
     };
 

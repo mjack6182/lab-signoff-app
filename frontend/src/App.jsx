@@ -4,8 +4,10 @@ import GroupList from './components/GroupList/GroupList'
 import LabSelector from './pages/lab-selector/lab-selector'
 import LabGroups from './pages/lab-groups/lab-groups'
 import LabJoin from './pages/lab-join/lab-join.jsx'
+import SelectStudent from './pages/select-student.jsx/select-student.jsx'
+import StudentCheckpoints from './pages/student-checkpoints/checkpoints.jsx'
 import Dashboard from './pages/dashboard/dashboard'
-import CheckpointPage from './pages/checkpoints/checkpoint'
+import CheckpointPage from './pages/checkpoints/checkpoints.jsx'
 // import RoleDemo from './pages/role-demo/role-demo'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { StaffOnly } from './components/RoleGuard/RoleGuard'
@@ -46,6 +48,8 @@ function AppContent() {
                 <Route path="/" element={user ? <Navigate to="/lab-selector" replace /> : <Navigate to="/login" replace />} />
                 <Route path="/login" element={user ? <Navigate to="/lab-selector" replace /> : <Login />} />
                 <Route path="/lab-join" element={<LabJoin />} />
+                <Route path="/select-student" element={<SelectStudent />} />
+                <Route path="/student-checkpoints/:labId/:groupId" element={<StudentCheckpoints />} />
                 <Route path="/groups" element={user ? <GroupList /> : <Navigate to="/login" replace />} />
                 <Route path="/lab-selector" element={user ? <LabSelector /> : <Navigate to="/login" replace />} />
                 {/* Direct route from lab selector to checkpoints */}
