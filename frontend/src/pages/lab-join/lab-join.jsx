@@ -64,113 +64,40 @@ export default function LabJoin() {
         }, 800);
     };
 
-    const handleJoinSubmit = (e) => {
-        e.preventDefault();
-        setError(null);
 
-        if (!selectedStudent) {
-            setError('Please select your name');
-            return;
-        }
-
-        setSubmitting(true);
-
-        // Simulate joining lab
-        setTimeout(() => {
-            setSubmitting(false);
-            console.log('Joining lab:', { labCode, selectedStudent });
-            // Navigate to next page (you'll tell me about this)
-            // navigate('/lab-dashboard');
-        }, 1000);
-    };
-
-    const handleBackToCode = () => {
-        setStep(1);
-        setSelectedStudent('');
-        setStudents([]);
-        setError(null);
-    };
 
     return (
         <main className="lab-join-container">
             <div className="lab-join-card">
                 <div className="lab-join-header">
                     <h1 className="lab-join-title">Join Lab</h1>
-                    {step === 1 ? (
-                        <p className="lab-join-subtitle">Enter your lab code to continue</p>
-                    ) : (
-                        <p className="lab-join-subtitle">Select your name from the class roster</p>
-                    )}
+                    <p className="lab-join-subtitle">Enter your lab code to continue</p>
                 </div>
 
                 {error && <div className="error-message">{error}</div>}
 
-                {step === 1 ? (
-                    // Step 1: Enter Lab Code
-                    <form onSubmit={handleCodeSubmit} className="lab-join-form">
-                        <div className="form-group">
-                            <label htmlFor="labCode" className="form-label">Lab Code</label>
-                            <input
-                                id="labCode"
-                                type="text"
-                                className="form-input"
-                                value={labCode}
-                                onChange={(e) => setLabCode(e.target.value)}
-                                placeholder="Enter lab code (e.g., CS101, CS201, MATH150)"
-                                disabled={loadingStudents}
-                            />
-                        </div>
-
-                        <button
-                            type="submit"
-                            className="join-button"
+                <form onSubmit={handleCodeSubmit} className="lab-join-form">
+                    <div className="form-group">
+                        <label htmlFor="labCode" className="form-label">Lab Code</label>
+                        <input
+                            id="labCode"
+                            type="text"
+                            className="form-input"
+                            value={labCode}
+                            onChange={(e) => setLabCode(e.target.value)}
+                            placeholder="Enter lab code (e.g., CS101, CS201, MATH150)"
                             disabled={loadingStudents}
-                        >
-                            {loadingStudents ? 'Loading Class Roster...' : 'Continue'}
-                        </button>
-                    </form>
-                ) : (
-                    // Step 2: Select Student Name
-                    <form onSubmit={handleJoinSubmit} className="lab-join-form">
-                        <div className="lab-code-display">
-                            <span className="lab-code-label">Lab Code:</span>
-                            <span className="lab-code-value">{labCode}</span>
-                            <button
-                                type="button"
-                                className="change-code-button"
-                                onClick={handleBackToCode}
-                            >
-                                Change
-                            </button>
-                        </div>
+                        />
+                    </div>
 
-                        <div className="form-group">
-                            <label htmlFor="studentName" className="form-label">Select Your Name</label>
-                            <select
-                                id="studentName"
-                                className="form-select"
-                                value={selectedStudent}
-                                onChange={(e) => setSelectedStudent(e.target.value)}
-                                disabled={submitting}
-                            >
-                                <option value="">Choose your name...</option>
-                                {students.map((student, index) => (
-                                    <option key={index} value={student}>
-                                        {student}
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
-
-                        <button
-                            type="submit"
-                            className="join-button"
-                            disabled={submitting}
-                        >
-                            {submitting ? 'Joining Lab...' : 'Join Lab'}
-                        </button>
-                    </form>
-                )}
+                    <button
+                        type="submit"
+                        className="join-button"
+                        disabled={loadingStudents}
+                    >
+                        {loadingStudents ? 'Loading Class Roster...' : 'Continue'}
+                    </button>
+                </form>
             </div>            <div className="app-info">
                 <h2 className="app-info-title">Lab Sign Off</h2>
                 <p className="app-info-description">
