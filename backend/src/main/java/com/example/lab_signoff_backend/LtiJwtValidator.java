@@ -29,7 +29,7 @@ import java.util.Objects;
  * @author Lab Signoff App Team
  * @version 1.0
  */
-@Component
+ @Component
 public class LtiJwtValidator {
     private final String issuer;
     private final String clientId;
