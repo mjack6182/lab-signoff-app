@@ -11,22 +11,22 @@ import { StaffOnly } from './components/RoleGuard/RoleGuard'
 // import RoleSwitcher from './components/RoleSwitcher/RoleSwitcher'
 
 function AppContent() {
-    const { user, loading } = useAuth();
-    
+    const { user, loading, isAuthenticated } = useAuth();
+
     if (loading) {
         return (
-            <div style={{ 
-                display: 'flex', 
-                justifyContent: 'center', 
-                alignItems: 'center', 
+            <div style={{
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
                 height: '100vh',
                 backgroundColor: '#f6f8fc'
             }}>
                 <div style={{ textAlign: 'center' }}>
-                    <div style={{ 
-                        fontSize: '24px', 
+                    <div style={{
+                        fontSize: '24px',
                         marginBottom: '16px',
-                        color: '#0f172a' 
+                        color: '#0f172a'
                     }}>
                         Lab Sign-Off App
                     </div>
@@ -36,11 +36,22 @@ function AppContent() {
         );
     }
 
+    // If not authenticated, show only login page
+    if (!isAuthenticated) {
+        return (
+            <Routes>
+                <Route path="/login" element={<Login />} />
+                <Route path="*" element={<Navigate to="/login" replace />} />
+            </Routes>
+        );
+    }
+
+    // If authenticated, show all routes
     return (
         <>
             <Routes>
                 <Route path="/" element={<Navigate to="/lab-selector" replace />} />
-                <Route path="/login" element={<Login />} />
+                <Route path="/login" element={<Navigate to="/lab-selector" replace />} />
                 <Route path="/groups" element={<GroupList />} />
                 <Route path="/lab-selector" element={<LabSelector />} />
                 <Route path="/labs/:labId/groups" element={<LabGroups />} />

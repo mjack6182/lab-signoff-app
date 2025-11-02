@@ -1,11 +1,28 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { classData } from '../../mock/classData';
-import { mockCheckpoints } from '../../mock/checkpoints';
 import SignOffModal from '../../components/SignOffModal';
 import GroupManagementModal from '../../components/GroupManagementModal';
 import Header from '../../components/Header/Header';
 import './checkpoints.css';
+
+// TODO: Replace mock data with real backend API calls
+const mockCheckpoints = [
+    { id: 1, name: 'Checkpoint 1', description: 'Complete task 1', points: 10 },
+    { id: 2, name: 'Checkpoint 2', description: 'Complete task 2', points: 10 },
+    { id: 3, name: 'Checkpoint 3', description: 'Complete task 3', points: 10 },
+];
+
+const classData = {
+    name: 'Computer Science 101',
+    sections: [
+        {
+            id: 1,
+            name: 'Section A',
+            time: 'MWF 9:00 AM',
+            groups: []
+        }
+    ]
+};
 
 /**
  * CheckpointPage Component

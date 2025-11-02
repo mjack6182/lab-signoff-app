@@ -14,8 +14,11 @@ import java.util.List;
 /**
  * Database seeding configuration for development and testing.
  * This class populates MongoDB with sample data on application startup.
+ *
+ * DISABLED: Data seeding is currently disabled.
+ * To re-enable, uncomment the @Configuration annotation below.
  */
-@Configuration
+// @Configuration  // ← DISABLED - Uncomment to re-enable seeding
 public class DataSeeder {
 
     /**

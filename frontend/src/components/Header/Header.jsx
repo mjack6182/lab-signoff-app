@@ -1,4 +1,3 @@
-import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
 import './Header.css'
 
@@ -11,16 +10,14 @@ import './Header.css'
  * Features:
  * - App name/branding
  * - Current user name and role
- * - Logout button
+ * - Logout button (using Auth0)
  * - Fixed position at top of viewport
  */
 export default function Header() {
-  const { user, logout } = useAuth()
-  const navigate = useNavigate()
+  const { user, logout, isAuthenticated } = useAuth()
 
   const handleLogout = () => {
     logout()
-    navigate('/lab-selector')
   }
 
   return (
@@ -31,9 +28,17 @@ export default function Header() {
         </div>
 
         <div className="header-right">
-          {user && (
+          {isAuthenticated && user && (
             <>
               <div className="user-info">
+                {user.picture && (
+                  <img
+                    src={user.picture}
+                    alt={user.name}
+                    className="user-avatar"
+                    style={{ width: '32px', height: '32px', borderRadius: '50%', marginRight: '0.5rem' }}
+                  />
+                )}
                 <span className="user-name">{user.name}</span>
                 <span className="user-role">({user.role})</span>
               </div>

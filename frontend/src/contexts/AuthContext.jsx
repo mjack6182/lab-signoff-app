@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect } from 'react';
+import { useAuth0 } from '@auth0/auth0-react';
 
-// Auth context for managing user authentication and role state
+// Auth context for managing user authentication and role state with Auth0
 const AuthContext = createContext(null);
 
 export const useAuth = () => {
@@ -12,71 +13,109 @@ export const useAuth = () => {
 };
 
 export const AuthProvider = ({ children }) => {
+    const {
+        user: auth0User,
+        isAuthenticated,
+        isLoading,
+        loginWithRedirect,
+        logout: auth0Logout,
+        getAccessTokenSilently
+    } = useAuth0();
+
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
 
-    // Simulate authentication check on app load
+    // Sync Auth0 user to our app user state and backend MongoDB
     useEffect(() => {
-        // In a real app, this would check for stored tokens, validate with server, etc.
-        const checkAuth = async () => {
-            try {
-                // Simulate API call delay
-                await new Promise(resolve => setTimeout(resolve, 500));
-                
-                // For demo, get user from localStorage or use default teacher
-                const storedUser = localStorage.getItem('labSignoffUser');
-                if (storedUser) {
-                    setUser(JSON.parse(storedUser));
-                } else {
-                    // Default to teacher for demo
-                    const defaultUser = {
-                        id: 'u1',
-                        name: 'Alex Rivera',
-                        email: 'alex.rivera@university.edu',
-                        role: 'Teacher'
-                    };
-                    setUser(defaultUser);
-                    localStorage.setItem('labSignoffUser', JSON.stringify(defaultUser));
+        const syncUser = async () => {
+            if (isAuthenticated && auth0User) {
+                try {
+                    // Sync user to backend MongoDB
+                    const response = await fetch('http://localhost:8080/api/auth/sync', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(auth0User)
+                    });
+
+                    const data = await response.json();
+
+                    if (data.success) {
+                        console.log('✅ User synced to MongoDB:', data.user);
+
+                        // Extract role from Auth0 user metadata or claims
+                        const roles = auth0User['https://lab-signoff-app/roles'] || ['Student'];
+                        const primaryRole = Array.isArray(roles) ? roles[0] : roles;
+
+                        const appUser = {
+                            id: auth0User.sub,
+                            name: auth0User.name,
+                            email: auth0User.email,
+                            picture: auth0User.picture,
+                            role: primaryRole,
+                            mongoId: data.user.id // MongoDB document ID
+                        };
+
+                        setUser(appUser);
+                    } else {
+                        console.error('❌ Failed to sync user to MongoDB:', data.error);
+                        // Still set user from Auth0 data even if sync fails
+                        const roles = auth0User['https://lab-signoff-app/roles'] || ['Student'];
+                        const primaryRole = Array.isArray(roles) ? roles[0] : roles;
+
+                        setUser({
+                            id: auth0User.sub,
+                            name: auth0User.name,
+                            email: auth0User.email,
+                            picture: auth0User.picture,
+                            role: primaryRole
+                        });
+                    }
+                } catch (error) {
+                    console.error('❌ Error syncing user:', error);
+                    // Still set user from Auth0 data even if sync fails
+                    const roles = auth0User['https://lab-signoff-app/roles'] || ['Student'];
+                    const primaryRole = Array.isArray(roles) ? roles[0] : roles;
+
+                    setUser({
+                        id: auth0User.sub,
+                        name: auth0User.name,
+                        email: auth0User.email,
+                        picture: auth0User.picture,
+                        role: primaryRole
+                    });
                 }
-            } catch (error) {
-                console.error('Auth check failed:', error);
+            } else {
                 setUser(null);
-            } finally {
-                setLoading(false);
             }
+            setLoading(isLoading);
         };
 
-        checkAuth();
-    }, []);
+        syncUser();
+    }, [auth0User, isAuthenticated, isLoading]);
 
-    const login = async (credentials) => {
-        try {
-            // Simulate login API call
-            const response = {
-                id: 'u' + Math.random().toString(36).substr(2, 9),
-                name: credentials.name || 'Demo User',
-                email: credentials.email,
-                role: credentials.role || 'Student'
-            };
-            
-            setUser(response);
-            localStorage.setItem('labSignoffUser', JSON.stringify(response));
-            return response;
-        } catch (error) {
-            throw new Error('Login failed');
-        }
+    const login = async () => {
+        await loginWithRedirect();
     };
 
     const logout = () => {
+        auth0Logout({
+            logoutParams: {
+                returnTo: window.location.origin
+            }
+        });
         setUser(null);
-        localStorage.removeItem('labSignoffUser');
     };
 
+    // Role switching is now only for demo/testing - in production, roles come from Auth0
     const switchRole = (newRole) => {
         if (user) {
             const updatedUser = { ...user, role: newRole };
             setUser(updatedUser);
-            localStorage.setItem('labSignoffUser', JSON.stringify(updatedUser));
+            // Note: This only updates local state, not Auth0.
+            // For production, roles should be managed in Auth0 dashboard
+            console.warn('Role switching is for demo only. In production, manage roles in Auth0.');
         }
     };
 
@@ -96,6 +135,7 @@ export const AuthProvider = ({ children }) => {
     const value = {
         user,
         loading,
+        isAuthenticated,
         login,
         logout,
         switchRole,
@@ -104,7 +144,8 @@ export const AuthProvider = ({ children }) => {
         isTeacher,
         isTA,
         isStudent,
-        isTeacherOrTA
+        isTeacherOrTA,
+        getAccessTokenSilently
     };
 
     return (
