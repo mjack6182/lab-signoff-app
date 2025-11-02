@@ -45,18 +45,24 @@ export default function GroupManagementModal({
         e.dataTransfer.dropEffect = 'move';
     };
 
+    // Helper function to get first name from student object
+    const getFirstName = (student) => {
+        // Prefer firstName field if available, otherwise fall back to parsing name
+        return student.firstName || student.name?.split(' ')[0] || 'Unknown';
+    };
+
     // Helper function to generate group name from student first names
     const generateGroupName = (members) => {
         if (members.length === 0) return 'Empty Group';
-        if (members.length === 1) return members[0].name.split(' ')[0];
+        if (members.length === 1) return getFirstName(members[0]);
         if (members.length === 2) {
-            const firstName1 = members[0].name.split(' ')[0];
-            const firstName2 = members[1].name.split(' ')[0];
+            const firstName1 = getFirstName(members[0]);
+            const firstName2 = getFirstName(members[1]);
             return `${firstName1} & ${firstName2}`;
         }
         // For 3+ members, show first two names + "& X more"
-        const firstName1 = members[0].name.split(' ')[0];
-        const firstName2 = members[1].name.split(' ')[0];
+        const firstName1 = getFirstName(members[0]);
+        const firstName2 = getFirstName(members[1]);
         const remainingCount = members.length - 2;
         return `${firstName1} & ${firstName2} & ${remainingCount} more`;
     };

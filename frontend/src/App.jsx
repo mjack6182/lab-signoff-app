@@ -5,13 +5,16 @@ import LabSelector from './pages/lab-selector/lab-selector'
 import LabGroups from './pages/lab-groups/lab-groups'
 import Dashboard from './pages/dashboard/dashboard'
 import CheckpointPage from './pages/checkpoints/checkpoint'
+import Settings from './pages/Settings/Settings'
+import ClassesSettings from './pages/Settings/ClassesSettings'
 // import RoleDemo from './pages/role-demo/role-demo'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { StaffOnly } from './components/RoleGuard/RoleGuard'
+import ProfileCompletionModal from './components/ProfileCompletionModal/ProfileCompletionModal'
 // import RoleSwitcher from './components/RoleSwitcher/RoleSwitcher'
 
 function AppContent() {
-    const { user, loading, isAuthenticated } = useAuth();
+    const { user, loading, isAuthenticated, hasCompletedProfile } = useAuth();
 
     if (loading) {
         return (
@@ -49,6 +52,9 @@ function AppContent() {
     // If authenticated, show all routes
     return (
         <>
+            {/* Show profile completion modal if user hasn't completed profile */}
+            <ProfileCompletionModal isOpen={isAuthenticated && !hasCompletedProfile()} />
+
             <Routes>
                 <Route path="/" element={<Navigate to="/lab-selector" replace />} />
                 <Route path="/login" element={<Navigate to="/lab-selector" replace />} />
@@ -56,6 +62,9 @@ function AppContent() {
                 <Route path="/lab-selector" element={<LabSelector />} />
                 <Route path="/labs/:labId/groups" element={<LabGroups />} />
                 <Route path="/labs/:labId/groups/:groupId/checkpoints" element={<CheckpointPage />} />
+                <Route path="/settings" element={<Settings />}>
+                    <Route path="classes" element={<ClassesSettings />} />
+                </Route>
                 <Route path="/dashboard" element={
                     <StaffOnly fallback={<Navigate to="/lab-selector" replace />}>
                         <Dashboard />

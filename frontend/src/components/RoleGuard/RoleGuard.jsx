@@ -62,9 +62,35 @@ export const TAOnly = ({ children, fallback, showFallback = false }) => (
  * Guard for Teacher or TA content (staff only)
  */
 export const StaffOnly = ({ children, fallback, showFallback = false }) => (
-    <RoleGuard 
-        roles={['Teacher', 'TA']} 
-        fallback={fallback} 
+    <RoleGuard
+        roles={['Teacher', 'TA']}
+        fallback={fallback}
+        showFallback={showFallback}
+    >
+        {children}
+    </RoleGuard>
+);
+
+/**
+ * Guard for Admin-only content
+ */
+export const AdminOnly = ({ children, fallback, showFallback = false }) => (
+    <RoleGuard
+        roles="Admin"
+        fallback={fallback}
+        showFallback={showFallback}
+    >
+        {children}
+    </RoleGuard>
+);
+
+/**
+ * Guard for staff or admin content (Teacher, TA, or Admin)
+ */
+export const StaffOrAdminOnly = ({ children, fallback, showFallback = false }) => (
+    <RoleGuard
+        roles={['Teacher', 'TA', 'Admin']}
+        fallback={fallback}
         showFallback={showFallback}
     >
         {children}
@@ -75,9 +101,9 @@ export const StaffOnly = ({ children, fallback, showFallback = false }) => (
  * Guard for student-only content
  */
 export const StudentOnly = ({ children, fallback, showFallback = false }) => (
-    <RoleGuard 
-        roles="Student" 
-        fallback={fallback} 
+    <RoleGuard
+        roles="Student"
+        fallback={fallback}
         showFallback={showFallback}
     >
         {children}
@@ -88,18 +114,22 @@ export const StudentOnly = ({ children, fallback, showFallback = false }) => (
  * Hook for conditional rendering based on roles
  */
 export const useRoleGuard = () => {
-    const { hasRole, hasAnyRole, isTeacher, isTA, isStudent, isTeacherOrTA } = useAuth();
-    
+    const { hasRole, hasAnyRole, isTeacher, isTA, isStudent, isTeacherOrTA, isAdmin, isStaffOrAdmin } = useAuth();
+
     return {
         hasRole,
         hasAnyRole,
         isTeacher,
         isTA,
         isStudent,
+        isAdmin,
         isTeacherOrTA,
+        isStaffOrAdmin,
         canAccessTeacherFeatures: isTeacher,
         canAccessTAFeatures: isTA,
         canAccessStaffFeatures: isTeacherOrTA,
+        canAccessAdminFeatures: isAdmin,
+        canAccessStaffOrAdminFeatures: isStaffOrAdmin,
         canAccessStudentFeatures: isStudent
     };
 };

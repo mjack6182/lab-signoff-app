@@ -41,6 +41,16 @@ public class User {
     private String name;
 
     /**
+     * User's first name
+     */
+    private String firstName;
+
+    /**
+     * User's last name
+     */
+    private String lastName;
+
+    /**
      * User's profile picture URL from Auth0
      */
     private String picture;
@@ -94,7 +104,7 @@ public class User {
         this.name = name;
         this.picture = picture;
         this.roles = roles;
-        this.primaryRole = (roles != null && !roles.isEmpty()) ? roles.get(0) : "Student";
+        this.primaryRole = (roles != null && !roles.isEmpty()) ? roles.get(0) : "Teacher";
         this.createdAt = Instant.now();
         this.lastLogin = Instant.now();
     }
@@ -133,6 +143,22 @@ public class User {
         this.name = name;
     }
 
+    public String getFirstName() {
+        return firstName;
+    }
+
+    public void setFirstName(String firstName) {
+        this.firstName = firstName;
+    }
+
+    public String getLastName() {
+        return lastName;
+    }
+
+    public void setLastName(String lastName) {
+        this.lastName = lastName;
+    }
+
     public String getPicture() {
         return picture;
     }
@@ -148,7 +174,7 @@ public class User {
     public void setRoles(List<String> roles) {
         this.roles = roles;
         // Update primary role when roles change
-        this.primaryRole = (roles != null && !roles.isEmpty()) ? roles.get(0) : "Student";
+        this.primaryRole = (roles != null && !roles.isEmpty()) ? roles.get(0) : "Teacher";
     }
 
     public String getPrimaryRole() {
@@ -221,12 +247,30 @@ public class User {
     }
 
     /**
+     * Helper method to check if user is an admin
+     *
+     * @return true if user has Admin role
+     */
+    public boolean isAdmin() {
+        return hasRole("Admin");
+    }
+
+    /**
      * Helper method to check if user is staff (Teacher or TA)
      *
      * @return true if user has Teacher or TA role
      */
     public boolean isStaff() {
         return isTeacher() || isTA();
+    }
+
+    /**
+     * Helper method to check if user is staff or admin (Teacher, TA, or Admin)
+     *
+     * @return true if user has Teacher, TA, or Admin role
+     */
+    public boolean isStaffOrAdmin() {
+        return isTeacher() || isTA() || isAdmin();
     }
 
     /**

@@ -44,29 +44,57 @@ export const AuthProvider = ({ children }) => {
                     if (data.success) {
                         console.log('✅ User synced to MongoDB:', data.user);
 
-                        // Extract role from Auth0 user metadata or claims
-                        const roles = auth0User['https://lab-signoff-app/roles'] || ['Student'];
-                        const primaryRole = Array.isArray(roles) ? roles[0] : roles;
+                        // Extract role from MongoDB backend (source of truth)
+                        // Fallback to Auth0 claims if backend doesn't have role
+                        const backendRole = data.user.primaryRole || data.user.role;
+                        const auth0Roles = auth0User['https://lab-signoff-app/roles'] || ['Teacher'];
+                        const auth0PrimaryRole = Array.isArray(auth0Roles) ? auth0Roles[0] : auth0Roles;
+
+                        // Prefer backend role over Auth0 role
+                        const primaryRole = backendRole || auth0PrimaryRole;
+
+                        // Extract firstName and lastName from backend (prioritize backend over Auth0)
+                        // Only use Auth0 data if backend explicitly has null/undefined
+                        const firstName = data.user.firstName !== null && data.user.firstName !== undefined
+                            ? data.user.firstName
+                            : (auth0User.given_name || null);
+                        const lastName = data.user.lastName !== null && data.user.lastName !== undefined
+                            ? data.user.lastName
+                            : (auth0User.family_name || null);
 
                         const appUser = {
                             id: auth0User.sub,
                             name: auth0User.name,
+                            firstName: firstName,
+                            lastName: lastName,
                             email: auth0User.email,
                             picture: auth0User.picture,
                             role: primaryRole,
                             mongoId: data.user.id // MongoDB document ID
                         };
 
+                        console.log('👤 User profile loaded:', {
+                            firstName: firstName,
+                            lastName: lastName,
+                            hasFirstName: firstName !== null && firstName !== undefined && firstName !== '',
+                            hasLastName: lastName !== null && lastName !== undefined && lastName !== '',
+                            role: primaryRole,
+                            backendRole: data.user.primaryRole || data.user.role,
+                            auth0Role: auth0PrimaryRole
+                        });
+
                         setUser(appUser);
                     } else {
                         console.error('❌ Failed to sync user to MongoDB:', data.error);
                         // Still set user from Auth0 data even if sync fails
-                        const roles = auth0User['https://lab-signoff-app/roles'] || ['Student'];
+                        const roles = auth0User['https://lab-signoff-app/roles'] || ['Teacher'];
                         const primaryRole = Array.isArray(roles) ? roles[0] : roles;
 
                         setUser({
                             id: auth0User.sub,
                             name: auth0User.name,
+                            firstName: auth0User.given_name || null,
+                            lastName: auth0User.family_name || null,
                             email: auth0User.email,
                             picture: auth0User.picture,
                             role: primaryRole
@@ -75,12 +103,14 @@ export const AuthProvider = ({ children }) => {
                 } catch (error) {
                     console.error('❌ Error syncing user:', error);
                     // Still set user from Auth0 data even if sync fails
-                    const roles = auth0User['https://lab-signoff-app/roles'] || ['Student'];
+                    const roles = auth0User['https://lab-signoff-app/roles'] || ['Teacher'];
                     const primaryRole = Array.isArray(roles) ? roles[0] : roles;
 
                     setUser({
                         id: auth0User.sub,
                         name: auth0User.name,
+                        firstName: auth0User.given_name || null,
+                        lastName: auth0User.family_name || null,
                         email: auth0User.email,
                         picture: auth0User.picture,
                         role: primaryRole
@@ -130,7 +160,99 @@ export const AuthProvider = ({ children }) => {
     const isTeacher = () => hasRole('Teacher');
     const isTA = () => hasRole('TA');
     const isStudent = () => hasRole('Student');
+    const isAdmin = () => hasRole('Admin');
     const isTeacherOrTA = () => hasAnyRole(['Teacher', 'TA']);
+    const isStaffOrAdmin = () => hasAnyRole(['Teacher', 'TA', 'Admin']);
+
+    // Check if user has completed their profile (has first and last name)
+    const hasCompletedProfile = () => {
+        if (!user) return false;
+
+        // Check if firstName and lastName exist and are not null/undefined/empty
+        const hasFirstName = user.firstName !== null &&
+                            user.firstName !== undefined &&
+                            typeof user.firstName === 'string' &&
+                            user.firstName.trim() !== '';
+
+        const hasLastName = user.lastName !== null &&
+                           user.lastName !== undefined &&
+                           typeof user.lastName === 'string' &&
+                           user.lastName.trim() !== '';
+
+        return hasFirstName && hasLastName;
+    };
+
+    // Update user profile (firstName and lastName)
+    const updateUserProfile = async (firstName, lastName) => {
+        if (!user) {
+            throw new Error('No user logged in');
+        }
+
+        try {
+            const response = await fetch('http://localhost:8080/api/users/profile', {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    auth0Id: user.id,
+                    firstName: firstName,
+                    lastName: lastName
+                })
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                // Update local user state
+                const updatedUser = {
+                    ...user,
+                    firstName: data.user.firstName,
+                    lastName: data.user.lastName,
+                    name: data.user.name
+                };
+                setUser(updatedUser);
+                return data.user;
+            } else {
+                throw new Error(data.error || 'Failed to update profile');
+            }
+        } catch (error) {
+            console.error('❌ Error updating profile:', error);
+            throw error;
+        }
+    };
+
+    // Delete user account
+    const deleteAccount = async () => {
+        if (!user) {
+            throw new Error('No user logged in');
+        }
+
+        try {
+            const response = await fetch('http://localhost:8080/api/users/account', {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    auth0Id: user.id
+                })
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                // Log out the user after successful deletion
+                console.log('✅ Account deleted successfully');
+                logout();
+            } else {
+                throw new Error(data.error || 'Failed to delete account');
+            }
+        } catch (error) {
+            console.error('❌ Error deleting account:', error);
+            throw error;
+        }
+    };
 
     const value = {
         user,
@@ -144,7 +266,12 @@ export const AuthProvider = ({ children }) => {
         isTeacher,
         isTA,
         isStudent,
+        isAdmin,
         isTeacherOrTA,
+        isStaffOrAdmin,
+        hasCompletedProfile,
+        updateUserProfile,
+        deleteAccount,
         getAccessTokenSilently
     };
 
