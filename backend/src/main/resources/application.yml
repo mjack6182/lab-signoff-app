@@ -20,7 +20,15 @@ spring:
           min-idle: 0
   application:
     name: ${SPRING_APPLICATION_NAME}
-
+  web:
+    resources:
+      # Configure static resource handling
+      static-locations: classpath:/static/
+      cache-period: 3600
+app:
+  mocks:
+    ags:
+      enabled: true
 server:
   port: ${SERVER_PORT}
 

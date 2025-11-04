@@ -3,8 +3,11 @@ import Login from './pages/login/login'
 import GroupList from './components/GroupList/GroupList'
 import LabSelector from './pages/lab-selector/lab-selector'
 import LabGroups from './pages/lab-groups/lab-groups'
+import LabJoin from './pages/lab-join/lab-join.jsx'
+import SelectStudent from './pages/select-student.jsx/select-student.jsx'
+import StudentCheckpoints from './pages/student-checkpoints/checkpoints.jsx'
 import Dashboard from './pages/dashboard/dashboard'
-import CheckpointPage from './pages/checkpoints/checkpoint'
+import CheckpointPage from './pages/checkpoints/checkpoints.jsx'
 import Settings from './pages/Settings/Settings'
 import ClassesSettings from './pages/Settings/ClassesSettings'
 // import RoleDemo from './pages/role-demo/role-demo'
@@ -12,6 +15,9 @@ import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { StaffOnly } from './components/RoleGuard/RoleGuard'
 import ProfileCompletionModal from './components/ProfileCompletionModal/ProfileCompletionModal'
 // import RoleSwitcher from './components/RoleSwitcher/RoleSwitcher'
+
+import { useEffect } from 'react';
+import { createWebSocketClient } from "./services/websocketClient.js"; // ✅ import your WebSocket setup
 
 function AppContent() {
     const { user, loading, isAuthenticated, hasCompletedProfile } = useAuth();
@@ -58,33 +64,57 @@ function AppContent() {
             <Routes>
                 <Route path="/" element={<Navigate to="/lab-selector" replace />} />
                 <Route path="/login" element={<Navigate to="/lab-selector" replace />} />
+                <Route path="/lab-join" element={<LabJoin />} />
+                <Route path="/select-student" element={<SelectStudent />} />
+                <Route path="/student-checkpoints/:labId/:groupId" element={<StudentCheckpoints />} />
                 <Route path="/groups" element={<GroupList />} />
                 <Route path="/lab-selector" element={<LabSelector />} />
-                <Route path="/labs/:labId/groups" element={<LabGroups />} />
+                {/* Direct route from lab selector to checkpoints */}
+                <Route path="/labs/:labId/checkpoints" element={<CheckpointPage />} />
+                {/* Keep the old group-specific route for backward compatibility */}
                 <Route path="/labs/:labId/groups/:groupId/checkpoints" element={<CheckpointPage />} />
+                {/* Keep the groups page for potential admin functionality */}
+                <Route path="/labs/:labId/groups" element={<LabGroups />} />
                 <Route path="/settings" element={<Settings />}>
                     <Route path="classes" element={<ClassesSettings />} />
                 </Route>
                 <Route path="/dashboard" element={
-                    <StaffOnly fallback={<Navigate to="/lab-selector" replace />}>
-                        <Dashboard />
-                    </StaffOnly>
+                    user ? (
+                        <StaffOnly fallback={<Navigate to="/lab-selector" replace />}>
+                            <Dashboard />
+                        </StaffOnly>
+                    ) : <Navigate to="/login" replace />
                 } />
                 <Route path="/checkpoints" element={
-                    <StaffOnly fallback={<Navigate to="/lab-selector" replace />}>
-                        <CheckpointPage />
-                    </StaffOnly>
+                    user ? (
+                        <StaffOnly fallback={<Navigate to="/lab-selector" replace />}>
+                            <CheckpointPage />
+                        </StaffOnly>
+                    ) : <Navigate to="/login" replace />
                 } />
                 {/* <Route path="/role-demo" element={<RoleDemo />} /> */}
 
                 {/* optional 404 */}
-                <Route path="*" element={<Navigate to="/lab-selector" replace />} />
+                <Route path="*" element={user ? <Navigate to="/lab-selector" replace /> : <Navigate to="/login" replace />} />
             </Routes>
         </>
     );
 }
 
 export default function App() {
+
+    useEffect(() => {
+        // 🟢 Create and connect the WebSocket client when the app starts
+        const client = createWebSocketClient();
+        client.activate();
+
+        // 🔴 Clean up connection when the app is closed or refreshed
+        return () => {
+            client.deactivate();
+        };
+    }, []); // ← runs only once when the app loads
+
+
     return (
         <AuthProvider>
             <AppContent />

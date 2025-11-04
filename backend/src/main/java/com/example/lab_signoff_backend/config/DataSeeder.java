@@ -74,7 +74,7 @@ public class DataSeeder {
                     "Group-1",
                     lab1.getId(),
                     Arrays.asList("student1@example.com", "student2@example.com"),
-                    "pending"
+                    "in-progress"
             );
 
             Group group2 = new Group(
@@ -90,7 +90,7 @@ public class DataSeeder {
                     "Group-3",
                     lab1.getId(),
                     Arrays.asList("student6@example.com"),
-                    "completed"
+                    "in-progress"
             );
 
             Group group4 = new Group(
@@ -98,7 +98,7 @@ public class DataSeeder {
                     "Team-A",
                     lab2.getId(),
                     Arrays.asList("student7@example.com", "student8@example.com"),
-                    "pending"
+                    "in-progress"
             );
 
             Group group5 = new Group(
@@ -106,7 +106,7 @@ public class DataSeeder {
                     "Team-B",
                     lab2.getId(),
                     Arrays.asList("student9@example.com", "student10@example.com"),
-                    "signed-off"
+                    "in-progress"
             );
 
             Group group6 = new Group(

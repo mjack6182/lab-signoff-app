@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from "react";
+import { api } from "../../config/api";
 
 export default function GroupList() {
   const [groups, setGroups] = useState([]);
 
 useEffect(() => {
-  fetch("http://localhost:8080/groups")
+  fetch(api.groups())
     .then((res) => {
       if (!res.ok) throw new Error("Failed to fetch groups");
       return res.json();
