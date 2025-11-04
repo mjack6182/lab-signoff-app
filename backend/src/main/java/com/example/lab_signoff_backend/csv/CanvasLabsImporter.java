@@ -81,6 +81,13 @@ private static final Pattern LAB_COL = Pattern.compile("^Laboratory\\s+.*\\(\\d+
     return (r != null && r.isMapped(col) && r.get(col) != null) ? r.get(col).trim() : "";
   }
   private static boolean isBlank(String s){ return s==null || s.isBlank(); }
-  private static String firstNonBlank(String... vals){ for (var v: vals) if(!isBlank(v)) return v; return ""; }
+  private static String firstNonBlank(String... vals) {
+    for (var v : vals) {
+      if (!isBlank(v)) {
+        return v;
+      }
+    }
+    return "";
+  }
   private static BigDecimal dec(String s){ if (isBlank(s)) return null; try { return new BigDecimal(s); } catch(Exception e){ return null; } }
 }
