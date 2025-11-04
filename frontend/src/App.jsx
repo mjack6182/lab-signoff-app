@@ -8,16 +8,19 @@ import SelectStudent from './pages/select-student.jsx/select-student.jsx'
 import StudentCheckpoints from './pages/student-checkpoints/checkpoints.jsx'
 import Dashboard from './pages/dashboard/dashboard'
 import CheckpointPage from './pages/checkpoints/checkpoints.jsx'
+import Settings from './pages/Settings/Settings'
+import ClassesSettings from './pages/Settings/ClassesSettings'
 // import RoleDemo from './pages/role-demo/role-demo'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { StaffOnly } from './components/RoleGuard/RoleGuard'
+import ProfileCompletionModal from './components/ProfileCompletionModal/ProfileCompletionModal'
 // import RoleSwitcher from './components/RoleSwitcher/RoleSwitcher'
 
 import { useEffect } from 'react';
 import { createWebSocketClient } from "./services/websocketClient.js"; // ✅ import your WebSocket setup
 
 function AppContent() {
-    const { user, loading } = useAuth();
+    const { user, loading, isAuthenticated, hasCompletedProfile } = useAuth();
 
     if (loading) {
         return (
@@ -42,22 +45,39 @@ function AppContent() {
         );
     }
 
+    // If not authenticated, show only login page
+    if (!isAuthenticated) {
+        return (
+            <Routes>
+                <Route path="/login" element={<Login />} />
+                <Route path="*" element={<Navigate to="/login" replace />} />
+            </Routes>
+        );
+    }
+
+    // If authenticated, show all routes
     return (
         <>
+            {/* Show profile completion modal if user hasn't completed profile */}
+            <ProfileCompletionModal isOpen={isAuthenticated && !hasCompletedProfile()} />
+
             <Routes>
-                <Route path="/" element={user ? <Navigate to="/lab-selector" replace /> : <Navigate to="/login" replace />} />
-                <Route path="/login" element={user ? <Navigate to="/lab-selector" replace /> : <Login />} />
+                <Route path="/" element={<Navigate to="/lab-selector" replace />} />
+                <Route path="/login" element={<Navigate to="/lab-selector" replace />} />
                 <Route path="/lab-join" element={<LabJoin />} />
                 <Route path="/select-student" element={<SelectStudent />} />
                 <Route path="/student-checkpoints/:labId/:groupId" element={<StudentCheckpoints />} />
-                <Route path="/groups" element={user ? <GroupList /> : <Navigate to="/login" replace />} />
-                <Route path="/lab-selector" element={user ? <LabSelector /> : <Navigate to="/login" replace />} />
+                <Route path="/groups" element={<GroupList />} />
+                <Route path="/lab-selector" element={<LabSelector />} />
                 {/* Direct route from lab selector to checkpoints */}
-                <Route path="/labs/:labId/checkpoints" element={user ? <CheckpointPage /> : <Navigate to="/login" replace />} />
+                <Route path="/labs/:labId/checkpoints" element={<CheckpointPage />} />
                 {/* Keep the old group-specific route for backward compatibility */}
-                <Route path="/labs/:labId/groups/:groupId/checkpoints" element={user ? <CheckpointPage /> : <Navigate to="/login" replace />} />
+                <Route path="/labs/:labId/groups/:groupId/checkpoints" element={<CheckpointPage />} />
                 {/* Keep the groups page for potential admin functionality */}
-                <Route path="/labs/:labId/groups" element={user ? <LabGroups /> : <Navigate to="/login" replace />} />
+                <Route path="/labs/:labId/groups" element={<LabGroups />} />
+                <Route path="/settings" element={<Settings />}>
+                    <Route path="classes" element={<ClassesSettings />} />
+                </Route>
                 <Route path="/dashboard" element={
                     user ? (
                         <StaffOnly fallback={<Navigate to="/lab-selector" replace />}>

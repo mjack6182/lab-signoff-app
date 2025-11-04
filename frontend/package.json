@@ -10,6 +10,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@auth0/auth0-react": "^2.8.0",
+    "@fortawesome/fontawesome-free": "^7.1.0",
     "@stomp/stompjs": "^7.2.1",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
