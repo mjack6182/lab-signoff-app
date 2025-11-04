@@ -18,9 +18,7 @@ export default function Login() {
     };
 
     const handleStudentJoinClick = () => {
-        // Future: navigate('/student-join');
-        // For now, show alert that feature is coming soon
-        alert('Student join code feature coming soon! This will be implemented by a teammate.');
+        navigate('/lab-join');
     };
 
     if (loading) {

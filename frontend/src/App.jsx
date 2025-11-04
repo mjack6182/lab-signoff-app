@@ -45,11 +45,14 @@ function AppContent() {
         );
     }
 
-    // If not authenticated, show only login page
+    // If not authenticated, show login page and student routes
     if (!isAuthenticated) {
         return (
             <Routes>
                 <Route path="/login" element={<Login />} />
+                <Route path="/lab-join" element={<LabJoin />} />
+                <Route path="/select-student" element={<SelectStudent />} />
+                <Route path="/student-checkpoints/:labId/:groupId" element={<StudentCheckpoints />} />
                 <Route path="*" element={<Navigate to="/login" replace />} />
             </Routes>
         );
