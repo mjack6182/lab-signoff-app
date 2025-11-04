@@ -52,7 +52,7 @@ public class GroupController {
         }
 
         // Extract checkpoint number from JSON
-        int checkpointNumber = (int) body.getOrDefault("checkpointNumber", 1);
+        int checkpointNumber = ((Number) body.getOrDefault("checkpointNumber", 1)).intValue();
         wsController.broadcastCheckpointUpdate(groupId, checkpointNumber, "PASS");
 
         logger.info("✅ Group {} passed checkpoint {}", groupId, checkpointNumber);
@@ -70,7 +70,7 @@ public class GroupController {
             return ResponseEntity.notFound().build();
         }
 
-        int checkpointNumber = (int) body.getOrDefault("checkpointNumber", 1);
+        int checkpointNumber = ((Number) body.getOrDefault("checkpointNumber", 1)).intValue();
         wsController.broadcastCheckpointUpdate(groupId, checkpointNumber, "RETURN");
 
         logger.info("♻️ Group {} returned checkpoint {}", groupId, checkpointNumber);
