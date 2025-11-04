@@ -44,12 +44,12 @@ class CanvasLabsRoundTripTest {
     assertTrue(wideHead.startsWith("Student,ID,")); // followed by lab columns
 
     System.out.println("==== Normalized Rows (student x lab) ====");
-for (var r : norm.rows) {
-    System.out.printf("%s | %s | %s | %s | %s%n",
-        r.student(), r.studentId(), r.labTitle(),
-        r.score() == null ? "" : r.score().toPlainString(),
-        r.pointsPossible() == null ? "" : r.pointsPossible().toPlainString()
-    );
-  }
+    for (var r : norm.rows) {
+      System.out.printf("%s | %s | %s | %s | %s%n",
+          r.student(), r.studentId(), r.labTitle(),
+          r.score() == null ? "" : r.score().toPlainString(),
+          r.pointsPossible() == null ? "" : r.pointsPossible().toPlainString()
+      );
+    }
 }
 }
