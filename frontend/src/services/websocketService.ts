@@ -1,4 +1,4 @@
-import { Client, Frame, IMessage, StompSubscription } from '@stomp/stompjs';
+import { Client, IMessage, StompSubscription } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
 
 type CheckpointUpdate = {
