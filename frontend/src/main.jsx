@@ -10,6 +10,16 @@ const domain = import.meta.env.VITE_AUTH0_DOMAIN;
 const clientId = import.meta.env.VITE_AUTH0_CLIENT_ID;
 const redirectUri = import.meta.env.VITE_AUTH0_CALLBACK_URL;
 
+// Validate required Auth0 configuration variables
+if (!domain) {
+    throw new Error("Missing required Auth0 configuration: VITE_AUTH0_DOMAIN. Please set this environment variable.");
+}
+if (!clientId) {
+    throw new Error("Missing required Auth0 configuration: VITE_AUTH0_CLIENT_ID. Please set this environment variable.");
+}
+if (!redirectUri) {
+    throw new Error("Missing required Auth0 configuration: VITE_AUTH0_CALLBACK_URL. Please set this environment variable.");
+}
 ReactDOM.createRoot(document.getElementById('root')).render(
     <React.StrictMode>
         <Auth0Provider
