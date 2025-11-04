@@ -18,6 +18,7 @@ import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerCo
  * @author Lab Signoff App Team
  * @version 1.0
  */
+
 @Configuration
 @EnableWebSocketMessageBroker
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
