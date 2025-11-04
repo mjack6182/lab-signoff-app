@@ -31,7 +31,7 @@ export const AuthProvider = ({ children }) => {
             if (isAuthenticated && auth0User) {
                 try {
                     // Sync user to backend MongoDB
-                    const response = await fetch('http://localhost:8080/api/auth/sync', {
+                    const response = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/sync`, {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
