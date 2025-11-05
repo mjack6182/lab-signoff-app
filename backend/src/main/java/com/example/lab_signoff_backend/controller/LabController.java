@@ -3,6 +3,7 @@ package com.example.lab_signoff_backend.controller;
 import com.example.lab_signoff_backend.model.Group;
 import com.example.lab_signoff_backend.model.Lab;
 import com.example.lab_signoff_backend.model.SignoffEvent;
+import com.example.lab_signoff_backend.model.enums.GroupStatus;
 import com.example.lab_signoff_backend.service.GroupService;
 import com.example.lab_signoff_backend.service.LabService;
 import com.example.lab_signoff_backend.service.SignoffEventService;
@@ -112,7 +113,7 @@ public class LabController {
             }
 
             Group group = groupOptional.get();
-            group.setStatus("passed");
+            group.setStatus(GroupStatus.SIGNED_OFF);
             groupService.upsert(group);
 
             String performer = (performedBy != null && !performedBy.trim().isEmpty())
@@ -173,7 +174,7 @@ public class LabController {
             }
 
             Group group = groupOptional.get();
-            group.setStatus("returned");
+            group.setStatus(GroupStatus.IN_PROGRESS);
             groupService.upsert(group);
 
             String performer = (performedBy != null && !performedBy.trim().isEmpty())
