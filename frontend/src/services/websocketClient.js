@@ -5,7 +5,7 @@ import { api } from '../config/api';
 let client;
 
 export const createWebSocketClient = () => {
-  const socketFactory = () => new SockJS(api.ws()); // matches backend endpoint
+  const socketFactory = () => new SockJS(api.ws()); // matches backend endpoint (http://localhost:8080/ws)
 
   client = new Client({
     webSocketFactory: socketFactory,
@@ -16,9 +16,14 @@ export const createWebSocketClient = () => {
   client.onConnect = () => {
     console.log('✅ WebSocket connected');
 
-    // Subscribe to your topic
-    client.subscribe('/topic/lab-updates', (message) => {
-      console.log('Received update:', message.body);
+    // ✅ FIXED: Subscribe to correct topic
+    client.subscribe('/topic/group-updates', (message) => {
+      try {
+        const body = JSON.parse(message.body);
+        console.log('📡 Received CheckpointUpdate:', body);
+      } catch (err) {
+        console.error('Failed to parse message:', err);
+      }
     });
   };
 
@@ -31,7 +36,7 @@ export const createWebSocketClient = () => {
     tryConnect(); // manual retry if closed
   };
 
-  // Function to attempt connecting
+  // Manual reconnect logic
   const tryConnect = () => {
     if (!client.active) {
       console.log('Attempting WebSocket connection...');

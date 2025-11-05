@@ -1,132 +1,116 @@
-import { useMemo, useRef, useState } from 'react';
-import { api } from '../../config/api';
+import { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../contexts/AuthContext';
 import './login.css';
 
 export default function Login() {
-    const [role, setRole] = useState('teacher');
-    const [showPw, setShowPw] = useState(false);
-    const [submitting, setSubmitting] = useState(false);
-    const [error, setError] = useState(null);
+    const { login, isAuthenticated, loading } = useAuth();
+    const navigate = useNavigate();
 
-    const emailRef = useRef(null);
-    const pwRef = useRef(null);
-
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
-
-    const emailErr = useMemo(() => {
-        if (!email) return 'Email is required.';
-        if (!/\S+@\S+\.\S+/.test(email)) return 'Enter a valid email.';
-        return null;
-    }, [email]);
-
-    const pwErr = useMemo(() => {
-        if (!password) return 'Password is required.';
-        if (password.length < 8) return 'Use at least 8 characters.';
-        return null;
-    }, [password]);
-
-    async function handleSubmit(e) {
-        e.preventDefault();
-        setError(null);
-
-        if (emailErr) { emailRef.current?.focus(); return; }
-        if (pwErr) { pwRef.current?.focus(); return; }
-
-        setSubmitting(true);
-        try {
-            // Swap this with your real call. If you use cookie sessions in Canvas (iframe),
-            // your server must set cookies with SameSite=None; Secure and you should pass credentials: 'include'.
-            const res = await fetch(api.auth.login(), {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                credentials: 'include',
-                body: JSON.stringify({ email, password, role })
-            });
-            if (!res.ok) throw new Error('Login failed');
-            window.location.assign('/dashboard');
-        } catch (err) {
-            setError(err.message || 'Something went wrong.');
-        } finally {
-            setSubmitting(false);
+    useEffect(() => {
+        if (isAuthenticated) {
+            navigate('/lab-selector');
         }
+    }, [isAuthenticated, navigate]);
+
+    const handleLogin = async () => {
+        await login();
+    };
+
+    const handleStudentJoinClick = () => {
+        navigate('/lab-join');
+    };
+
+    if (loading) {
+        return (
+            <div className="login-shell">
+                <div className="loading-container">
+                    <p>Loading...</p>
+                </div>
+            </div>
+        );
     }
 
     return (
-        <main className="center">
-            <section className="card" aria-labelledby="login-title">
-                <h1 id="login-title" className="h1">Login</h1>
-                <p className="subtle">For Teachers and Teaching Assistants</p>
-
-                {error && <div role="alert" className="error">{error}</div>}
-
-                <form onSubmit={handleSubmit} noValidate>
-                    <div className="field">
-                        <label htmlFor="email" className="label">Email</label>
-                        <input
-                            ref={emailRef}
-                            id="email"
-                            name="email"
-                            type="email"
-                            className="input"
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                            aria-invalid={!!emailErr}
-                            aria-describedby={emailErr ? 'email-err' : undefined}
-                            placeholder="name@school.edu"
-                            required
-                        />
-                        {emailErr && <div id="email-err" className="error">{emailErr}</div>}
+        <div className="login-shell">
+            <div className="login-container">
+                {/* Left Column - App Information */}
+                <div className="login-info">
+                    <div className="logo-section">
+                        <div className="app-logo">
+                            <span className="logo-icon">✓</span>
+                        </div>
+                        <h1 className="app-title">Lab Signoff App</h1>
+                        <p className="app-tagline">Streamline your lab management and student progress tracking</p>
                     </div>
 
-                    <div className="field">
-                        <label htmlFor="password" className="label">Password</label>
-                        <div className="password-container">
-                            <input
-                                ref={pwRef}
-                                id="password"
-                                name="password"
-                                type={showPw ? 'text' : 'password'}
-                                className="input"
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
-                                aria-invalid={!!pwErr}
-                                aria-describedby={pwErr ? 'password-err' : undefined}
-                                placeholder="••••••••"
-                                required
-                            />
+                    <div className="features-section">
+                        <h2 className="features-title">For Instructors</h2>
+                        <ul className="features-list">
+                            <li>
+                                <span className="feature-icon">📋</span>
+                                <div className="feature-content">
+                                    <strong>Manage Labs</strong>
+                                    <p>Create and organize lab assignments with checkpoints</p>
+                                </div>
+                            </li>
+                            <li>
+                                <span className="feature-icon">👥</span>
+                                <div className="feature-content">
+                                    <strong>Track Groups</strong>
+                                    <p>Monitor student groups and their progress in real-time</p>
+                                </div>
+                            </li>
+                            <li>
+                                <span className="feature-icon">✅</span>
+                                <div className="feature-content">
+                                    <strong>Sign Off Checkpoints</strong>
+                                    <p>Review and approve student work efficiently</p>
+                                </div>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+
+                {/* Right Column - Login Card */}
+                <div className="login-form-wrapper">
+                    <div className="login-card">
+                        <h2 className="login-title">Teacher Portal</h2>
+                        <p className="login-subtitle">Sign in to access the instructor dashboard</p>
+
+                        <button
+                            className="login-btn"
+                            type="button"
+                            onClick={handleLogin}
+                            disabled={loading}
+                        >
+                            {loading ? 'Loading...' : 'Sign in with Auth0'}
+                        </button>
+
+                        <p className="auth-note">
+                            Secure authentication powered by Auth0
+                        </p>
+                    </div>
+
+                    {/* Student Notice */}
+                    <div className="student-notice">
+                        <div className="notice-icon">ℹ️</div>
+                        <div className="notice-content">
+                            <h3 className="notice-title">Are you a student?</h3>
+                            <p className="notice-text">
+                                You don't need to sign in. Join your lab using the join code provided by your instructor.
+                            </p>
                             <button
+                                className="student-join-btn"
                                 type="button"
-                                onClick={() => setShowPw(s => !s)}
-                                aria-pressed={showPw}
-                                className="password-toggle"
+                                onClick={handleStudentJoinClick}
                             >
-                                {showPw ? 'Hide' : 'Show'}
+                                Enter Join Code
                             </button>
                         </div>
-                        {pwErr && <div id="password-err" className="error">{pwErr}</div>}
                     </div>
-
-                    <div className="field">
-                        <label htmlFor="role" className="label">Role</label>
-                        <select
-                            id="role"
-                            className="select"
-                            value={role}
-                            onChange={(e) => setRole(e.target.value)}
-                        >
-                            <option value="teacher">Teacher</option>
-                            <option value="ta">Teaching Assistant</option>
-                        </select>
-                    </div>
-
-                    <div className="actions">
-                        <button className="button" type="submit" disabled={submitting || !!emailErr || !!pwErr}>
-                            {submitting ? 'Signing in…' : 'Sign in'}
-                        </button>
-                    </div>
-                </form>
-            </section>
-        </main>
+                </div>
+            </div>
+        </div>
     );
 }
