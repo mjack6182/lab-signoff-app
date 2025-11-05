@@ -3,6 +3,7 @@ package com.example.lab_signoff_backend.model;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.core.mapping.Field;
 
 import java.time.Instant;
 import java.util.List;
@@ -25,8 +26,10 @@ public class User {
     /**
      * Auth0 user ID (subject claim from JWT)
      * This is indexed for fast lookups and should be unique
+     * Explicit field mapping ensures correct MongoDB field name
      */
     @Indexed(unique = true)
+    @Field("auth0Id")
     private String auth0Id;
 
     /**

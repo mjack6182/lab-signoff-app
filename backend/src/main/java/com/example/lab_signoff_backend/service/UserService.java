@@ -27,7 +27,16 @@ public class UserService {
      * @return Optional containing the user if found
      */
     public Optional<User> findByAuth0Id(String auth0Id) {
-        return userRepository.findByAuth0Id(auth0Id);
+        System.out.println("📊 UserService: Querying MongoDB for user with auth0Id: " + auth0Id);
+        Optional<User> result = userRepository.findByAuth0Id(auth0Id);
+        System.out.println("📊 UserService: Query result - User " + (result.isPresent() ? "FOUND" : "NOT FOUND"));
+        if (result.isPresent()) {
+            User user = result.get();
+            System.out.println("   - MongoDB ID: " + user.getId());
+            System.out.println("   - Email: " + user.getEmail());
+            System.out.println("   - Roles: " + user.getRoles());
+        }
+        return result;
     }
 
     /**

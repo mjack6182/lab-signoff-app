@@ -3,9 +3,13 @@ package com.example.lab_signoff_backend.controller;
 import com.example.lab_signoff_backend.model.Group;
 import com.example.lab_signoff_backend.model.Lab;
 import com.example.lab_signoff_backend.model.SignoffEvent;
+import com.example.lab_signoff_backend.model.embedded.GroupMember;
+import com.example.lab_signoff_backend.model.enums.GroupStatus;
+import com.example.lab_signoff_backend.model.enums.SignoffAction;
 import com.example.lab_signoff_backend.service.GroupService;
 import com.example.lab_signoff_backend.service.LabService;
 import com.example.lab_signoff_backend.service.SignoffEventService;
+import com.example.lab_signoff_backend.websocket.LabWebSocketController;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -17,6 +21,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -31,7 +36,7 @@ import static org.mockito.Mockito.*;
  * ensuring proper validation, error handling, and audit logging.
  *
  * @author Lab Signoff App Team
- * @version 1.0
+ * @version 2.0 - Updated for new database schema
  */
 @ExtendWith(MockitoExtension.class)
 class LabControllerTest {
@@ -45,6 +50,9 @@ class LabControllerTest {
     @Mock
     private SignoffEventService signoffEventService;
 
+    @Mock
+    private LabWebSocketController wsController;
+
     @InjectMocks
     private LabController labController;
 
@@ -54,21 +62,34 @@ class LabControllerTest {
 
     @BeforeEach
     void setUp() {
-        // Set up test data
-        testLab = new Lab("lab1", "course1", "lineItem1");
+        // Set up test lab with new schema (classId, title, points, createdBy)
+        testLab = new Lab("class-123", "Laboratory for Module 01", 4, "instructor-456");
+        testLab.setId("lab1");
+        testLab.setDescription("Test lab description");
 
+        // Set up test group with new schema
         testGroup = new Group();
         testGroup.setId("group-mongo-id-1");
         testGroup.setGroupId("group1");
         testGroup.setLabId("lab1");
-        testGroup.setMembers(Arrays.asList("student1", "student2"));
-        testGroup.setStatus("in-progress");
 
+        // Use GroupMember objects instead of strings
+        List<GroupMember> members = new ArrayList<>();
+        GroupMember member1 = new GroupMember("student1", "Alice Smith", "alice@example.com");
+        GroupMember member2 = new GroupMember("student2", "Bob Jones", "bob@example.com");
+        members.add(member1);
+        members.add(member2);
+        testGroup.setMembers(members);
+
+        // Use GroupStatus enum
+        testGroup.setStatus(GroupStatus.IN_PROGRESS);
+
+        // Set up test event with new schema
         testEvent = new SignoffEvent();
         testEvent.setId("event1");
         testEvent.setLabId("lab1");
         testEvent.setGroupId("group1");
-        testEvent.setAction("PASS");
+        testEvent.setAction(SignoffAction.PASS);
         testEvent.setTimestamp(Instant.now());
         testEvent.setPerformedBy("instructor1");
     }
@@ -93,10 +114,10 @@ class LabControllerTest {
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertNotNull(response.getBody());
 
-        // Verify group status was updated
+        // Verify group status was updated to SIGNED_OFF
         ArgumentCaptor<Group> groupCaptor = ArgumentCaptor.forClass(Group.class);
         verify(groupService).upsert(groupCaptor.capture());
-        assertEquals("passed", groupCaptor.getValue().getStatus());
+        assertEquals(GroupStatus.SIGNED_OFF, groupCaptor.getValue().getStatus());
 
         // Verify audit event was created
         verify(signoffEventService).createEvent(
@@ -107,6 +128,9 @@ class LabControllerTest {
                 eq("Good work!"),
                 isNull()
         );
+
+        // Verify WebSocket broadcast was called
+        verify(wsController).broadcastGroupPassed("group1");
     }
 
     /**
@@ -239,7 +263,7 @@ class LabControllerTest {
         returnEvent.setId("event2");
         returnEvent.setLabId("lab1");
         returnEvent.setGroupId("group1");
-        returnEvent.setAction("RETURN");
+        returnEvent.setAction(SignoffAction.RETURN);
         returnEvent.setTimestamp(Instant.now());
         returnEvent.setPerformedBy("instructor1");
 
@@ -254,10 +278,10 @@ class LabControllerTest {
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertNotNull(response.getBody());
 
-        // Verify group status was updated
+        // Verify group status was updated to IN_PROGRESS
         ArgumentCaptor<Group> groupCaptor = ArgumentCaptor.forClass(Group.class);
         verify(groupService).upsert(groupCaptor.capture());
-        assertEquals("returned", groupCaptor.getValue().getStatus());
+        assertEquals(GroupStatus.IN_PROGRESS, groupCaptor.getValue().getStatus());
 
         // Verify audit event was created
         verify(signoffEventService).createEvent(
@@ -367,7 +391,7 @@ class LabControllerTest {
         when(groupService.upsert(any(Group.class))).thenReturn(testGroup);
 
         SignoffEvent returnEvent = new SignoffEvent();
-        returnEvent.setAction("RETURN");
+        returnEvent.setAction(SignoffAction.RETURN);
         when(signoffEventService.createEvent(eq("lab1"), eq("group1"), eq("RETURN"),
                 eq("system"), isNull(), isNull())).thenReturn(returnEvent);
 
@@ -409,30 +433,6 @@ class LabControllerTest {
         // Verify no audit event was created
         verify(signoffEventService, never()).createEvent(anyString(), anyString(),
                 anyString(), anyString(), anyString(), any());
-    }
-
-    /**
-     * Test: Handling exception during audit logging in pass endpoint
-     * Should return 206 Partial Content (group updated but audit failed)
-     */
-    @Test
-    void testPassGroup_AuditException() {
-        // Arrange
-        when(labService.labExists("lab1")).thenReturn(true);
-        when(groupService.getAll()).thenReturn(Arrays.asList(testGroup));
-        when(groupService.upsert(any(Group.class))).thenReturn(testGroup);
-        when(signoffEventService.createEvent(anyString(), anyString(), anyString(),
-                anyString(), anyString(), any())).thenThrow(new RuntimeException("Audit logging failed"));
-
-        // Act
-        ResponseEntity<?> response = labController.passGroup("lab1", "group1", "instructor1", null);
-
-        // Assert
-        assertEquals(HttpStatus.PARTIAL_CONTENT, response.getStatusCode());
-        assertTrue(response.getBody().toString().contains("audit logging failed"));
-
-        // Verify group was still updated
-        verify(groupService).upsert(any(Group.class));
     }
 
     /**

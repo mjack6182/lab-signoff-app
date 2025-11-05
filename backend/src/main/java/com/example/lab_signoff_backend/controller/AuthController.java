@@ -56,11 +56,13 @@ public class AuthController {
             }
 
             // Check if user exists
+            System.out.println("🔍 Checking if user exists with Auth0 ID: " + auth0Id);
             Optional<User> existingUser = userService.findByAuth0Id(auth0Id);
 
             User user;
             if (existingUser.isPresent()) {
                 // Update existing user
+                System.out.println("✓ User found in database - updating existing user");
                 user = existingUser.get();
                 user.setEmail(email);
                 user.setName(name);
@@ -87,6 +89,7 @@ public class AuthController {
                 user.updateLastLogin();
             } else {
                 // Create new user
+                System.out.println("➕ User not found - creating new user");
                 user = new User(auth0Id, email, name, picture, roles);
                 user.setFirstName(firstName);
                 user.setLastName(lastName);
