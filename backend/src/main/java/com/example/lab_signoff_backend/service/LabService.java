@@ -56,4 +56,14 @@ public class LabService {
     public boolean labExists(String id) {
         return repo.existsById(id);
     }
+
+    /**
+     * Retrieves all labs belonging to a specific class
+     *
+     * @param classId The class identifier
+     * @return List of labs for the class
+     */
+    public List<Lab> getLabsByClassId(String classId) {
+        return repo.findByClassId(classId);
+    }
 }

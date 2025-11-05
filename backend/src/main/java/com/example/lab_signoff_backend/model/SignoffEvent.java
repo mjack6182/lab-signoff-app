@@ -1,6 +1,12 @@
 package com.example.lab_signoff_backend.model;
 
+import com.example.lab_signoff_backend.model.enums.SignoffAction;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.CompoundIndex;
+import org.springframework.data.mongodb.core.index.CompoundIndexes;
+import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.Instant;
@@ -13,9 +19,12 @@ import java.time.Instant;
  * providing a complete audit trail for accountability and analysis.
  *
  * @author Lab Signoff App Team
- * @version 1.0
+ * @version 2.0
  */
 @Document(collection = "signoff_events")
+@CompoundIndexes({
+    @CompoundIndex(name = "lab_timestamp_idx", def = "{'labId': 1, 'timestamp': 1}")
+})
 public class SignoffEvent {
 
     /**
@@ -27,27 +36,39 @@ public class SignoffEvent {
     /**
      * Reference to the lab this event is associated with
      */
+    @NotBlank(message = "Lab ID is required")
+    @Indexed
     private String labId;
 
     /**
      * Reference to the group this event is associated with
      */
+    @NotBlank(message = "Group ID is required")
+    @Indexed
     private String groupId;
 
     /**
-     * Action performed: either "PASS" or "RETURN"
+     * Action performed: PASS, RETURN, or COMPLETE
      */
-    private String action;
+    @NotNull(message = "Action is required")
+    private SignoffAction action;
 
     /**
      * Timestamp when the event occurred (ISO 8601 format)
      */
+    @NotNull
     private Instant timestamp;
 
     /**
      * Identifier of the instructor or TA who performed the action
      */
+    @NotBlank(message = "Performed by is required")
     private String performedBy;
+
+    /**
+     * Role of the person who performed the action (TA or Teacher)
+     */
+    private String performerRole;
 
     /**
      * Optional notes or comments about the action
@@ -55,59 +76,25 @@ public class SignoffEvent {
     private String notes;
 
     /**
-     * Checkpoint number if applicable (optional, for future use)
+     * Checkpoint number (required in new schema)
      */
+    @NotNull(message = "Checkpoint number is required")
     private Integer checkpointNumber;
+
+    /**
+     * Points awarded for this checkpoint
+     */
+    private Integer pointsAwarded;
 
     /**
      * Default constructor for SignoffEvent
      * Required for Spring Data MongoDB serialization/deserialization
      */
     public SignoffEvent() {
-    }
-
-    /**
-     * Constructor for creating a SignoffEvent with all information
-     *
-     * @param id                Unique identifier for the event
-     * @param labId             Identifier of the lab
-     * @param groupId           Identifier of the group
-     * @param action            Action performed (PASS or RETURN)
-     * @param timestamp         When the event occurred
-     * @param performedBy       Who performed the action
-     * @param notes             Optional notes
-     * @param checkpointNumber  Optional checkpoint number
-     */
-    public SignoffEvent(String id, String labId, String groupId, String action,
-                       Instant timestamp, String performedBy, String notes, Integer checkpointNumber) {
-        this.id = id;
-        this.labId = labId;
-        this.groupId = groupId;
-        this.action = action;
-        this.timestamp = timestamp;
-        this.performedBy = performedBy;
-        this.notes = notes;
-        this.checkpointNumber = checkpointNumber;
-    }
-
-    /**
-     * Builder pattern constructor for creating a SignoffEvent with required fields
-     *
-     * @param labId       Identifier of the lab
-     * @param groupId     Identifier of the group
-     * @param action      Action performed (PASS or RETURN)
-     * @param performedBy Who performed the action
-     */
-    public SignoffEvent(String labId, String groupId, String action, String performedBy) {
-        this.labId = labId;
-        this.groupId = groupId;
-        this.action = action;
         this.timestamp = Instant.now();
-        this.performedBy = performedBy;
     }
 
     // Getters and Setters
-
     public String getId() {
         return id;
     }
@@ -132,11 +119,11 @@ public class SignoffEvent {
         this.groupId = groupId;
     }
 
-    public String getAction() {
+    public SignoffAction getAction() {
         return action;
     }
 
-    public void setAction(String action) {
+    public void setAction(SignoffAction action) {
         this.action = action;
     }
 
@@ -156,6 +143,14 @@ public class SignoffEvent {
         this.performedBy = performedBy;
     }
 
+    public String getPerformerRole() {
+        return performerRole;
+    }
+
+    public void setPerformerRole(String performerRole) {
+        this.performerRole = performerRole;
+    }
+
     public String getNotes() {
         return notes;
     }
@@ -172,17 +167,27 @@ public class SignoffEvent {
         this.checkpointNumber = checkpointNumber;
     }
 
+    public Integer getPointsAwarded() {
+        return pointsAwarded;
+    }
+
+    public void setPointsAwarded(Integer pointsAwarded) {
+        this.pointsAwarded = pointsAwarded;
+    }
+
     @Override
     public String toString() {
         return "SignoffEvent{" +
                 "id='" + id + '\'' +
                 ", labId='" + labId + '\'' +
                 ", groupId='" + groupId + '\'' +
-                ", action='" + action + '\'' +
+                ", action=" + action +
                 ", timestamp=" + timestamp +
                 ", performedBy='" + performedBy + '\'' +
+                ", performerRole='" + performerRole + '\'' +
                 ", notes='" + notes + '\'' +
                 ", checkpointNumber=" + checkpointNumber +
+                ", pointsAwarded=" + pointsAwarded +
                 '}';
     }
 }

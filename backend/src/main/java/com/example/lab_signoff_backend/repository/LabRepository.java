@@ -3,6 +3,8 @@ package com.example.lab_signoff_backend.repository;
 import com.example.lab_signoff_backend.model.Lab;
 import org.springframework.data.mongodb.repository.MongoRepository;
 
+import java.util.List;
+
 /**
  * Repository interface for Lab entity operations.
  *
@@ -13,6 +15,12 @@ import org.springframework.data.mongodb.repository.MongoRepository;
  * @version 1.0
  */
 public interface LabRepository extends MongoRepository<Lab, String> {
-    // You can add finders like: List<Lab> findByTitleContainingIgnoreCase(String
-    // q);
+
+    /**
+     * Find all labs belonging to a specific class
+     *
+     * @param classId The class identifier
+     * @return List of labs for the class
+     */
+    List<Lab> findByClassId(String classId);
 }

@@ -1,6 +1,7 @@
 package com.example.lab_signoff_backend.service;
 
 import com.example.lab_signoff_backend.model.SignoffEvent;
+import com.example.lab_signoff_backend.model.enums.SignoffAction;
 import com.example.lab_signoff_backend.repository.SignoffEventRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -45,7 +46,7 @@ class SignoffEventServiceTest {
         testEvent.setId("event1");
         testEvent.setLabId("lab1");
         testEvent.setGroupId("group1");
-        testEvent.setAction("PASS");
+        testEvent.setAction(SignoffAction.PASS);
         testEvent.setTimestamp(Instant.now());
         testEvent.setPerformedBy("instructor1");
         testEvent.setNotes("Great work!");
@@ -60,7 +61,7 @@ class SignoffEventServiceTest {
         SignoffEvent newEvent = new SignoffEvent();
         newEvent.setLabId("lab2");
         newEvent.setGroupId("group2");
-        newEvent.setAction("RETURN");
+        newEvent.setAction(SignoffAction.RETURN);
         newEvent.setPerformedBy("instructor2");
 
         when(repository.save(any(SignoffEvent.class))).thenReturn(testEvent);
@@ -82,7 +83,7 @@ class SignoffEventServiceTest {
         SignoffEvent eventWithoutTimestamp = new SignoffEvent();
         eventWithoutTimestamp.setLabId("lab1");
         eventWithoutTimestamp.setGroupId("group1");
-        eventWithoutTimestamp.setAction("PASS");
+        eventWithoutTimestamp.setAction(SignoffAction.PASS);
         eventWithoutTimestamp.setPerformedBy("instructor1");
         // No timestamp set
 
@@ -116,7 +117,7 @@ class SignoffEventServiceTest {
         SignoffEvent savedEvent = captor.getValue();
         assertEquals("lab1", savedEvent.getLabId());
         assertEquals("group1", savedEvent.getGroupId());
-        assertEquals("PASS", savedEvent.getAction());
+        assertEquals(SignoffAction.PASS, savedEvent.getAction());
         assertEquals("instructor1", savedEvent.getPerformedBy());
         assertNotNull(savedEvent.getTimestamp());
     }
@@ -141,7 +142,7 @@ class SignoffEventServiceTest {
         SignoffEvent savedEvent = captor.getValue();
         assertEquals("lab1", savedEvent.getLabId());
         assertEquals("group1", savedEvent.getGroupId());
-        assertEquals("RETURN", savedEvent.getAction());
+        assertEquals(SignoffAction.RETURN, savedEvent.getAction());
         assertEquals("instructor1", savedEvent.getPerformedBy());
         assertEquals("Needs revision", savedEvent.getNotes());
         assertEquals(2, savedEvent.getCheckpointNumber());
@@ -260,7 +261,7 @@ class SignoffEventServiceTest {
         // Assert
         assertNotNull(result);
         assertEquals(1, result.size());
-        assertEquals("PASS", result.get(0).getAction());
+        assertEquals(SignoffAction.PASS, result.get(0).getAction());
         verify(repository).findByAction("PASS");
     }
 
