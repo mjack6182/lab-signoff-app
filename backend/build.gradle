@@ -24,6 +24,18 @@ repositories {
 	mavenCentral()
 }
 
+
+tasks.named('bootRun', org.springframework.boot.gradle.tasks.run.BootRun) {
+    def agentJar = "opentelemetry-javaagent.jar"
+    jvmArgs = [
+        "-javaagent:${agentJar}",
+        "-Dotel.service.name=springApp",
+        "-Dotel.exporter.otlp.protocol=http/protobuf",
+        "-Dotel.exporter.otlp.endpoint=http://localhost:4318",
+        "-Dotel.traces.exporter=otlp"
+    ]
+}
+
 dependencies {
 	implementation 'org.apache.commons:commons-csv:1.14.1'
 	implementation 'org.springframework.boot:spring-boot-starter-data-mongodb'
