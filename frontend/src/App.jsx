@@ -1,7 +1,8 @@
 import { Routes, Route, NavLink, Navigate } from 'react-router-dom'
 import Login from './pages/login/login'
 import GroupList from './components/GroupList/GroupList'
-import LabSelector from './pages/lab-selector/lab-selector'
+import ClassSelector from './pages/class-selector/class-selector'
+import ClassDetail from './pages/class-detail/class-detail'
 import LabGroups from './pages/lab-groups/lab-groups'
 import LabJoin from './pages/lab-join/lab-join.jsx'
 import SelectStudent from './pages/select-student.jsx/select-student.jsx'
@@ -65,14 +66,15 @@ function AppContent() {
             <ProfileCompletionModal isOpen={isAuthenticated && !hasCompletedProfile()} />
 
             <Routes>
-                <Route path="/" element={<Navigate to="/lab-selector" replace />} />
-                <Route path="/login" element={<Navigate to="/lab-selector" replace />} />
+                <Route path="/" element={<Navigate to="/class-selector" replace />} />
+                <Route path="/login" element={<Navigate to="/class-selector" replace />} />
                 <Route path="/lab-join" element={<LabJoin />} />
                 <Route path="/select-student" element={<SelectStudent />} />
                 <Route path="/student-checkpoints/:labId/:groupId" element={<StudentCheckpoints />} />
                 <Route path="/groups" element={<GroupList />} />
-                <Route path="/lab-selector" element={<LabSelector />} />
-                {/* Direct route from lab selector to checkpoints */}
+                <Route path="/class-selector" element={<ClassSelector />} />
+                <Route path="/classes/:classId" element={<ClassDetail />} />
+                {/* Direct route to checkpoints when labId is known */}
                 <Route path="/labs/:labId/checkpoints" element={<CheckpointPage />} />
                 {/* Keep the old group-specific route for backward compatibility */}
                 <Route path="/labs/:labId/groups/:groupId/checkpoints" element={<CheckpointPage />} />
@@ -83,14 +85,14 @@ function AppContent() {
                 </Route>
                 <Route path="/dashboard" element={
                     user ? (
-                        <StaffOnly fallback={<Navigate to="/lab-selector" replace />}>
+                        <StaffOnly fallback={<Navigate to="/class-selector" replace />}>
                             <Dashboard />
                         </StaffOnly>
                     ) : <Navigate to="/login" replace />
                 } />
                 <Route path="/checkpoints" element={
                     user ? (
-                        <StaffOnly fallback={<Navigate to="/lab-selector" replace />}>
+                        <StaffOnly fallback={<Navigate to="/class-selector" replace />}>
                             <CheckpointPage />
                         </StaffOnly>
                     ) : <Navigate to="/login" replace />
@@ -98,7 +100,7 @@ function AppContent() {
                 {/* <Route path="/role-demo" element={<RoleDemo />} /> */}
 
                 {/* optional 404 */}
-                <Route path="*" element={user ? <Navigate to="/lab-selector" replace /> : <Navigate to="/login" replace />} />
+                <Route path="*" element={user ? <Navigate to="/class-selector" replace /> : <Navigate to="/login" replace />} />
             </Routes>
         </>
     );

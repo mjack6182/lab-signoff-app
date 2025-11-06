@@ -322,7 +322,7 @@ export default function CheckpointPage() {
         <main className="checkpoint-shell">
           <div className="error-message">
             <div>Error loading data: {error}</div>
-            <button onClick={() => navigate('/lab-selector')}>Back to Labs</button>
+            <button onClick={() => navigate('/class-selector')}>Back to Classes</button>
           </div>
         </main>
       </>
@@ -339,9 +339,9 @@ export default function CheckpointPage() {
         {/* ---------- Page Header ---------- */}
         <div className="checkpoint-page-header">
           <div className="checkpoint-nav">
-            <button className="breadcrumb-back" onClick={() => navigate('/lab-selector')}>
+            <button className="breadcrumb-back" onClick={() => navigate('/class-selector')}>
               <span className="back-arrow">←</span>
-              <span>Back to Labs</span>
+              <span>Back to Classes</span>
             </button>
             <span className="breadcrumb-separator">/</span>
             <h1 className="checkpoint-title">{currentLab}</h1>

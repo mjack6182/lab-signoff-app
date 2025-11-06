@@ -1,5 +1,5 @@
-/* ===== Lab Selector Page ===== */
-.lab-selector-shell {
+/* ===== Class Selector Page ===== */
+.class-selector-shell {
     min-height: 100vh;
     background: #f6f8fc;
     display: flex;
@@ -8,6 +8,53 @@
     /* 64px header + 32px spacing */
     padding: 32px 24px 48px;
     padding-top: 96px;
+}
+
+.class-selector-top {
+    max-width: 1400px;
+    margin: 0 auto 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+}
+
+.class-selector-heading h1 {
+    margin: 0 0 4px;
+    font-size: 28px;
+    color: #0f172a;
+}
+
+.class-selector-heading p {
+    margin: 0;
+    color: #64748b;
+}
+
+.class-import-trigger {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    border: none;
+    border-radius: 12px;
+    background: #016836;
+    color: #fff;
+    font-weight: 600;
+    padding: 12px 20px;
+    cursor: pointer;
+    box-shadow: 0 8px 24px rgba(1, 104, 54, 0.18);
+    transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.class-import-trigger:hover {
+    background: #014a28;
+    transform: translateY(-1px);
+}
+
+.class-import-trigger:disabled {
+    background: #94a3b8;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
 }
 
 /* Search Section */
@@ -208,6 +255,122 @@
     cursor: not-allowed;
 }
 
+.class-import-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.55);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1200;
+    padding: 24px;
+}
+
+.class-import-modal {
+    position: relative;
+    width: 100%;
+    max-width: 480px;
+    background: #fff;
+    border-radius: 18px;
+    padding: 32px 28px 28px;
+    box-shadow: 0 24px 60px rgba(15, 23, 42, 0.25);
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.class-import-modal h2 {
+    margin: 0;
+    font-size: 24px;
+    color: #0f172a;
+}
+
+.class-import-modal p {
+    margin: 0;
+    color: #475569;
+}
+
+.class-import-close {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    border: none;
+    background: transparent;
+    font-size: 24px;
+    color: #94a3b8;
+    cursor: pointer;
+}
+
+.class-import-close:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.class-import-dropzone {
+    border: 2px dashed #cbd5f5;
+    border-radius: 16px;
+    padding: 32px 24px;
+    text-align: center;
+    background: #f8fafc;
+    color: #475569;
+    cursor: pointer;
+    transition: border-color 0.2s ease, background 0.2s ease, color 0.2s ease;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    align-items: center;
+}
+
+.class-import-dropzone.dragging {
+    border-color: #016836;
+    background: #ecfdf5;
+    color: #016836;
+}
+
+.class-import-icon {
+    font-size: 36px;
+}
+
+.class-import-hint {
+    font-size: 13px;
+    color: #64748b;
+}
+
+.class-import-progress {
+    font-weight: 600;
+    color: #016836;
+}
+
+.class-import-error {
+    background: #fee2e2;
+    color: #991b1b;
+    border: 1px solid #fecaca;
+    border-radius: 12px;
+    padding: 12px 16px;
+    text-align: center;
+}
+
+.class-import-secondary {
+    align-self: center;
+    border: none;
+    border-radius: 10px;
+    background: #0f172a;
+    color: #fff;
+    padding: 10px 18px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+
+.class-import-secondary:hover {
+    background: #020617;
+}
+
+.class-import-secondary:disabled {
+    background: #94a3b8;
+    cursor: not-allowed;
+}
+
 /* Responsive Design */
 @media (max-width: 1200px) {
     .labs-grid {
@@ -217,15 +380,15 @@
 }
 
 @media (max-width: 768px) {
-    .lab-selector-header {
+    .class-selector-top {
         flex-direction: column;
-        gap: 12px;
         align-items: stretch;
-        padding: 16px 20px;
+        gap: 12px;
     }
 
-    .header-right {
-        justify-content: space-between;
+    .class-import-trigger {
+        width: 100%;
+        justify-content: center;
     }
 
     .labs-grid-section {
@@ -243,26 +406,20 @@
 }
 
 @media (max-width: 480px) {
-    .lab-selector-header {
-        padding: 12px 16px;
-    }
-
     .labs-grid-section {
         padding: 20px 16px 24px;
     }
 
-    .app-title {
-        font-size: 20px;
-    }
-
-    .user-profile {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 2px;
-    }
-
     .lab-card {
         height: 260px;
+    }
+
+    .class-selector-heading h1 {
+        font-size: 24px;
+    }
+
+    .class-import-modal {
+        padding: 28px 20px 24px;
     }
 }
 

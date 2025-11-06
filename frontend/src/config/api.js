@@ -13,6 +13,16 @@ export const buildApiUrl = (path) => {
 // Export specific endpoint builders for convenience
 export const api = {
   labs: () => buildApiUrl('/lti/labs'),
+  classes: (params) => {
+    if (!params || Object.keys(params).length === 0) {
+      return buildApiUrl('/api/classes');
+    }
+    const search = new URLSearchParams(params);
+    return buildApiUrl(`/api/classes?${search.toString()}`);
+  },
+  classDetail: (classId) => buildApiUrl(`/api/classes/${classId}`),
+  classLabs: (classId) => buildApiUrl(`/api/classes/${classId}/labs`),
+  importClass: () => buildApiUrl('/api/classes/import'),
   labGroups: (labId) => buildApiUrl(`/lti/labs/${labId}/groups`),
   groups: () => buildApiUrl('/groups'),
   auth: {

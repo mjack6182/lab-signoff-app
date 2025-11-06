@@ -2,10 +2,8 @@ package com.example.lab_signoff_backend.service;
 
 import com.example.lab_signoff_backend.model.Class;
 import com.example.lab_signoff_backend.model.Lab;
-import com.example.lab_signoff_backend.model.User;
 import com.example.lab_signoff_backend.model.enums.LabStatus;
 import com.example.lab_signoff_backend.repository.ClassRepository;
-import com.example.lab_signoff_backend.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -26,9 +24,6 @@ public class ClassService {
 
     @Autowired
     private ClassRepository classRepository;
-
-    @Autowired
-    private UserRepository userRepository;
 
     @Autowired
     private LabService labService;
@@ -81,7 +76,30 @@ public class ClassService {
     /**
      * Update a class
      */
-    public Class updateClass(Class classEntity) {
+    public Class updateClass(String id, Class updates) {
+        Optional<Class> classOpt = classRepository.findById(id);
+        if (classOpt.isEmpty()) {
+            throw new RuntimeException("Class not found with id: " + id);
+        }
+
+        Class classEntity = classOpt.get();
+
+        if (updates.getCourseName() != null) {
+            classEntity.setCourseName(updates.getCourseName());
+        }
+        if (updates.getCourseCode() != null) {
+            classEntity.setCourseCode(updates.getCourseCode());
+        }
+        if (updates.getSection() != null) {
+            classEntity.setSection(updates.getSection());
+        }
+        if (updates.getTerm() != null) {
+            classEntity.setTerm(updates.getTerm());
+        }
+        if (updates.getRoster() != null) {
+            classEntity.setRoster(new ArrayList<>(updates.getRoster()));
+        }
+
         classEntity.updateTimestamp();
         return classRepository.save(classEntity);
     }
@@ -170,7 +188,7 @@ public class ClassService {
         }
 
         Class classEntity = classOpt.get();
-        List<String> studentIds = new ArrayList<>();
+        List<String> rosterEntries = new ArrayList<>();
         List<Lab> labsToCreate = new ArrayList<>();
 
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(csvFile.getInputStream()))) {
@@ -229,37 +247,23 @@ public class ClassService {
             // Parse student roster (rows 3+)
             String line;
             while ((line = reader.readLine()) != null) {
-                String[] columns = line.split(",");
+                String[] columns = line.split(",", -1);
 
                 // Canvas CSV format: Student,ID,SIS User ID,SIS Login ID,...
                 if (columns.length >= 4) {
                     String studentName = columns[0].trim();
-                    String studentCanvasId = columns[1].trim();
-                    String sisUserId = columns[2].trim();
-                    String sisLoginId = columns[3].trim();
-
                     // Skip empty rows or summary rows
                     if (studentName.isEmpty() || studentName.equals("Student, Test")) {
                         continue;
                     }
 
-                    // Try to find existing user by email (SIS Login ID is typically email)
-                    Optional<User> userOpt = userRepository.findByEmail(sisLoginId);
-
-                    if (userOpt.isPresent()) {
-                        // Add existing user to roster
-                        studentIds.add(userOpt.get().getId());
-                    } else {
-                        // For now, store the SIS User ID or Canvas ID
-                        // In a full implementation, you'd create placeholder users
-                        studentIds.add(sisUserId.isEmpty() ? studentCanvasId : sisUserId);
-                    }
+                    rosterEntries.add(studentName);
                 }
             }
 
             // Add all students to roster
-            for (String studentId : studentIds) {
-                classEntity.addStudentToRoster(studentId);
+            for (String entry : rosterEntries) {
+                classEntity.addStudentToRoster(entry);
             }
 
             return classRepository.save(classEntity);

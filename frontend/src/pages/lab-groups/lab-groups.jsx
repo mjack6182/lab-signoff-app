@@ -73,7 +73,7 @@ export default function LabGroups() {
   }
 
   const handleBackToLabs = () => {
-    navigate('/lab-selector')
+    navigate('/class-selector')
   }
 
   // ✅ Loading or Error states
@@ -95,7 +95,7 @@ export default function LabGroups() {
         <main className="lab-groups-shell">
           <div className="error-message">
             <div>Error loading groups: {error}</div>
-            <button onClick={handleBackToLabs}>Back to Labs</button>
+            <button onClick={handleBackToLabs}>Back to Classes</button>
           </div>
         </main>
       </>
@@ -114,7 +114,7 @@ export default function LabGroups() {
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             <button className="back-btn" onClick={handleBackToLabs}>
-              <span>←</span> Back to Labs
+              <span>←</span> Back to Classes
             </button>
             <div className="page-title-section">
               <h1 className="lab-title">{lab?.courseId || 'Lab'}</h1>
@@ -157,7 +157,7 @@ export default function LabGroups() {
 
           <div className="groups-grid">
             {groups.length === 0 ? (
-              <div className="no-groups">No groups available for this lab</div>
+              <div className="no-groups">No groups available for this class</div>
             ) : (
               groups.map((group) => (
                 <div
