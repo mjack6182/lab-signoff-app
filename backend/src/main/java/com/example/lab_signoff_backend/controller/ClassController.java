@@ -7,9 +7,11 @@ import com.example.lab_signoff_backend.service.LabService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.time.Year;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -20,7 +22,15 @@ import java.util.Optional;
  */
 @RestController
 @RequestMapping("/api/classes")
-@CrossOrigin(origins = "*") // Configure appropriately for production
+@CrossOrigin(
+        origins = {
+                "http://localhost:5173",
+                "http://localhost:5002",
+                "https://lab-signoff-app.web.app",
+                "https://lab-signoff-app.firebaseapp.com"
+        },
+        allowCredentials = "true"
+)
 public class ClassController {
 
     @Autowired
@@ -97,6 +107,66 @@ public class ClassController {
     }
 
     /**
+     * Import a new class (and associated labs) from a Canvas gradebook CSV
+     * POST /api/classes/import
+     */
+    @PostMapping("/import")
+    public ResponseEntity<?> importClassFromCsv(
+            @RequestParam("file") MultipartFile file,
+            @RequestParam("instructorId") String instructorId,
+            @RequestParam(value = "courseCode", required = false) String courseCode,
+            @RequestParam(value = "courseName", required = false) String courseName,
+            @RequestParam(value = "term", required = false) String term,
+            @RequestParam(value = "section", required = false) String section
+    ) {
+        if (file == null || file.isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of("error", "CSV file is required"));
+        }
+        if (!StringUtils.hasText(instructorId)) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Instructor ID is required"));
+        }
+
+        String originalFilename = file.getOriginalFilename();
+        String baseName = deriveNameFromFilename(originalFilename);
+
+        String resolvedCourseName = StringUtils.hasText(courseName)
+                ? courseName.trim()
+                : baseName;
+
+        String resolvedCourseCode = StringUtils.hasText(courseCode)
+                ? courseCode.trim()
+                : baseName.replaceAll("\\s+", "-").toUpperCase();
+
+        String resolvedTerm = StringUtils.hasText(term)
+                ? term.trim()
+                : "Imported " + Year.now();
+
+        String resolvedSection = StringUtils.hasText(section)
+                ? section.trim()
+                : null;
+
+        Class createdClass = null;
+        try {
+            Class newClass = new Class(resolvedCourseCode, resolvedCourseName, resolvedTerm, instructorId);
+            if (resolvedSection != null) {
+                newClass.setSection(resolvedSection);
+            }
+
+            createdClass = classService.createClass(newClass);
+            Class populatedClass = classService.importRosterFromCsv(createdClass.getId(), file);
+
+            return ResponseEntity.status(HttpStatus.CREATED).body(populatedClass);
+        } catch (Exception e) {
+            if (createdClass != null && createdClass.getId() != null) {
+                classService.deleteClass(createdClass.getId());
+            }
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of(
+                    "error", "Failed to import class: " + e.getMessage()
+            ));
+        }
+    }
+
+    /**
      * Get all labs for a specific class
      * GET /api/classes/{classId}/labs
      */
@@ -122,9 +192,7 @@ public class ClassController {
             @PathVariable String id,
             @RequestBody Class classEntity) {
         try {
-            // Ensure ID matches
-            classEntity.setId(id);
-            Class updated = classService.updateClass(classEntity);
+            Class updated = classService.updateClass(id, classEntity);
             return ResponseEntity.ok(updated);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
@@ -289,5 +357,20 @@ public class ClassController {
             @PathVariable String userId) {
         boolean isStaff = classService.isStaff(id, userId);
         return ResponseEntity.ok(Map.of("isStaff", isStaff));
+    }
+
+    private String deriveNameFromFilename(String filename) {
+        if (!StringUtils.hasText(filename)) {
+            return "Imported Class";
+        }
+
+        String base = filename;
+        int dotIndex = filename.lastIndexOf('.');
+        if (dotIndex > 0) {
+            base = filename.substring(0, dotIndex);
+        }
+
+        String cleaned = base.replace('_', ' ').replace('-', ' ').trim();
+        return StringUtils.hasText(cleaned) ? cleaned : "Imported Class";
     }
 }
