@@ -40,15 +40,31 @@ export default function CheckpointPage() {
     if (!labId) return;
     setLoading(true);
 
+    console.log('[Checkpoints] Fetching data for labId:', labId);
+
     // Fetch all labs and the groups for the current lab
     Promise.all([
       fetch(api.labs()).then(res => res.json()),
-      fetch(api.labGroups(labId)).then(res => {
-        if (!res.ok) throw new Error('Failed to fetch groups');
+      fetch(api.labGroups(labId)).then(async res => {
+        if (!res.ok) {
+          const errorText = await res.text();
+          console.error('[Checkpoints] Failed to fetch groups:', {
+            status: res.status,
+            statusText: res.statusText,
+            url: res.url,
+            errorBody: errorText
+          });
+          throw new Error(`Failed to fetch groups: ${res.status} - ${errorText}`);
+        }
         return res.json();
       })
     ])
       .then(([allLabs, groupsData]) => {
+        console.log('[Checkpoints] Successfully fetched labs and groups:', {
+          totalLabs: allLabs.length,
+          totalGroups: groupsData.length
+        });
+
         // Match labId to its data
         const currentLab = allLabs.find(l => l.id === labId);
         setLab(currentLab);
@@ -73,7 +89,7 @@ export default function CheckpointPage() {
         setGroupCheckpoints(initial);
       })
       .catch(err => {
-        console.error('Error fetching data:', err);
+        console.error('[Checkpoints] Error fetching data:', err);
         setError(err.message);
       })
       .finally(() => setLoading(false));
@@ -399,14 +415,19 @@ export default function CheckpointPage() {
                   <div className="group-card-body">
                     <div className="group-members">
                       <div className="members-list">
-                        {group.members.map((member, index) => (
-                          <span key={index} className="member-name">
-                            {member}{index < group.members.length - 1 ? ', ' : ''}
-                          </span>
-                        ))}
+                        {group.members && group.members.map((member, index) => {
+                          const displayName = typeof member === 'string'
+                            ? member
+                            : (member.name || member.email || member.userId || 'Unknown');
+                          return (
+                            <span key={index} className="member-name">
+                              {displayName}{index < group.members.length - 1 ? ', ' : ''}
+                            </span>
+                          );
+                        })}
                       </div>
                       <span className="members-count">
-                        {group.members.length} member{group.members.length !== 1 ? 's' : ''}
+                        {group.members?.length || 0} member{group.members?.length !== 1 ? 's' : ''}
                       </span>
                     </div>
 
