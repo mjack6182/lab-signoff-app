@@ -3,38 +3,22 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
 import Header from '../../components/Header/Header'
 import { api } from '../../config/api'
+import { websocketService } from '../../services/websocketService'
 import './lab-groups.css'
 
-/**
- * LabGroups Component
- *
- * LEGACY/ADMIN COMPONENT: Displays all groups for a specific lab with detailed group management.
- * This component is now primarily used for administrative purposes, as the main user flow
- * has been simplified to go directly from Labs -> Checkpoints.
- *
- * Backend Integration:
- * - Fetches lab info from GET /lti/labs endpoint
- * - Fetches groups for the lab from GET /lti/labs/:labId/groups endpoint
- *
- * User Flow (Admin/Legacy):
- * 1. Admin navigates directly to /labs/:labId/groups
- * 2. This page displays all groups for that lab with detailed information
- * 3. Admin can click on a group to view/manage checkpoints for that specific group
- *
- * Note: Regular users now go directly from lab selector to checkpoints page.
- */
 export default function LabGroups() {
   const { labId } = useParams()
   const navigate = useNavigate()
   const { user } = useAuth()
+
   const [lab, setLab] = useState(null)
   const [groups, setGroups] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [wsStatus, setWsStatus] = useState('DISCONNECTED')
 
-  // Fetch lab and groups data on component mount
+  // ✅ Fetch lab and groups on mount
   useEffect(() => {
-    // Fetch lab information
     Promise.all([
       fetch(api.labs()).then(res => res.json()),
       fetch(api.labGroups(labId)).then(res => {
@@ -55,30 +39,50 @@ export default function LabGroups() {
       })
   }, [labId])
 
+  // ✅ WebSocket setup for live updates
+  useEffect(() => {
+    const onUpdate = (update) => {
+      console.log('📡 WebSocket update received:', update)
+      setGroups(prev =>
+        prev.map(g =>
+          g.groupId === update.groupId
+            ? { ...g, status: update.status }
+            : g
+        )
+      )
+    }
+
+    const onStatusChange = (status) => {
+      setWsStatus(status)
+    }
+
+    websocketService.init()
+    websocketService.addListener(onUpdate)
+    websocketService.addStatusListener?.(onStatusChange)
+    websocketService.subscribeToGroup('Group-1') // TEMP: adjust later for dynamic group
+
+    return () => {
+      websocketService.removeListener(onUpdate)
+      websocketService.removeStatusListener?.(onStatusChange)
+      websocketService.unsubscribeFromGroup('Group-1')
+    }
+  }, [])
+
   const handleGroupClick = (group) => {
-    // Navigate to checkpoint page for this group
     navigate(`/labs/${labId}/groups/${group.id}/checkpoints`)
   }
 
   const handleBackToLabs = () => {
-    navigate('/lab-selector')
+    navigate('/class-selector')
   }
 
+  // ✅ Loading or Error states
   if (loading) {
     return (
       <>
         <Header />
         <main className="lab-groups-shell">
-          <div style={{
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            height: '50vh',
-            fontSize: '18px',
-            color: '#64748b'
-          }}>
-            Loading groups...
-          </div>
+          <div className="center-message">Loading groups...</div>
         </main>
       </>
     )
@@ -89,101 +93,115 @@ export default function LabGroups() {
       <>
         <Header />
         <main className="lab-groups-shell">
-          <div style={{
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            height: '50vh',
-            fontSize: '18px',
-            color: '#ef4444',
-            flexDirection: 'column',
-            gap: '12px'
-          }}>
+          <div className="error-message">
             <div>Error loading groups: {error}</div>
-            <button
-              onClick={handleBackToLabs}
-              style={{
-                padding: '8px 16px',
-                fontSize: '14px',
-                cursor: 'pointer'
-              }}
-            >
-              Back to Labs
-            </button>
+            <button onClick={handleBackToLabs}>Back to Classes</button>
           </div>
         </main>
       </>
     )
   }
 
+  // ✅ UI
   return (
     <>
       <Header />
       <main className="lab-groups-shell">
-        {/* Page Header with Back Button */}
-        <div className="page-header">
-          <button className="back-btn" onClick={handleBackToLabs}>
-            <span>←</span> Back to Labs
-          </button>
-          <div className="page-title-section">
-            <h1 className="lab-title">{lab?.courseId || 'Lab'}</h1>
-            <p className="lab-subtitle">Line Item: {lab?.lineItemId}</p>
+        {/* Page Header */}
+        <div
+          className="page-header"
+          style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <button className="back-btn" onClick={handleBackToLabs}>
+              <span>←</span> Back to Classes
+            </button>
+            <div className="page-title-section">
+              <h1 className="lab-title">{lab?.courseId || 'Lab'}</h1>
+              <p className="lab-subtitle">Line Item: {lab?.lineItemId}</p>
+            </div>
+          </div>
+
+          {/* ✅ Connection Status + Test Broadcast */}
+          <div className="flex items-center gap-4">
+            <span
+              className={`font-semibold ${
+                wsStatus === 'CONNECTED'
+                  ? 'text-green-600'
+                  : wsStatus === 'RECONNECTING'
+                  ? 'text-orange-500'
+                  : 'text-red-600'
+              }`}
+            >
+              {wsStatus}
+            </span>
+            <button
+              onClick={() =>
+                fetch('http://localhost:8080/ws-test-broadcast').catch(console.error)
+              }
+              className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700"
+            >
+              Test Broadcast
+            </button>
           </div>
         </div>
 
-      {/* Groups Section */}
-      <section className="groups-section">
-        <div className="section-header">
-          <h2 className="section-title">Groups</h2>
-          <span className="groups-count">{groups.length} group{groups.length !== 1 ? 's' : ''}</span>
-        </div>
+        {/* Groups Section */}
+        <section className="groups-section">
+          <div className="section-header">
+            <h2 className="section-title">Groups</h2>
+            <span className="groups-count">
+              {groups.length} group{groups.length !== 1 ? 's' : ''}
+            </span>
+          </div>
 
-        <div className="groups-grid">
-          {groups.length === 0 ? (
-            <div className="no-groups">
-              No groups available for this lab
-            </div>
-          ) : (
-            groups.map(group => (
-              <div
-                key={group.id}
-                className="group-card"
-                onClick={() => handleGroupClick(group)}
-              >
-                <div className="group-card-header">
-                  <h3 className="group-name">{group.groupId}</h3>
-                  <span className={`group-status status-${group.status.toLowerCase().replace(' ', '-')}`}>
-                    {group.status}
-                  </span>
-                </div>
+          <div className="groups-grid">
+            {groups.length === 0 ? (
+              <div className="no-groups">No groups available for this class</div>
+            ) : (
+              groups.map((group) => (
+                <div
+                  key={group.id}
+                  className="group-card"
+                  onClick={() => handleGroupClick(group)}
+                >
+                  <div className="group-card-header">
+                    <h3 className="group-name">{group.groupId}</h3>
+                    <span
+                      className={`group-status status-${group.status
+                        .toLowerCase()
+                        .replace(' ', '-')}`}
+                    >
+                      {group.status}
+                    </span>
+                  </div>
 
-                <div className="group-card-body">
-                  <div className="group-members">
-                    <div className="members-label">Members:</div>
-                    <div className="members-list">
-                      {group.members.map((member, index) => (
-                        <span key={index} className="member-item">
-                          {member}
-                        </span>
-                      ))}
-                    </div>
-                    <div className="members-count">
-                      {group.members.length} member{group.members.length !== 1 ? 's' : ''}
+                  <div className="group-card-body">
+                    <div className="group-members">
+                      <div className="members-label">Members:</div>
+                      <div className="members-list">
+                        {group.members.map((member, index) => (
+                          <span key={index} className="member-item">
+                            {member}
+                          </span>
+                        ))}
+                      </div>
+                      <div className="members-count">
+                        {group.members.length} member
+                        {group.members.length !== 1 ? 's' : ''}
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                <div className="group-card-footer">
-                  <button className="view-btn">
-                    View Checkpoints
-                  </button>
+                  <div className="group-card-footer">
+                    <button className="view-btn">View Checkpoints</button>
+                  </div>
                 </div>
-              </div>
-            ))
-          )}
-        </div>
-      </section>
-    </main>
+              ))
+            )}
+          </div>
+        </section>
+      </main>
     </>
   )
 }

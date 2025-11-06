@@ -1,0 +1,448 @@
+/* ===== Class Selector Page ===== */
+.class-selector-shell {
+    min-height: 100vh;
+    background: #f6f8fc;
+    display: flex;
+    flex-direction: column;
+    padding-top: 96px;
+    /* 64px header + 32px spacing */
+    padding: 32px 24px 48px;
+    padding-top: 96px;
+}
+
+.class-selector-top {
+    max-width: 1400px;
+    margin: 0 auto 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+}
+
+.class-selector-heading h1 {
+    margin: 0 0 4px;
+    font-size: 28px;
+    color: #0f172a;
+}
+
+.class-selector-heading p {
+    margin: 0;
+    color: #64748b;
+}
+
+.class-import-trigger {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    border: none;
+    border-radius: 12px;
+    background: #016836;
+    color: #fff;
+    font-weight: 600;
+    padding: 12px 20px;
+    cursor: pointer;
+    box-shadow: 0 8px 24px rgba(1, 104, 54, 0.18);
+    transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.class-import-trigger:hover {
+    background: #014a28;
+    transform: translateY(-1px);
+}
+
+.class-import-trigger:disabled {
+    background: #94a3b8;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+/* Search Section */
+.search-section {
+    margin-bottom: 24px;
+}
+
+.search-controls {
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+.search-input {
+    width: 100%;
+    height: 48px;
+    padding: 0 16px;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    background: #fff;
+    font-size: 16px;
+    color: #0f172a;
+    box-shadow: 0 4px 18px rgba(2, 6, 23, 0.06);
+    transition: all 0.2s ease;
+}
+
+.search-input:focus {
+    outline: none;
+    border-color: #016836;
+    box-shadow: 0 0 0 3px rgba(1, 104, 54, 0.1);
+}
+
+.search-input::placeholder {
+    color: #64748b;
+}
+
+/* Labs Grid */
+.labs-grid-section {
+    flex: 1;
+}
+
+.labs-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 24px;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+/* Lab Card */
+.lab-card {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 16px;
+    box-shadow: 0 4px 18px rgba(2, 6, 23, 0.06);
+    overflow: hidden;
+    transition: all 0.2s ease;
+    display: flex;
+    flex-direction: column;
+    height: 320px;
+    width: 100%;
+    cursor: pointer;
+}
+
+.lab-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 32px rgba(2, 6, 23, 0.12);
+}
+
+.lab-card-header {
+    padding: 20px 20px 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+}
+
+.lab-card-title {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 700;
+    color: #0f172a;
+    line-height: 1.3;
+    flex: 1;
+}
+
+.lab-card-status {
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+    border: 1px solid;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    flex-shrink: 0;
+    background: #f1f5f9;
+    color: #64748b;
+    border-color: #e5e7eb;
+}
+
+.lab-card-body {
+    padding: 16px 20px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.lab-card-course {
+    margin: 0;
+    font-size: 14px;
+    color: #016836;
+    font-weight: 600;
+}
+
+.lab-card-description {
+    margin: 0;
+    font-size: 14px;
+    color: #64748b;
+    line-height: 1.4;
+    flex: 1;
+}
+
+.lab-card-progress {
+    margin-top: auto;
+}
+
+.progress-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.progress-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.progress-value {
+    font-size: 12px;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.progress-bar {
+    height: 6px;
+    background: #f1f5f9;
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    background: #016836;
+    border-radius: 3px;
+    transition: width 0.3s ease;
+}
+
+.lab-card-footer {
+    padding: 0 20px 20px;
+}
+
+.lab-card-button {
+    width: 100%;
+    height: 40px;
+    border: none;
+    border-radius: 10px;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    background: #016836;
+    color: white;
+}
+
+.lab-card-button:hover {
+    background: #014a28;
+    transform: translateY(-1px);
+}
+
+.lab-card-button.open {
+    background: #016836;
+    color: #fff;
+}
+
+.lab-card-button.open:hover {
+    background: #014a28;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(1, 104, 54, 0.3);
+}
+
+.lab-card-button.disabled {
+    background: #f1f5f9;
+    color: #9ca3af;
+    cursor: not-allowed;
+}
+
+.class-import-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.55);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1200;
+    padding: 24px;
+}
+
+.class-import-modal {
+    position: relative;
+    width: 100%;
+    max-width: 480px;
+    background: #fff;
+    border-radius: 18px;
+    padding: 32px 28px 28px;
+    box-shadow: 0 24px 60px rgba(15, 23, 42, 0.25);
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.class-import-modal h2 {
+    margin: 0;
+    font-size: 24px;
+    color: #0f172a;
+}
+
+.class-import-modal p {
+    margin: 0;
+    color: #475569;
+}
+
+.class-import-close {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    border: none;
+    background: transparent;
+    font-size: 24px;
+    color: #94a3b8;
+    cursor: pointer;
+}
+
+.class-import-close:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.class-import-dropzone {
+    border: 2px dashed #cbd5f5;
+    border-radius: 16px;
+    padding: 32px 24px;
+    text-align: center;
+    background: #f8fafc;
+    color: #475569;
+    cursor: pointer;
+    transition: border-color 0.2s ease, background 0.2s ease, color 0.2s ease;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    align-items: center;
+}
+
+.class-import-dropzone.dragging {
+    border-color: #016836;
+    background: #ecfdf5;
+    color: #016836;
+}
+
+.class-import-icon {
+    font-size: 36px;
+}
+
+.class-import-hint {
+    font-size: 13px;
+    color: #64748b;
+}
+
+.class-import-progress {
+    font-weight: 600;
+    color: #016836;
+}
+
+.class-import-error {
+    background: #fee2e2;
+    color: #991b1b;
+    border: 1px solid #fecaca;
+    border-radius: 12px;
+    padding: 12px 16px;
+    text-align: center;
+}
+
+.class-import-secondary {
+    align-self: center;
+    border: none;
+    border-radius: 10px;
+    background: #0f172a;
+    color: #fff;
+    padding: 10px 18px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+
+.class-import-secondary:hover {
+    background: #020617;
+}
+
+.class-import-secondary:disabled {
+    background: #94a3b8;
+    cursor: not-allowed;
+}
+
+/* Responsive Design */
+@media (max-width: 1200px) {
+    .labs-grid {
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 20px;
+    }
+}
+
+@media (max-width: 768px) {
+    .class-selector-top {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+    }
+
+    .class-import-trigger {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .labs-grid-section {
+        padding: 24px 20px 32px;
+    }
+
+    .labs-grid {
+        grid-template-columns: 1fr;
+        gap: 16px;
+    }
+
+    .lab-card {
+        height: 280px;
+    }
+}
+
+@media (max-width: 480px) {
+    .labs-grid-section {
+        padding: 20px 16px 24px;
+    }
+
+    .lab-card {
+        height: 260px;
+    }
+
+    .class-selector-heading h1 {
+        font-size: 24px;
+    }
+
+    .class-import-modal {
+        padding: 28px 20px 24px;
+    }
+}
+
+/* Tablet breakpoint */
+@media (min-width: 768px) and (max-width: 1024px) {
+    .labs-grid {
+        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+        gap: 20px;
+    }
+
+    .lab-card {
+        height: 300px;
+    }
+}
+
+/* Large desktop breakpoint */
+@media (min-width: 1200px) {
+    .labs-grid {
+        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+        gap: 28px;
+    }
+
+    .lab-card {
+        height: 340px;
+    }
+}

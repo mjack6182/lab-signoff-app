@@ -1,0 +1,99 @@
+/* Profile Completion Modal Styles */
+.profile-intro {
+    margin-bottom: 24px;
+    padding: 16px;
+    background: #f0f9ff;
+    border-radius: 12px;
+    border-left: 4px solid #016836;
+}
+
+.profile-intro p {
+    margin: 0;
+    color: #374151;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.profile-form {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.form-field {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.form-label {
+    font-weight: 600;
+    color: #374151;
+    font-size: 14px;
+}
+
+.required {
+    color: #ef4444;
+}
+
+.form-input {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: 14px;
+    box-sizing: border-box;
+    transition: all 0.2s;
+}
+
+.form-input:focus {
+    outline: none;
+    border-color: #016836;
+    box-shadow: 0 0 0 3px rgba(1, 104, 54, 0.1);
+}
+
+.form-input:disabled {
+    background: #f1f5f9;
+    cursor: not-allowed;
+}
+
+.error-message {
+    padding: 12px;
+    background: #fee2e2;
+    border: 1px solid #fecaca;
+    border-radius: 8px;
+    color: #991b1b;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.modal-btn.primary {
+    background: #016836;
+    color: #fff;
+    width: 100%;
+}
+
+.modal-btn.primary:hover:not(:disabled) {
+    background: #014a28;
+}
+
+.modal-btn.primary:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Responsive Design */
+@media (max-width: 480px) {
+    .profile-intro {
+        padding: 12px;
+    }
+
+    .form-field {
+        gap: 6px;
+    }
+
+    .form-input {
+        padding: 10px;
+    }
+}

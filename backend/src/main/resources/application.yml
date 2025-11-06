@@ -29,7 +29,6 @@ app:
   mocks:
     ags:
       enabled: true
-      
 server:
   port: ${SERVER_PORT}
 

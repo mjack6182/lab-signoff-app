@@ -1,6 +1,7 @@
 package com.example.lab_signoff_backend.service;
 
 import com.example.lab_signoff_backend.model.SignoffEvent;
+import com.example.lab_signoff_backend.model.enums.SignoffAction;
 import com.example.lab_signoff_backend.repository.SignoffEventRepository;
 import org.springframework.stereotype.Service;
 
@@ -54,7 +55,11 @@ public class SignoffEventService {
      * @return The created signoff event
      */
     public SignoffEvent createEvent(String labId, String groupId, String action, String performedBy) {
-        SignoffEvent event = new SignoffEvent(labId, groupId, action, performedBy);
+        SignoffEvent event = new SignoffEvent();
+        event.setLabId(labId);
+        event.setGroupId(groupId);
+        event.setAction(SignoffAction.valueOf(action));
+        event.setPerformedBy(performedBy);
         return repository.save(event);
     }
 
@@ -71,7 +76,11 @@ public class SignoffEventService {
      */
     public SignoffEvent createEvent(String labId, String groupId, String action,
                                    String performedBy, String notes, Integer checkpointNumber) {
-        SignoffEvent event = new SignoffEvent(labId, groupId, action, performedBy);
+        SignoffEvent event = new SignoffEvent();
+        event.setLabId(labId);
+        event.setGroupId(groupId);
+        event.setAction(SignoffAction.valueOf(action));
+        event.setPerformedBy(performedBy);
         event.setNotes(notes);
         event.setCheckpointNumber(checkpointNumber);
         return repository.save(event);

@@ -1,9 +1,44 @@
-// Mock checkpoint data with more comprehensive structure - Lab 5 specific
+/**
+ * Mock Checkpoint Data
+ * Used for development and testing of the student checkpoint view
+ */
+
 export const mockCheckpoints = [
-    { id: 'cp-1', name: 'Environment Setup', description: 'Configure development environment and install required dependencies', completed: true, completedAt: '2025-10-10', completedBy: 'u2', points: 1 },
-    { id: 'cp-2', name: 'Database Schema', description: 'Design and implement database schema with proper relationships', completed: true, completedAt: '2025-10-11', completedBy: 'u2', points: 1 },
-    { id: 'cp-3', name: 'API Endpoints', description: 'Create RESTful API endpoints with proper error handling', completed: true, completedAt: '2025-10-12', completedBy: 'u1', points: 1 },
-    { id: 'cp-4', name: 'Frontend Components', description: 'Develop responsive React components with proper state management', completed: false, points: 1 },
-    { id: 'cp-5', name: 'Testing & Validation', description: 'Write and execute comprehensive test cases', completed: false, points: 1 },
-    { id: 'cp-6', name: 'Deployment & Documentation', description: 'Deploy application and create complete documentation', completed: false, points: 1 }
+    {
+        id: 'checkpoint-1',
+        name: 'Setup Environment',
+        description: 'Install required dependencies and configure your development environment',
+        points: 1,
+        order: 1
+    },
+    {
+        id: 'checkpoint-2',
+        name: 'Implement Core Functionality',
+        description: 'Complete the main feature implementation according to specifications',
+        points: 1,
+        order: 2
+    },
+    {
+        id: 'checkpoint-3',
+        name: 'Write Tests',
+        description: 'Create unit tests with at least 80% code coverage',
+        points: 1,
+        order: 3
+    },
+    {
+        id: 'checkpoint-4',
+        name: 'Code Review',
+        description: 'Submit code for review and address feedback',
+        points: 1,
+        order: 4
+    },
+    {
+        id: 'checkpoint-5',
+        name: 'Final Submission',
+        description: 'Complete all requirements and submit final deliverables',
+        points: 1,
+        order: 5
+    }
 ];
+
+export default mockCheckpoints;
