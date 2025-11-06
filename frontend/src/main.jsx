@@ -29,6 +29,8 @@ ReactDOM.createRoot(document.getElementById('root')).render(
                 redirect_uri: redirectUri,
                 scope: "openid profile email"
             }}
+            cacheLocation="localstorage"
+            useRefreshTokens={true}
         >
             <BrowserRouter>
                 <App />
