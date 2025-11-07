@@ -1,3 +1,5 @@
+/backend/otel-out/
+/backend/otel-out/*.json
 # === Node.js ===
 # Logs
 logs
@@ -231,3 +233,5 @@ docker-volumes/
 
 # Ignore claude.ai local files
 .claude/
+backend/otel-out/logs.json
+backend/otel-out/metrics.json
