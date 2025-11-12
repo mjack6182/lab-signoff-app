@@ -98,6 +98,16 @@ public class LabWebSocketController {
     }
 
     /**
+     * Broadcast groups randomized event to all clients subscribed to the lab
+     * @param labId The lab identifier
+     */
+    public void broadcastGroupsRandomized(String labId) {
+        messagingTemplate.convertAndSend("/topic/labs/" + labId + "/groups-randomized",
+            new GroupsRandomizedMessage(labId));
+        logger.info("Broadcasted groups randomized event -> Lab: {}", labId);
+    }
+
+    /**
      * Test endpoint to verify WebSocket connectivity
      */
     @GetMapping("/ws-test-broadcast")
@@ -108,5 +118,24 @@ public class LabWebSocketController {
         testUpdate.setPointsAwarded(1);
         broadcastCheckpointUpdate("test-lab-123", testUpdate);
         return "✅ Test WebSocket broadcast sent to /topic/labs/test-lab-123/checkpoints";
+    }
+
+    /**
+     * Message class for groups randomized events
+     */
+    public static class GroupsRandomizedMessage {
+        private final String labId;
+        private final long timestamp;
+        private final String message;
+
+        public GroupsRandomizedMessage(String labId) {
+            this.labId = labId;
+            this.timestamp = System.currentTimeMillis();
+            this.message = "Groups have been randomized";
+        }
+
+        public String getLabId() { return labId; }
+        public long getTimestamp() { return timestamp; }
+        public String getMessage() { return message; }
     }
 }
