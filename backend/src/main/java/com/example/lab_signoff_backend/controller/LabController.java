@@ -200,6 +200,43 @@ public class LabController {
         }
     }
 
+    /**
+     * Randomize groups for a lab based on enrolled students.
+     * Deletes existing groups and creates new randomized groups.
+     */
+    @PostMapping("/labs/{labId}/randomize-groups")
+    public ResponseEntity<?> randomizeGroups(@PathVariable String labId) {
+        if (labId == null || labId.trim().isEmpty()) {
+            return ResponseEntity.badRequest().body("Lab ID cannot be empty");
+        }
+
+        try {
+            if (!labService.labExists(labId)) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body("Lab with ID " + labId + " not found");
+            }
+
+            List<Group> newGroups = groupService.randomizeGroups(labId);
+
+            // Broadcast WebSocket update to notify all clients
+            wsController.broadcastGroupsRandomized(labId);
+
+            return ResponseEntity.ok()
+                    .body(new RandomizeGroupsResponse(
+                            newGroups,
+                            newGroups.size(),
+                            "Groups successfully randomized"
+                    ));
+
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body("Error randomizing groups: " + e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error randomizing groups: " + e.getMessage());
+        }
+    }
+
     /** Response class for pass/return operations. */
     private static class PassReturnResponse {
         private final Group group;
@@ -214,6 +251,23 @@ public class LabController {
 
         public Group getGroup() { return group; }
         public SignoffEvent getEvent() { return event; }
+        public String getMessage() { return message; }
+    }
+
+    /** Response class for randomize groups operation. */
+    private static class RandomizeGroupsResponse {
+        private final List<Group> groups;
+        private final int groupCount;
+        private final String message;
+
+        public RandomizeGroupsResponse(List<Group> groups, int groupCount, String message) {
+            this.groups = groups;
+            this.groupCount = groupCount;
+            this.message = message;
+        }
+
+        public List<Group> getGroups() { return groups; }
+        public int getGroupCount() { return groupCount; }
         public String getMessage() { return message; }
     }
 }
