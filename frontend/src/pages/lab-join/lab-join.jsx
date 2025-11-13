@@ -1,49 +1,17 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { apiService } from '../../services/apiService.js';
 import './lab-join.css';
 
 export default function LabJoin() {
     const [labCode, setLabCode] = useState('');
     const [loadingStudents, setLoadingStudents] = useState(false);
     const [error, setError] = useState(null);
+    const [success, setSuccess] = useState(null);
 
-    const navigate = useNavigate();    // Mock student lists for different lab codes
-    const mockStudentLists = {
-        'CS101': [
-            'Alice Johnson', 'Bob Smith', 'Charlie Brown', 'Diana Wilson', 'Ethan Davis',
-            'Fiona Clark', 'George Miller', 'Hannah Lee', 'Ian Taylor', 'Julia Anderson',
-            'Kevin Chen', 'Laura Martinez', 'Michael Thompson', 'Nina Patel', 'Oscar Rodriguez',
-            'Priya Singh', 'Quinn Walker', 'Rachel Green', 'Sam Williams', 'Tina Park',
-            'Uma Sharma', 'Victor Lopez', 'Wendy Chang', 'Xavier Kim', 'Yuki Tanaka',
-            'Zoe Adams', 'Aaron Brooks', 'Bella Carter', 'Caleb Davis', 'Daisy Evans'
-        ],
-        'CS201': [
-            'Alex Thompson', 'Brooke Wilson', 'Connor Mitchell', 'Delia Rodriguez', 'Eli Foster',
-            'Grace Patel', 'Harrison Lee', 'Ivy Chen', 'Jake Morrison', 'Kara Johnson',
-            'Liam Anderson', 'Maya Singh', 'Noah Kim', 'Olivia Brown', 'Parker Davis',
-            'Quinn Taylor', 'Ruby Martinez', 'Seth Wilson', 'Tara Nguyen', 'Umar Ali',
-            'Violet Clark', 'Wesley Park', 'Ximena Lopez', 'Yasmin Ahmed', 'Zach Miller',
-            'Aria Shah', 'Blake Cooper', 'Chloe Wright', 'Diego Ramirez', 'Emma Stone'
-        ],
-        'MATH150': [
-            'Aiden Murphy', 'Bella Torres', 'Cameron White', 'Delilah Garcia', 'Evan Phillips',
-            'Faith Robinson', 'Gabriel Hayes', 'Harper Collins', 'Isaac Reed', 'Jasmine Cook',
-            'Kai Edwards', 'Luna Rivera', 'Mason Hughes', 'Nora Stewart', 'Owen Bailey',
-            'Penelope Ward', 'Quinton Gray', 'Riley Murphy', 'Sophia Barnes', 'Tyler Nelson',
-            'Ursula Powell', 'Vincent Scott', 'Willow Fisher', 'Xander King', 'Yvonne Bell',
-            'Zachary Price', 'Abigail Ross', 'Benjamin Cruz', 'Cora Morgan', 'Dante Kelly'
-        ],
-        'default': [
-            'Student Adams', 'Student Baker', 'Student Clark', 'Student Davis', 'Student Evans',
-            'Student Foster', 'Student Garcia', 'Student Harris', 'Student Irving', 'Student Jones',
-            'Student Kelly', 'Student Lopez', 'Student Miller', 'Student Nelson', 'Student Oliver',
-            'Student Parker', 'Student Quinn', 'Student Rivera', 'Student Smith', 'Student Taylor',
-            'Student Underwood', 'Student Valdez', 'Student Wilson', 'Student Xavier', 'Student Young',
-            'Student Zhang', 'Student Anderson', 'Student Brown', 'Student Carter', 'Student Douglas'
-        ]
-    };
+    const navigate = useNavigate();
 
-    const handleCodeSubmit = (e) => {
+    const handleCodeSubmit = async (e) => {
         e.preventDefault();
         setError(null);
 
@@ -54,18 +22,50 @@ export default function LabJoin() {
 
         setLoadingStudents(true);
 
-        // Simulate API call to fetch students for this lab code
-        setTimeout(() => {
-            const studentList = mockStudentLists[labCode.toUpperCase()] || mockStudentLists['default'];
+        try {
+            // Fetch lab data using the join code
+            const labData = await apiService.joinLabWithCode(labCode.trim());
+
+            if (!labData) {
+                throw new Error('No lab found with this code');
+            }
+
+            // Get the roster for this lab
+            const roster = await apiService.getLabRoster(labData.id);
+
+            if (!roster || !roster.students || roster.students.length === 0) {
+                throw new Error('No students found in this lab roster');
+            }
+
             setLoadingStudents(false);
-            // Navigate to select student page with lab data
+            setSuccess(`Successfully found lab: ${labData.name || labCode}`);
+
+            // Navigate to select student page with real data
             navigate('/select-student', {
                 state: {
                     labCode: labCode.toUpperCase(),
-                    students: studentList
+                    labId: labData.id,
+                    labName: labData.name,
+                    students: roster.students,
+                    labData: labData
                 }
             });
-        }, 800);
+
+        } catch (error) {
+            setLoadingStudents(false);
+            console.error('Error joining lab:', error);
+
+            // Handle specific error cases
+            if (error.message.includes('404') || error.message.includes('not found')) {
+                setError(`Lab code "${labCode.toUpperCase()}" not found. Please check the code and try again.`);
+            } else if (error.message.includes('403') || error.message.includes('unauthorized')) {
+                setError('You are not authorized to join this lab. Please contact your instructor.');
+            } else if (error.message.includes('network') || error.message.includes('fetch')) {
+                setError('Network error. Please check your connection and try again.');
+            } else {
+                setError(error.message || 'Failed to join lab. Please try again.');
+            }
+        }
     };
 
 
@@ -79,6 +79,7 @@ export default function LabJoin() {
                 </div>
 
                 {error && <div className="error-message">{error}</div>}
+                {success && <div className="success-message">{success}</div>}
 
                 <form onSubmit={handleCodeSubmit} className="lab-join-form">
                     <div className="form-group">
@@ -88,7 +89,11 @@ export default function LabJoin() {
                             type="text"
                             className="form-input"
                             value={labCode}
-                            onChange={(e) => setLabCode(e.target.value)}
+                            onChange={(e) => {
+                                setLabCode(e.target.value);
+                                setError(null);
+                                setSuccess(null);
+                            }}
                             placeholder="Enter lab code (e.g., CS101, CS201, MATH150)"
                             disabled={loadingStudents}
                         />

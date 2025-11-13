@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { apiService } from '../../services/apiService.js';
 import './select-student.css';
 
 export default function SelectStudent() {
@@ -74,7 +75,7 @@ export default function SelectStudent() {
     };
 
     // Get lab code and students from navigation state
-    const { labCode, students } = location.state || {};
+    const { labCode, students, labId, labName, labData } = location.state || {};
 
     // Redirect back if no lab data
     if (!labCode || !students) {
@@ -84,14 +85,40 @@ export default function SelectStudent() {
 
     // Check for existing selection on component mount
     useEffect(() => {
-        const existingSelection = checkExistingSelection();
-        if (existingSelection) {
-            setAlreadySelected(existingSelection);
-            setError(`This browser has already selected "${existingSelection}" for ${labCode}. Please use a different device or wait 24 hours to select again.`);
-        }
-    }, [labCode]);
+        const checkExistingSelections = async () => {
+            // Check local storage first
+            const localSelection = checkExistingSelection();
+            if (localSelection) {
+                setAlreadySelected(localSelection);
+                setError(`This browser has already selected "${localSelection}" for ${labCode}. Please use a different device or wait 24 hours to select again.`);
+                return;
+            }
 
-    const handleJoinSubmit = () => {
+            // Check backend selections if we have labId
+            if (labId) {
+                try {
+                    const selections = await apiService.getStudentSelections(labId);
+                    const fingerprint = generateFingerprint();
+
+                    // Check if this browser fingerprint has already made a selection
+                    const existingSelection = selections.find(s => s.browserFingerprint === fingerprint);
+                    if (existingSelection) {
+                        setAlreadySelected(existingSelection.studentName);
+                        setError(`This browser has already selected "${existingSelection.studentName}" for ${labCode}. Multiple selections are not allowed.`);
+                    }
+                } catch (error) {
+                    console.warn('Could not check existing selections:', error);
+                    // Don't show error to user, continue with local validation only
+                }
+            }
+        };
+
+        if (labCode) {
+            checkExistingSelections();
+        }
+    }, [labCode, labId]);
+
+    const handleJoinSubmit = async () => {
         setError(null);
 
         if (!selectedStudent) {
@@ -108,28 +135,58 @@ export default function SelectStudent() {
 
         setSubmitting(true);
 
-        // Simulate joining lab
-        setTimeout(() => {
-            // Record the selection before proceeding
+        try {
+            const fingerprint = generateFingerprint();
+
+            // Submit student selection to backend
+            const selectionResult = await apiService.selectStudent(labId, selectedStudent, fingerprint);
+
+            if (!selectionResult) {
+                throw new Error('Failed to record student selection');
+            }
+
+            // Record the selection locally as backup
             recordSelection(selectedStudent);
 
-            setSubmitting(false);
-            console.log('Joining lab:', { labCode, selectedStudent });
+            console.log('Successfully joined lab:', {
+                labCode,
+                selectedStudent,
+                labId,
+                selectionId: selectionResult.id
+            });
 
-            // Create a mock group ID based on lab code and student name
-            // In a real app, this would come from the backend after joining
-            const mockGroupId = `${labCode}-group-${Math.floor(Math.random() * 10) + 1}`;
-            const mockLabId = labCode.toLowerCase();
+            // Navigate to student checkpoints page with real data
+            const groupId = selectionResult.groupId || `${labCode}-group-${Math.floor(Math.random() * 10) + 1}`;
 
-            // Navigate to student checkpoints page
-            navigate(`/student-checkpoints/${mockLabId}/${mockGroupId}`, {
+            navigate(`/student-checkpoints/${labId}/${groupId}`, {
                 state: {
                     studentName: selectedStudent,
                     labCode: labCode,
-                    groupId: mockGroupId
+                    labId: labId,
+                    labName: labName,
+                    groupId: groupId,
+                    selectionId: selectionResult.id,
+                    labData: labData
                 }
             });
-        }, 1000);
+
+        } catch (error) {
+            setSubmitting(false);
+            console.error('Error selecting student:', error);
+
+            // Handle specific error cases
+            if (error.message.includes('already selected') || error.message.includes('duplicate')) {
+                setError('This student has already been selected. Please choose a different name or contact your instructor.');
+            } else if (error.message.includes('404')) {
+                setError('Lab not found. Please return to the previous page and try again.');
+            } else if (error.message.includes('403') || error.message.includes('unauthorized')) {
+                setError('You are not authorized to join this lab. Please contact your instructor.');
+            } else if (error.message.includes('network') || error.message.includes('fetch')) {
+                setError('Network error. Please check your connection and try again.');
+            } else {
+                setError(error.message || 'Failed to join lab. Please try again.');
+            }
+        }
     };
 
     const handleBackToCode = () => {
