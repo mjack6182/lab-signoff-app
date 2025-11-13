@@ -28,6 +28,13 @@ export const api = {
   auth: {
     login: () => buildApiUrl('/api/auth/login'),
   },
+  labs: {
+    join: () => buildApiUrl('/api/labs/join'),
+    byCode: (code) => buildApiUrl(`/api/labs/code/${code}`),
+    roster: (labId) => buildApiUrl(`/api/labs/${labId}/roster`),
+    selectStudent: (labId) => buildApiUrl(`/api/labs/${labId}/select-student`),
+    selections: (labId) => buildApiUrl(`/api/labs/${labId}/selections`),
+  },
   ws: () => buildApiUrl('/ws'),
 };
 
