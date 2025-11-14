@@ -5,6 +5,7 @@ import com.example.lab_signoff_backend.repository.GroupRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Service class for Group entity business logic.
@@ -55,5 +56,18 @@ public class GroupService {
      */
     public Group upsert(Group group) {
         return repo.save(group);
+    }
+
+    /**
+     * Retrieve a group by its identifier.
+     *
+     * @param id The MongoDB object id
+     * @return Optional containing the group if found
+     */
+    public Optional<Group> getById(String id) {
+        if (id == null) {
+            return Optional.empty();
+        }
+        return repo.findById(id);
     }
 }

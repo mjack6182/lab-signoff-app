@@ -249,10 +249,8 @@ public class ClassService {
             while ((line = reader.readLine()) != null) {
                 String[] columns = line.split(",", -1);
 
-                // Canvas CSV format: Student,ID,SIS User ID,SIS Login ID,...
                 if (columns.length >= 4) {
                     String studentName = columns[0].trim();
-                    // Skip empty rows or summary rows
                     if (studentName.isEmpty() || studentName.equals("Student, Test")) {
                         continue;
                     }
