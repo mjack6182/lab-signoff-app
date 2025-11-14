@@ -18,7 +18,7 @@ import java.util.List;
  *
  * Data includes: Users, Class, Enrollments, Labs, Groups, and HelpQueueItems
  */
-// @Configuration  // ✅ ENABLED - Comment out to disable seeding
+@Configuration  // ✅ ENABLED - Comment out to disable seeding
 public class DataSeeder {
 
     @Bean
