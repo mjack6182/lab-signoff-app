@@ -22,10 +22,10 @@ exporters:
     endpoint: jaeger:4317   # For Jaeger running in Docker; edit endpoint for your environment.
     tls: { insecure: true } # 'insecure' disables TLS verification; only suitable for local/dev use.
 
-  file/metrics:
-    path: /otel-out/metrics.json # Custom path; adjust as necessary for metrics file output.
-  file/logs:
-    path: /otel-out/logs.json  # Custom path; adjust as necessary for logs file output.
+  # file/metrics:
+  #   path: /otel-out/metrics.json # Custom path; adjust as necessary for metrics file output.
+  # file/logs:
+  #   path: /otel-out/logs.json  # Custom path; adjust as necessary for logs file output.
 
 # Service section ties components together and sets logging level, extensions, and pipelines.
 service:
@@ -44,16 +44,16 @@ service:
       # Metrics pipeline: receives metrics via OTLP, batches, and exports to debug and JSON file.
 
       #Optional, added so we dont intentionally get rid of logs and metrics
-    metrics:
-      receivers: [ otlp ]
-      processors: [ batch ]
-      exporters: [ debug, file/metrics ]
+    # metrics:
+    #   receivers: [ otlp ]
+    #   processors: [ batch ]
+    #   exporters: [ debug, file/metrics ]
 
       # Logs pipeline: receives logs via OTLP, batches, and exports to debug and JSON file.
-    logs:
-      receivers: [ otlp ]
-      processors: [ batch ]
-      exporters: [ debug, file/logs ]
+    # logs:
+    #   receivers: [ otlp ]
+    #   processors: [ batch ]
+    #   exporters: [ debug, file/logs ]
 
       # GENERAL NOTES:
       # - All sections are whitespace-sensitive. Avoid tabs and ensure proper indentation!

@@ -1,70 +1,56 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './lab-join.css';
+import { api } from '../../config/api';
 
 export default function LabJoin() {
     const [labCode, setLabCode] = useState('');
     const [loadingStudents, setLoadingStudents] = useState(false);
     const [error, setError] = useState(null);
-    
-    const navigate = useNavigate();    // Mock student lists for different lab codes
-    const mockStudentLists = {
-        'CS101': [
-            'Alice Johnson',
-            'Bob Smith',
-            'Charlie Brown',
-            'Diana Wilson',
-            'Ethan Davis'
-        ],
-        'CS201': [
-            'Fiona Clark',
-            'George Miller',
-            'Hannah Lee',
-            'Ian Taylor',
-            'Julia Anderson'
-        ],
-        'MATH150': [
-            'Kevin Chen',
-            'Laura Martinez',
-            'Michael Thompson',
-            'Nina Patel',
-            'Oscar Rodriguez'
-        ],
-        'default': [
-            'Student One',
-            'Student Two',
-            'Student Three',
-            'Student Four',
-            'Student Five'
-        ]
-    };
 
-    const handleCodeSubmit = (e) => {
+    const navigate = useNavigate();
+
+    const handleCodeSubmit = async (e) => {
         e.preventDefault();
         setError(null);
 
-        if (!labCode.trim()) {
+        const trimmedCode = labCode.trim().toUpperCase();
+        if (!trimmedCode) {
             setError('Please enter a lab code');
             return;
         }
 
         setLoadingStudents(true);
 
-        // Simulate API call to fetch students for this lab code
-        setTimeout(() => {
-            const studentList = mockStudentLists[labCode.toUpperCase()] || mockStudentLists['default'];
-            setLoadingStudents(false);
-            // Navigate to select student page with lab data
-            navigate('/select-student', { 
-                state: { 
-                    labCode: labCode.toUpperCase(), 
-                    students: studentList 
-                } 
+        try {
+            const response = await fetch(api.labByJoinCode(trimmedCode));
+            const labData = await response.json().catch(() => ({}));
+
+            if (!response.ok) {
+                throw new Error(labData.error || 'Unable to find a lab with that code');
+            }
+
+            const students = Array.isArray(labData.students) ? labData.students : [];
+            if (students.length === 0) {
+                throw new Error('No students found for this lab code');
+            }
+
+            navigate('/select-student', {
+                state: {
+                    labCode: labData.labCode || trimmedCode,
+                    students,
+                    labId: labData.labId,
+                    labTitle: labData.labTitle,
+                    classId: labData.classId,
+                    className: labData.className
+                }
             });
-        }, 800);
+        } catch (err) {
+            setError(err.message || 'Failed to load class roster');
+        } finally {
+            setLoadingStudents(false);
+        }
     };
-
-
 
     return (
         <main className="lab-join-container">
@@ -98,7 +84,8 @@ export default function LabJoin() {
                         {loadingStudents ? 'Loading Class Roster...' : 'Continue'}
                     </button>
                 </form>
-            </div>            <div className="app-info">
+            </div>
+            <div className="app-info">
                 <h2 className="app-info-title">Lab Sign Off</h2>
                 <p className="app-info-description">
                     Track your lab progress and complete checkpoints

@@ -13,6 +13,10 @@ export const buildApiUrl = (path) => {
 // Export specific endpoint builders for convenience
 export const api = {
   labs: () => buildApiUrl('/lti/labs'),
+  labByJoinCode: (joinCode) => buildApiUrl(`/api/labs/join/${encodeURIComponent(joinCode)}`),
+  labJoinStudent: (joinCode) => buildApiUrl(`/api/labs/join/${encodeURIComponent(joinCode)}/students`),
+  labDetail: (labId) => buildApiUrl(`/api/labs/${labId}`),
+  labGroupDetail: (labId, groupId) => buildApiUrl(`/api/labs/${labId}/groups/${groupId}`),
   classes: (params) => {
     if (!params || Object.keys(params).length === 0) {
       return buildApiUrl('/api/classes');

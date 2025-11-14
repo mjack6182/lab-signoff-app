@@ -247,12 +247,10 @@ public class ClassService {
             // Parse student roster (rows 3+)
             String line;
             while ((line = reader.readLine()) != null) {
-                String[] columns = line.split(",", -1);
+                List<String> columns = parseCsvLine(line);
 
-                // Canvas CSV format: Student,ID,SIS User ID,SIS Login ID,...
-                if (columns.length >= 4) {
-                    String studentName = columns[0].trim();
-                    // Skip empty rows or summary rows
+                if (!columns.isEmpty()) {
+                    String studentName = unquote(columns.get(0));
                     if (studentName.isEmpty() || studentName.equals("Student, Test")) {
                         continue;
                     }
@@ -317,5 +315,44 @@ public class ClassService {
      */
     public boolean classExists(String courseCode, String term, String section) {
         return classRepository.existsByCourseCodeAndTermAndSection(courseCode, term, section);
+    }
+
+    private String unquote(String value) {
+        if (value == null) {
+            return "";
+        }
+        String result = value;
+        if (result.length() >= 2 && result.startsWith("\"") && result.endsWith("\"")) {
+            result = result.substring(1, result.length() - 1).replace("\"\"", "\"");
+        }
+        return result;
+    }
+
+    private List<String> parseCsvLine(String line) {
+        List<String> columns = new ArrayList<>();
+        if (line == null || line.isEmpty()) {
+            return columns;
+        }
+
+        StringBuilder current = new StringBuilder();
+        boolean inQuotes = false;
+        for (int i = 0; i < line.length(); i++) {
+            char c = line.charAt(i);
+            if (c == '"') {
+                if (inQuotes && i + 1 < line.length() && line.charAt(i + 1) == '"') {
+                    current.append('"');
+                    i++;
+                } else {
+                    inQuotes = !inQuotes;
+                }
+            } else if (c == ',' && !inQuotes) {
+                columns.add(current.toString());
+                current.setLength(0);
+            } else {
+                current.append(c);
+            }
+        }
+        columns.add(current.toString());
+        return columns;
     }
 }

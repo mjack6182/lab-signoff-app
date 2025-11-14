@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import './select-student.css';
+import { api } from '../../config/api';
 
 export default function SelectStudent() {
     const [selectedStudent, setSelectedStudent] = useState('');
@@ -10,16 +11,23 @@ export default function SelectStudent() {
     const navigate = useNavigate();
     const location = useLocation();
 
-    // Get lab code and students from navigation state
-    const { labCode, students } = location.state || {};
+    // Get lab context and students from navigation state
+    const {
+        labCode,
+        students,
+        labId,
+        labTitle,
+        classId,
+        className
+    } = location.state || {};
 
     // Redirect back if no lab data
-    if (!labCode || !students) {
+    if (!labCode || !students || !labId) {
         navigate('/lab-join');
         return null;
     }
 
-    const handleJoinSubmit = (e) => {
+    const handleJoinSubmit = async (e) => {
         e.preventDefault();
         setError(null);
 
@@ -30,25 +38,47 @@ export default function SelectStudent() {
 
         setSubmitting(true);
 
-        // Simulate joining lab
-        setTimeout(() => {
-            setSubmitting(false);
-            console.log('Joining lab:', { labCode, selectedStudent });
+        try {
+            const response = await fetch(api.labJoinStudent(labCode), {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    studentName: selectedStudent
+                })
+            });
 
-            // Create a mock group ID based on lab code and student name
-            // In a real app, this would come from the backend after joining
-            const mockGroupId = `${labCode}-group-${Math.floor(Math.random() * 10) + 1}`;
-            const mockLabId = labCode.toLowerCase();
+            const joinData = await response.json().catch(() => ({}));
 
-            // Navigate to student checkpoints page
-            navigate(`/student-checkpoints/${mockLabId}/${mockGroupId}`, {
+            if (!response.ok) {
+                throw new Error(joinData.error || 'Unable to join lab with that code');
+            }
+
+            const { lab: joinedLab, group } = joinData;
+            if (!joinedLab || !group) {
+                throw new Error('Unexpected response from server');
+            }
+
+            navigate(`/student-checkpoints/${joinedLab.labId}/${group.id}`, {
                 state: {
                     studentName: selectedStudent,
-                    labCode: labCode,
-                    groupId: mockGroupId
+                    labCode: joinedLab.labCode,
+                    labTitle: joinedLab.labTitle,
+                    classId: joinedLab.classId,
+                    className: joinedLab.className,
+                    groupId: group.id,
+                    groupDisplayId: group.groupId,
+                    labData: joinedLab,
+                    labCheckpoints: joinedLab.checkpoints,
+                    groupData: group
                 }
             });
-        }, 1000);
+        } catch (err) {
+            setError(err.message || 'Failed to join lab');
+        } finally {
+            setSubmitting(false);
+        }
     };
 
     const handleBackToCode = () => {

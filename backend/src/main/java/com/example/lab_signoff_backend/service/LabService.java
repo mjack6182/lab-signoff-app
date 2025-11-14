@@ -5,6 +5,7 @@ import com.example.lab_signoff_backend.repository.LabRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Service class for Lab entity business logic.
@@ -65,5 +66,31 @@ public class LabService {
      */
     public List<Lab> getLabsByClassId(String classId) {
         return repo.findByClassId(classId);
+    }
+
+    /**
+     * Find a lab using its public join code.
+     *
+     * @param joinCode The join code provided by students
+     * @return Optional containing the lab if it exists
+     */
+    public Optional<Lab> getByJoinCode(String joinCode) {
+        if (joinCode == null) {
+            return Optional.empty();
+        }
+        return repo.findByJoinCodeIgnoreCase(joinCode.trim());
+    }
+
+    /**
+     * Find a lab by its identifier.
+     *
+     * @param id The lab id
+     * @return Optional containing the lab if found
+     */
+    public Optional<Lab> getById(String id) {
+        if (id == null) {
+            return Optional.empty();
+        }
+        return repo.findById(id);
     }
 }
