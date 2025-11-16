@@ -1,59 +1,98 @@
 package com.example.lab_signoff_backend.service;
 
 import com.example.lab_signoff_backend.model.Group;
+import com.example.lab_signoff_backend.model.embedded.CheckpointProgress;
+import com.example.lab_signoff_backend.model.enums.SignoffAction;
 import com.example.lab_signoff_backend.repository.GroupRepository;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
+import java.time.Instant;
+import java.util.*;
 
 /**
- * Service class for Group entity business logic.
- *
- * Provides methods for managing student groups including retrieval by lab,
- * creation, and updates.
- *
- * @author Lab Signoff App Team
- * @version 1.0
+ * Handles Group operations and checkpoint progress updates.
  */
 @Service
 public class GroupService {
+
     private final GroupRepository repo;
 
-    /**
-     * Constructor for GroupService.
-     *
-     * @param repo The GroupRepository for database operations
-     */
     public GroupService(GroupRepository repo) {
         this.repo = repo;
     }
 
-    /**
-     * Retrieve all groups for a specific lab
-     *
-     * @param labId The lab identifier
-     * @return List of groups associated with the lab
-     */
     public List<Group> getGroupsByLabId(String labId) {
         return repo.findByLabId(labId);
     }
 
-    /**
-     * Retrieve all groups
-     *
-     * @return List of all groups
-     */
     public List<Group> getAll() {
         return repo.findAll();
     }
 
-    /**
-     * Create or update a group
-     *
-     * @param group The group to save
-     * @return The saved group
-     */
     public Group upsert(Group group) {
         return repo.save(group);
+    }
+
+    public CheckpointProgress updateCheckpointProgress(
+            String groupIdOrId,
+            Integer checkpointNumber,
+            String statusString,
+            String signedOffBy,
+            String signedOffByName,
+            String notes,
+            Integer pointsAwarded) {
+
+        // Try finding the group either by custom groupId or Mongo _id
+        Optional<Group> maybeGroup = repo.findByGroupId(groupIdOrId);
+        if (maybeGroup.isEmpty()) {
+            maybeGroup = repo.findById(groupIdOrId);
+        }
+
+        if (maybeGroup.isEmpty()) {
+            throw new RuntimeException("Group not found: " + groupIdOrId);
+        }
+
+        Group group = maybeGroup.get();
+
+        // Initialize checkpoint list if null
+        List<CheckpointProgress> progressList = group.getCheckpointProgress();
+        if (progressList == null) {
+            progressList = new ArrayList<>();
+            group.setCheckpointProgress(progressList);
+        }
+
+        // Find or create the specific checkpoint
+        CheckpointProgress target = null;
+        for (CheckpointProgress cp : progressList) {
+            if (Objects.equals(cp.getCheckpointNumber(), checkpointNumber)) {
+                target = cp;
+                break;
+            }
+        }
+
+        if (target == null) {
+            target = new CheckpointProgress();
+            target.setCheckpointNumber(checkpointNumber);
+            progressList.add(target); // Now safe — list is guaranteed non-null
+        }
+
+        // Update checkpoint info
+        SignoffAction action = SignoffAction.valueOf(statusString); // e.g., "PASS" or "RETURN"
+        target.setStatus(action);
+        target.setSignedOffBy(signedOffBy);
+        target.setSignedOffByName(signedOffByName);
+        target.setTimestamp(Instant.now());
+        target.setNotes(notes);
+        target.setPointsAwarded(pointsAwarded);
+
+        // Update group timestamps and persist
+        group.updateTimestamp();
+        Group saved = repo.save(group);
+
+        // Return updated checkpoint
+        return saved.getCheckpointProgress().stream()
+                .filter(cp -> Objects.equals(cp.getCheckpointNumber(), checkpointNumber))
+                .findFirst()
+                .orElseThrow(() -> new RuntimeException("Failed to persist checkpoint progress"));
     }
 }
