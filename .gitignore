@@ -235,3 +235,4 @@ docker-volumes/
 .claude/
 backend/otel-out/logs.json
 backend/otel-out/metrics.json
+backend/otel-out/
