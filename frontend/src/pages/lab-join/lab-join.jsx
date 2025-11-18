@@ -1,13 +1,12 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { apiService } from '../../services/apiService.js';
 import './lab-join.css';
+import { api } from '../../config/api';
 
 export default function LabJoin() {
     const [labCode, setLabCode] = useState('');
     const [loadingStudents, setLoadingStudents] = useState(false);
     const [error, setError] = useState(null);
-    const [success, setSuccess] = useState(null);
 
     const navigate = useNavigate();
 
@@ -15,7 +14,8 @@ export default function LabJoin() {
         e.preventDefault();
         setError(null);
 
-        if (!labCode.trim()) {
+        const trimmedCode = labCode.trim().toUpperCase();
+        if (!trimmedCode) {
             setError('Please enter a lab code');
             return;
         }
@@ -23,52 +23,34 @@ export default function LabJoin() {
         setLoadingStudents(true);
 
         try {
-            // Fetch lab data using the join code
-            const labData = await apiService.joinLabWithCode(labCode.trim());
+            const response = await fetch(api.labByJoinCode(trimmedCode));
+            const labData = await response.json().catch(() => ({}));
 
-            if (!labData) {
-                throw new Error('No lab found with this code');
+            if (!response.ok) {
+                throw new Error(labData.error || 'Unable to find a lab with that code');
             }
 
-            // Get the roster for this lab
-            const roster = await apiService.getLabRoster(labData.id);
-
-            if (!roster || !roster.students || roster.students.length === 0) {
-                throw new Error('No students found in this lab roster');
+            const students = Array.isArray(labData.students) ? labData.students : [];
+            if (students.length === 0) {
+                throw new Error('No students found for this lab code');
             }
 
-            setLoadingStudents(false);
-            setSuccess(`Successfully found lab: ${labData.name || labCode}`);
-
-            // Navigate to select student page with real data
             navigate('/select-student', {
                 state: {
-                    labCode: labCode.toUpperCase(),
-                    labId: labData.id,
-                    labName: labData.name,
-                    students: roster.students,
-                    labData: labData
+                    labCode: labData.labCode || trimmedCode,
+                    students,
+                    labId: labData.labId,
+                    labTitle: labData.labTitle,
+                    classId: labData.classId,
+                    className: labData.className
                 }
             });
-
-        } catch (error) {
+        } catch (err) {
+            setError(err.message || 'Failed to load class roster');
+        } finally {
             setLoadingStudents(false);
-            console.error('Error joining lab:', error);
-
-            // Handle specific error cases
-            if (error.message.includes('404') || error.message.includes('not found')) {
-                setError(`Lab code "${labCode.toUpperCase()}" not found. Please check the code and try again.`);
-            } else if (error.message.includes('403') || error.message.includes('unauthorized')) {
-                setError('You are not authorized to join this lab. Please contact your instructor.');
-            } else if (error.message.includes('network') || error.message.includes('fetch')) {
-                setError('Network error. Please check your connection and try again.');
-            } else {
-                setError(error.message || 'Failed to join lab. Please try again.');
-            }
         }
     };
-
-
 
     return (
         <main className="lab-join-container">
@@ -79,7 +61,6 @@ export default function LabJoin() {
                 </div>
 
                 {error && <div className="error-message">{error}</div>}
-                {success && <div className="success-message">{success}</div>}
 
                 <form onSubmit={handleCodeSubmit} className="lab-join-form">
                     <div className="form-group">
@@ -89,11 +70,7 @@ export default function LabJoin() {
                             type="text"
                             className="form-input"
                             value={labCode}
-                            onChange={(e) => {
-                                setLabCode(e.target.value);
-                                setError(null);
-                                setSuccess(null);
-                            }}
+                            onChange={(e) => setLabCode(e.target.value)}
                             placeholder="Enter lab code (e.g., CS101, CS201, MATH150)"
                             disabled={loadingStudents}
                         />
@@ -107,7 +84,8 @@ export default function LabJoin() {
                         {loadingStudents ? 'Loading Class Roster...' : 'Continue'}
                     </button>
                 </form>
-            </div>            <div className="app-info">
+            </div>
+            <div className="app-info">
                 <h2 className="app-info-title">Lab Sign Off</h2>
                 <p className="app-info-description">
                     Track your lab progress and complete checkpoints
