@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { mockCheckpoints } from '../../mock/checkpoints';
 import SignOffModal from '../../components/SignOffModal';
 import GroupManagementModal from '../../components/GroupManagementModal';
 import Header from '../../components/Header/Header';
@@ -32,6 +31,19 @@ export default function CheckpointPage() {
 
   const selectedGroup = groups.find(g => g.id === selectedGroupId);
   const currentLab = lab?.courseId || 'Lab';
+
+  // Get checkpoints from lab (stored in MongoDB) or use empty array as fallback
+  const checkpoints = lab?.checkpoints || [];
+
+  // Transform checkpoints to match the expected format with IDs
+  const formattedCheckpoints = checkpoints.map(cp => ({
+    id: `cp-${cp.number}`,
+    name: cp.name,
+    description: cp.description,
+    points: cp.points,
+    order: cp.number,
+    number: cp.number
+  }));
 
   // ================================================================
   // 🧩 EFFECT 1: Fetch lab + group data on mount
@@ -268,7 +280,7 @@ export default function CheckpointPage() {
       console.log(`✅ Backend API called for checkpoint ${checkpointNum}`);
 
       // 🎯 If all checkpoints are completed → mark full group as passed
-      const allCompleted = mockCheckpoints.every(
+      const allCompleted = formattedCheckpoints.every(
         cp => next[selectedGroup.id]?.[cp.id]?.completed
       );
 
@@ -312,9 +324,19 @@ export default function CheckpointPage() {
   };
 
   const handleEditGroups = () => setShowGroupManagement(true);
-  const handleUpdateGroups = (updatedGroups) => {
-    setGroups(updatedGroups);
-    console.log('Groups updated successfully!', updatedGroups);
+  const handleUpdateGroups = async () => {
+    // Refetch groups after update
+    try {
+      const response = await fetch(api.labGroups(labId));
+      if (response.ok) {
+        const groupsData = await response.json();
+        const groupsArray = Array.isArray(groupsData) ? groupsData : [];
+        setGroups(groupsArray);
+        console.log('Groups refreshed successfully!', groupsArray);
+      }
+    } catch (err) {
+      console.error('Failed to refresh groups:', err);
+    }
   };
 
   // ================================================================
@@ -395,7 +417,7 @@ export default function CheckpointPage() {
           <div className="groups-list">
             {groups.map(group => {
               const completedCount = getCompletedCount(group.id);
-              const totalCount = mockCheckpoints.length;
+              const totalCount = formattedCheckpoints.length;
               const progressPercent = Math.round((completedCount / totalCount) * 100);
               const isSelected = group.id === selectedGroupId;
 
@@ -452,12 +474,12 @@ export default function CheckpointPage() {
           <header className="panel-header">
             <h2 className="panel-title">Checkpoints</h2>
             <span className="checkpoint-count">
-              {selectedGroup ? getCompletedCount(selectedGroup.id) : 0}/{mockCheckpoints.length}
+              {selectedGroup ? getCompletedCount(selectedGroup.id) : 0}/{formattedCheckpoints.length}
             </span>
           </header>
 
           <div className="checkpoint-list">
-            {mockCheckpoints.map((checkpoint, index) => {
+            {formattedCheckpoints.map((checkpoint, index) => {
               const isCompleted = isCheckpointCompleted(checkpoint.id);
               return (
                 <div key={checkpoint.id} className={`checkpoint-item ${isCompleted ? 'completed' : 'pending'}`}>
@@ -505,8 +527,9 @@ export default function CheckpointPage() {
         <GroupManagementModal
           isOpen={showGroupManagement}
           onClose={() => setShowGroupManagement(false)}
-          groupsData={groups}
           labId={labId}
+          classId={lab?.classId}
+          labName={lab?.courseId || lab?.name || 'Lab'}
           onUpdateGroups={handleUpdateGroups}
         />
       </main>

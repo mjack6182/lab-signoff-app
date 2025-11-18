@@ -1,38 +1,85 @@
 import { useState, useEffect } from 'react';
 import './GroupManagementModal.css';
+import {
+    fetchEnrolledStudents,
+    fetchLabGroups,
+    randomizeGroups as randomizeGroupsAPI,
+    updateGroups as updateGroupsAPI,
+    calculateUnassignedStudents
+} from '../../services/groupService';
 
-export default function GroupManagementModal({ 
-    isOpen, 
-    onClose, 
-    sectionData, 
-    onUpdateGroups 
+export default function GroupManagementModal({
+    isOpen,
+    onClose,
+    labId,
+    classId,
+    labName,
+    onUpdateGroups
 }) {
     const [unassignedStudents, setUnassignedStudents] = useState([]);
     const [groups, setGroups] = useState([]);
     const [draggedItem, setDraggedItem] = useState(null);
     const [draggedFrom, setDraggedFrom] = useState(null);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState(null);
+    const [showRandomizeConfirm, setShowRandomizeConfirm] = useState(false);
 
-    // Initialize data when modal opens
+    // Fetch data when modal opens
     useEffect(() => {
-        if (isOpen && sectionData) {
-            // Get all students from groups
-            const allStudents = [];
-            const currentGroups = sectionData.groups?.map(group => ({
-                ...group,
-                members: [...(group.members || [])]
-            })) || [];
-
-            currentGroups.forEach(group => {
-                allStudents.push(...group.members);
-            });
-
-            // Get unassigned students from sectionData (if provided) or initialize as empty
-            const unassigned = sectionData.unassignedStudents || [];
-
-            setGroups(currentGroups);
-            setUnassignedStudents(unassigned);
+        if (isOpen && labId && classId) {
+            fetchData();
         }
-    }, [isOpen, sectionData]);
+    }, [isOpen, labId, classId]);
+
+    const fetchData = async () => {
+        setLoading(true);
+        setError(null);
+
+        try {
+            // Fetch enrolled students and existing groups in parallel
+            const [studentsData, groupsData] = await Promise.all([
+                fetchEnrolledStudents(classId),
+                fetchLabGroups(labId)
+            ]);
+
+            // Transform enrolled students to match the expected format
+            const students = studentsData.map(enrollment => ({
+                id: enrollment.userId,
+                userId: enrollment.userId,
+                name: enrollment.userName || enrollment.userEmail || 'Unknown Student',
+                email: enrollment.userEmail || '',
+                firstName: enrollment.userName?.split(' ')[0] || ''
+            }));
+
+            // Transform groups to match the expected format
+            const transformedGroups = groupsData.map(group => ({
+                id: group.id || group.groupId,
+                groupId: group.groupId,
+                name: group.groupId || `Group ${group.groupNumber}`,
+                members: (group.members || []).map(member => ({
+                    id: member.userId,
+                    userId: member.userId,
+                    name: member.name,
+                    email: member.email,
+                    firstName: member.name?.split(' ')[0] || ''
+                })),
+                status: group.status || 'FORMING',
+                checkpointProgress: group.checkpointProgress || 0,
+                groupNumber: group.groupNumber
+            }));
+
+            // Calculate unassigned students
+            const unassigned = calculateUnassignedStudents(students, transformedGroups);
+
+            setGroups(transformedGroups);
+            setUnassignedStudents(unassigned);
+        } catch (err) {
+            console.error('Failed to fetch group data:', err);
+            setError(err.message || 'Failed to load group data');
+        } finally {
+            setLoading(false);
+        }
+    };
 
     const handleDragStart = (e, student, fromType, fromId = null) => {
         setDraggedItem(student);
@@ -145,22 +192,90 @@ export default function GroupManagementModal({
         setGroups(prev => prev.filter(g => g.id !== groupId));
     };
 
-    const handleSave = () => {
-        // Filter out empty groups before saving
-        const nonEmptyGroups = groups.filter(group => group.members && group.members.length > 0);
-        
-        // Create updated section data with non-empty groups and preserve unassigned students
-        const updatedSectionData = {
-            ...sectionData,
-            groups: nonEmptyGroups,
-            unassignedStudents: unassignedStudents // Preserve unassigned students
-        };
-        
-        console.log(`Removed ${groups.length - nonEmptyGroups.length} empty groups`);
-        console.log(`Preserved ${unassignedStudents.length} unassigned students`);
-        
-        onUpdateGroups(updatedSectionData);
-        onClose();
+    const handleRandomize = () => {
+        // Show confirmation if groups already exist
+        if (groups.length > 0) {
+            setShowRandomizeConfirm(true);
+        } else {
+            executeRandomize();
+        }
+    };
+
+    const executeRandomize = async () => {
+        setShowRandomizeConfirm(false);
+        setLoading(true);
+        setError(null);
+
+        try {
+            const response = await randomizeGroupsAPI(labId);
+
+            // Transform the response groups to match our format
+            const transformedGroups = response.groups.map(group => ({
+                id: group.id || group.groupId,
+                groupId: group.groupId,
+                name: group.groupId || `Group ${group.groupNumber}`,
+                members: (group.members || []).map(member => ({
+                    id: member.userId,
+                    userId: member.userId,
+                    name: member.name,
+                    email: member.email,
+                    firstName: member.name?.split(' ')[0] || ''
+                })),
+                status: group.status || 'FORMING',
+                checkpointProgress: group.checkpointProgress || 0,
+                groupNumber: group.groupNumber
+            }));
+
+            setGroups(transformedGroups);
+            setUnassignedStudents([]); // All students are now assigned
+
+            // Notify parent component
+            if (onUpdateGroups) {
+                onUpdateGroups();
+            }
+        } catch (err) {
+            console.error('Failed to randomize groups:', err);
+            setError(err.message || 'Failed to randomize groups');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleSave = async () => {
+        setLoading(true);
+        setError(null);
+
+        try {
+            // Filter out empty groups before saving
+            const nonEmptyGroups = groups.filter(group => group.members && group.members.length > 0);
+
+            // Transform groups to backend format
+            const groupsToSave = nonEmptyGroups.map((group, index) => ({
+                groupId: group.groupId || `Group-${index + 1}`,
+                groupNumber: group.groupNumber || (index + 1),
+                labId: labId,
+                members: group.members.map(member => ({
+                    userId: member.userId || member.id,
+                    name: member.name,
+                    email: member.email,
+                    present: true
+                })),
+                status: group.status || 'FORMING'
+            }));
+
+            await updateGroupsAPI(labId, groupsToSave);
+
+            // Notify parent component to refresh
+            if (onUpdateGroups) {
+                onUpdateGroups();
+            }
+
+            onClose();
+        } catch (err) {
+            console.error('Failed to save groups:', err);
+            setError(err.message || 'Failed to save groups');
+            setLoading(false);
+        }
     };
 
     const handleCancel = () => {
@@ -173,9 +288,51 @@ export default function GroupManagementModal({
         <div className="group-management-overlay">
             <div className="group-management-modal">
                 <div className="modal-header">
-                    <h2 className="modal-title">Manage Groups - {sectionData?.name}</h2>
-                    <button className="modal-close" onClick={onClose}>×</button>
+                    <h2 className="modal-title">Manage Groups - {labName || 'Lab'}</h2>
+                    <div className="header-actions">
+                        <button
+                            className="btn-randomize"
+                            onClick={handleRandomize}
+                            disabled={loading || unassignedStudents.length === 0}
+                            title={unassignedStudents.length === 0 ? "No students to randomize" : "Randomize all students into groups"}
+                        >
+                            🎲 Randomize Groups
+                        </button>
+                        <button className="modal-close" onClick={onClose}>×</button>
+                    </div>
                 </div>
+
+                {error && (
+                    <div className="error-banner">
+                        <span className="error-icon">⚠️</span>
+                        <span className="error-message">{error}</span>
+                        <button className="error-close" onClick={() => setError(null)}>×</button>
+                    </div>
+                )}
+
+                {loading && (
+                    <div className="loading-overlay">
+                        <div className="loading-spinner"></div>
+                        <p>Loading...</p>
+                    </div>
+                )}
+
+                {showRandomizeConfirm && (
+                    <div className="confirm-dialog-overlay">
+                        <div className="confirm-dialog">
+                            <h3>Confirm Randomization</h3>
+                            <p>This will replace all existing groups with new randomized groups. Are you sure you want to continue?</p>
+                            <div className="confirm-actions">
+                                <button className="btn-cancel" onClick={() => setShowRandomizeConfirm(false)}>
+                                    Cancel
+                                </button>
+                                <button className="btn-confirm" onClick={executeRandomize}>
+                                    Yes, Randomize
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
 
                 <div className="modal-body">
                     {/* Unassigned Students Section */}

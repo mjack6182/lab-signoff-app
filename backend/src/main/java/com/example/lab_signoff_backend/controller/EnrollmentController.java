@@ -1,13 +1,17 @@
 package com.example.lab_signoff_backend.controller;
 
+import com.example.lab_signoff_backend.dto.EnrollmentWithUserDTO;
 import com.example.lab_signoff_backend.model.Enrollment;
+import com.example.lab_signoff_backend.model.User;
 import com.example.lab_signoff_backend.model.enums.EnrollmentRole;
 import com.example.lab_signoff_backend.service.EnrollmentService;
+import com.example.lab_signoff_backend.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -18,11 +22,13 @@ import java.util.Optional;
  */
 @RestController
 @RequestMapping("/api/enrollments")
-@CrossOrigin(origins = "*") // Configure appropriately for production
 public class EnrollmentController {
 
     @Autowired
     private EnrollmentService enrollmentService;
+
+    @Autowired
+    private UserService userService;
 
     /**
      * Create a new enrollment
@@ -109,18 +115,58 @@ public class EnrollmentController {
     }
 
     /**
-     * Get students for a class
+     * Get students for a class with user details
      * GET /api/enrollments/class/{classId}/students
      */
     @GetMapping("/class/{classId}/students")
-    public ResponseEntity<List<Enrollment>> getStudents(
+    public ResponseEntity<List<EnrollmentWithUserDTO>> getStudents(
             @PathVariable String classId,
             @RequestParam(required = false, defaultValue = "false") Boolean activeOnly) {
         try {
             List<Enrollment> students = activeOnly
                     ? enrollmentService.getActiveStudents(classId)
                     : enrollmentService.getStudents(classId);
-            return ResponseEntity.ok(students);
+
+            // Fetch all users once for efficiency
+            List<User> allUsers = userService.getAllUsers();
+            Map<String, User> userMap = new java.util.HashMap<>();
+            for (User user : allUsers) {
+                userMap.put(user.getId(), user);
+            }
+
+            // Enrich enrollments with user data
+            List<EnrollmentWithUserDTO> enrichedStudents = new ArrayList<>();
+            for (Enrollment enrollment : students) {
+                EnrollmentWithUserDTO dto = new EnrollmentWithUserDTO();
+                dto.setId(enrollment.getId());
+                dto.setUserId(enrollment.getUserId());
+                dto.setClassId(enrollment.getClassId());
+                dto.setRole(enrollment.getRole());
+                dto.setStatus(enrollment.getStatus());
+                dto.setEnrolledAt(enrollment.getEnrolledAt());
+                dto.setUpdatedAt(enrollment.getUpdatedAt());
+
+                User user = userMap.get(enrollment.getUserId());
+                if (user != null) {
+                    // Use name, email may be null/empty for students who joined via join code
+                    dto.setUserName(user.getName() != null ? user.getName() : "Unknown Student");
+                    dto.setUserEmail(user.getEmail() != null ? user.getEmail() : "");
+                    dto.setUserFirstName(user.getFirstName() != null ? user.getFirstName() : "");
+                    dto.setUserLastName(user.getLastName() != null ? user.getLastName() : "");
+                    dto.setUserPicture(user.getPicture() != null ? user.getPicture() : "");
+                } else {
+                    // User not found, use defaults
+                    dto.setUserName("Unknown Student");
+                    dto.setUserEmail("");
+                    dto.setUserFirstName("");
+                    dto.setUserLastName("");
+                    dto.setUserPicture("");
+                }
+
+                enrichedStudents.add(dto);
+            }
+
+            return ResponseEntity.ok(enrichedStudents);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
