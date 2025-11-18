@@ -221,7 +221,7 @@ export default function CheckpointPage() {
               };
             }
           } else if (normalized === 'RETURN') {
-            const { [cpKey]: removed, ...rest } = next[update.groupId];
+            const { [cpKey]: _removed, ...rest } = next[update.groupId];
             next[update.groupId] = rest;
           }
         }
