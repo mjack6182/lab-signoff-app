@@ -63,6 +63,21 @@ public class GroupService {
         return repo.save(group);
     }
 
+    /**
+     * Fetch a group by its Mongo document id or display groupId.
+     * Auto-initialises checkpoint progress to avoid nulls when returned to callers.
+     */
+    public Optional<Group> getById(String idOrGroupId) {
+        Optional<Group> groupOpt = repo.findById(idOrGroupId);
+
+        if (groupOpt.isEmpty()) {
+            groupOpt = repo.findByGroupId(idOrGroupId);
+        }
+
+        groupOpt.ifPresent(this::autoInitCheckpoints);
+        return groupOpt;
+    }
+
     public CheckpointProgress updateCheckpointProgress(
             String groupIdOrId,
             Integer checkpointNumber,
