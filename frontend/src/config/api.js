@@ -11,8 +11,15 @@ export const buildApiUrl = (path) => {
 };
 
 // Export specific endpoint builders for convenience
+const labs = () => buildApiUrl('/lti/labs');
+labs.join = () => buildApiUrl('/api/labs/join');
+labs.byCode = (code) => buildApiUrl(`/api/labs/code/${code}`);
+labs.roster = (labId) => buildApiUrl(`/api/labs/${labId}/roster`);
+labs.selectStudent = (labId) => buildApiUrl(`/api/labs/${labId}/select-student`);
+labs.selections = (labId) => buildApiUrl(`/api/labs/${labId}/selections`);
+
 export const api = {
-  labs: () => buildApiUrl('/lti/labs'),
+  labs,
   labByJoinCode: (joinCode) => buildApiUrl(`/api/labs/join/${encodeURIComponent(joinCode)}`),
   labJoinStudent: (joinCode) => buildApiUrl(`/api/labs/join/${encodeURIComponent(joinCode)}/students`),
   labDetail: (labId) => buildApiUrl(`/api/labs/${labId}`),
@@ -31,13 +38,6 @@ export const api = {
   groups: () => buildApiUrl('/groups'),
   auth: {
     login: () => buildApiUrl('/api/auth/login'),
-  },
-  labs: {
-    join: () => buildApiUrl('/api/labs/join'),
-    byCode: (code) => buildApiUrl(`/api/labs/code/${code}`),
-    roster: (labId) => buildApiUrl(`/api/labs/${labId}/roster`),
-    selectStudent: (labId) => buildApiUrl(`/api/labs/${labId}/select-student`),
-    selections: (labId) => buildApiUrl(`/api/labs/${labId}/selections`),
   },
   ws: () => buildApiUrl('/ws'),
 };
