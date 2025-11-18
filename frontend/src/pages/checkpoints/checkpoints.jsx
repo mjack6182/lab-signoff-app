@@ -160,7 +160,7 @@ export default function CheckpointPage() {
           const status = update.status;
 
           if (!updated[gid]) updated[gid] = {};
-          const checkpointId = `cp-${checkpointNum}`;
+          const checkpointId = `checkpoint-${checkpointNum}`;
 
           console.log('✅ Backend checkpoint number', checkpointNum, '→ Frontend ID:', checkpointId);
 
