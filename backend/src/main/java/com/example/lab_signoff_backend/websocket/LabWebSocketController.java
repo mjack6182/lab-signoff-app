@@ -70,7 +70,40 @@ public class LabWebSocketController {
     }
 
     /**
-     * Test endpoint
+     * Legacy method - kept for backward compatibility
+     * @deprecated Use broadcastCheckpointUpdate with CheckpointUpdate object instead
+     */
+    @Deprecated
+    public void broadcastCheckpointUpdate(String groupId, int checkpointNumber, String status) {
+        CheckpointUpdate update = new CheckpointUpdate(null, groupId, checkpointNumber, status);
+        messagingTemplate.convertAndSend("/topic/group-updates", update);
+        logger.warn("Using deprecated broadcastCheckpointUpdate method - missing labId");
+    }
+
+    /**
+     * Legacy method - kept for backward compatibility
+     * @deprecated Use broadcastGroupStatusUpdate instead
+     */
+    @Deprecated
+    public void broadcastGroupPassed(String groupId) {
+        GroupStatusUpdate update = new GroupStatusUpdate(null, groupId, null);
+        update.setStatus(com.example.lab_signoff_backend.model.enums.GroupStatus.SIGNED_OFF);
+        messagingTemplate.convertAndSend("/topic/group-updates", update);
+        logger.warn("Using deprecated broadcastGroupPassed method - missing labId");
+    }
+
+    /**
+     * Broadcast groups randomized event to all clients subscribed to the lab
+     * @param labId The lab identifier
+     */
+    public void broadcastGroupsRandomized(String labId) {
+        messagingTemplate.convertAndSend("/topic/labs/" + labId + "/groups-randomized",
+            new GroupsRandomizedMessage(labId));
+        logger.info("Broadcasted groups randomized event -> Lab: {}", labId);
+    }
+
+    /**
+     * Test endpoint to verify WebSocket connectivity
      */
     @GetMapping("/ws-test-broadcast")
     @ResponseBody
@@ -78,5 +111,24 @@ public class LabWebSocketController {
         CheckpointUpdate testUpdate = new CheckpointUpdate("test-lab-123", "test-group-123", 1, "PASS");
         broadcastCheckpointUpdate("test-lab-123", testUpdate);
         return "✅ Test WebSocket broadcast sent!";
+    }
+
+    /**
+     * Message class for groups randomized events
+     */
+    public static class GroupsRandomizedMessage {
+        private final String labId;
+        private final long timestamp;
+        private final String message;
+
+        public GroupsRandomizedMessage(String labId) {
+            this.labId = labId;
+            this.timestamp = System.currentTimeMillis();
+            this.message = "Groups have been randomized";
+        }
+
+        public String getLabId() { return labId; }
+        public long getTimestamp() { return timestamp; }
+        public String getMessage() { return message; }
     }
 }
