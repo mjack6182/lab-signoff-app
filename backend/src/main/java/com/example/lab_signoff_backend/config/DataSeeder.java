@@ -18,7 +18,11 @@ import java.util.List;
  *
  * Data includes: Users, Class, Enrollments, Labs, Groups, and HelpQueueItems
  */
-@Configuration  // ✅ ENABLED - Comment out to disable seeding
+
+ //@Configuration 
+//✅ ENABLED - Comment out to disable seeding
+
+
 public class DataSeeder {
 
     @Bean
@@ -179,7 +183,7 @@ public class DataSeeder {
             Lab lab1 = new Lab(
                     labSignoffClass.getId(),
                     "Laboratory for Module 01",
-                    3,
+                    5,
                     instructor.getId());
             lab1.setDescription("Introduction to version control and Git basics");
             lab1.activate(); // Make it active
@@ -189,7 +193,7 @@ public class DataSeeder {
             Lab lab2 = new Lab(
                     labSignoffClass.getId(),
                     "Laboratory for Module 02",
-                    4,
+                    5,
                     instructor.getId());
             lab2.setDescription("Object-oriented programming fundamentals");
             lab2.activate();
@@ -199,7 +203,7 @@ public class DataSeeder {
             Lab lab3 = new Lab(
                     labSignoffClass.getId(),
                     "Laboratory for Module 03",
-                    4,
+                    5,
                     instructor.getId());
             lab3.setDescription("Data structures and algorithms");
             lab3.setStatus(LabStatus.DRAFT); // Not yet active

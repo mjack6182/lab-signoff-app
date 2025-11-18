@@ -11,14 +11,10 @@ import Dashboard from './pages/dashboard/dashboard'
 import CheckpointPage from './pages/checkpoints/checkpoints.jsx'
 import Settings from './pages/Settings/Settings'
 import ClassesSettings from './pages/Settings/ClassesSettings'
-// import RoleDemo from './pages/role-demo/role-demo'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { StaffOnly } from './components/RoleGuard/RoleGuard'
 import ProfileCompletionModal from './components/ProfileCompletionModal/ProfileCompletionModal'
-// import RoleSwitcher from './components/RoleSwitcher/RoleSwitcher'
-
 import { useEffect } from 'react';
-import { createWebSocketClient } from "./services/websocketClient.js"; // ✅ import your WebSocket setup
 
 function AppContent() {
     const { user, loading, isAuthenticated, hasCompletedProfile } = useAuth();
@@ -46,7 +42,7 @@ function AppContent() {
         );
     }
 
-    // If not authenticated, show login page and student routes
+    // If not authenticated, show login + student routes
     if (!isAuthenticated) {
         return (
             <Routes>
@@ -59,10 +55,8 @@ function AppContent() {
         );
     }
 
-    // If authenticated, show all routes
     return (
         <>
-            {/* Show profile completion modal if user hasn't completed profile */}
             <ProfileCompletionModal isOpen={isAuthenticated && !hasCompletedProfile()} />
 
             <Routes>
@@ -71,18 +65,20 @@ function AppContent() {
                 <Route path="/lab-join" element={<LabJoin />} />
                 <Route path="/select-student" element={<SelectStudent />} />
                 <Route path="/student-checkpoints/:labId/:groupId" element={<StudentCheckpoints />} />
+
                 <Route path="/groups" element={<GroupList />} />
                 <Route path="/class-selector" element={<ClassSelector />} />
                 <Route path="/classes/:classId" element={<ClassDetail />} />
-                {/* Direct route to checkpoints when labId is known */}
+
                 <Route path="/labs/:labId/checkpoints" element={<CheckpointPage />} />
-                {/* Keep the old group-specific route for backward compatibility */}
                 <Route path="/labs/:labId/groups/:groupId/checkpoints" element={<CheckpointPage />} />
-                {/* Keep the groups page for potential admin functionality */}
+
                 <Route path="/labs/:labId/groups" element={<LabGroups />} />
+
                 <Route path="/settings" element={<Settings />}>
                     <Route path="classes" element={<ClassesSettings />} />
                 </Route>
+
                 <Route path="/dashboard" element={
                     user ? (
                         <StaffOnly fallback={<Navigate to="/class-selector" replace />}>
@@ -90,6 +86,7 @@ function AppContent() {
                         </StaffOnly>
                     ) : <Navigate to="/login" replace />
                 } />
+
                 <Route path="/checkpoints" element={
                     user ? (
                         <StaffOnly fallback={<Navigate to="/class-selector" replace />}>
@@ -97,9 +94,7 @@ function AppContent() {
                         </StaffOnly>
                     ) : <Navigate to="/login" replace />
                 } />
-                {/* <Route path="/role-demo" element={<RoleDemo />} /> */}
 
-                {/* optional 404 */}
                 <Route path="*" element={user ? <Navigate to="/class-selector" replace /> : <Navigate to="/login" replace />} />
             </Routes>
         </>
@@ -107,19 +102,6 @@ function AppContent() {
 }
 
 export default function App() {
-
-    useEffect(() => {
-        // 🟢 Create and connect the WebSocket client when the app starts
-        const client = createWebSocketClient();
-        client.activate();
-
-        // 🔴 Clean up connection when the app is closed or refreshed
-        return () => {
-            client.deactivate();
-        };
-    }, []); // ← runs only once when the app loads
-
-
     return (
         <AuthProvider>
             <AppContent />

@@ -3,6 +3,7 @@ package com.example.lab_signoff_backend.repository;
 import com.example.lab_signoff_backend.model.Group;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.stereotype.Repository; 
+import java.util.Optional;
 
 import java.util.List;
 
@@ -14,5 +15,9 @@ public interface GroupRepository extends MongoRepository<Group, String> {
      * @param labId The lab identifier to search for
      * @return List of groups associated with the lab
      */
+
     List<Group> findByLabId(String labId);
+    Optional<Group> findByGroupId(String groupId);
 }
+
+
