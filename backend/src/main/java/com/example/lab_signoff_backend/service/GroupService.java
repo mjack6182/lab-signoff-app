@@ -1,5 +1,4 @@
 package com.example.lab_signoff_backend.service;
-
 import com.example.lab_signoff_backend.model.Group;
 import com.example.lab_signoff_backend.model.Lab;
 import com.example.lab_signoff_backend.model.User;
