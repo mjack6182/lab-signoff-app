@@ -4,14 +4,18 @@ import com.example.lab_signoff_backend.model.Class;
 import com.example.lab_signoff_backend.model.Lab;
 import com.example.lab_signoff_backend.model.enums.LabStatus;
 import com.example.lab_signoff_backend.repository.ClassRepository;
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVParser;
+import org.apache.commons.csv.CSVRecord;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -191,41 +195,59 @@ public class ClassService {
         List<String> rosterEntries = new ArrayList<>();
         List<Lab> labsToCreate = new ArrayList<>();
 
-        try (BufferedReader reader = new BufferedReader(new InputStreamReader(csvFile.getInputStream()))) {
-            String headerLine = reader.readLine();
-            String pointsLine = reader.readLine();
+        try (InputStreamReader reader = new InputStreamReader(csvFile.getInputStream());
+             CSVParser parser = new CSVParser(reader, CSVFormat.RFC4180.builder()
+                     .setHeader()
+                     .setSkipHeaderRecord(true) // consume header row instead of returning it as a record
+                     .setTrim(true)
+                     .setIgnoreEmptyLines(true)
+                     .build())) {
 
-            if (headerLine == null || pointsLine == null) {
-                throw new RuntimeException("CSV file must have at least 2 rows (header and points possible)");
+            List<String> headers = parser.getHeaderNames();
+            if (headers == null || headers.isEmpty()) {
+                throw new RuntimeException("CSV file missing header row");
             }
 
-            // Parse headers to find lab columns
-            String[] headers = headerLine.split(",");
-            String[] points = pointsLine.split(",");
+            // Map normalized header -> actual header name for case-insensitive/BOM tolerant lookups
+            Map<String, String> headerLookup = new HashMap<>();
+            for (String h : headers) {
+                headerLookup.putIfAbsent(normalizeHeader(h), h);
+            }
+
+            String studentHeader = headerLookup.getOrDefault("student", headers.get(0));
 
             // Pattern to match lab assignments like "Laboratory for Module 01 (9601577)"
             Pattern labPattern = Pattern.compile("Laboratory for (.+?)\\s*\\((\\d+)\\)");
 
-            // Parse lab columns from headers (starting after the first 4 student info columns)
-            for (int i = 4; i < headers.length; i++) {
-                String header = headers[i].trim();
+            List<CSVRecord> records = parser.getRecords();
+            CSVRecord pointsRecord = records.stream()
+                    .filter(r -> {
+                        String studentCol = getValue(r, studentHeader, headerLookup);
+                        return studentCol != null && studentCol.toLowerCase().contains("points possible");
+                    })
+                    .findFirst()
+                    .orElse(null);
+
+            // Build labs from header definitions
+            for (int i = 4; i < headers.size(); i++) {
+                String header = headers.get(i).trim();
                 Matcher matcher = labPattern.matcher(header);
 
                 if (matcher.find()) {
                     String labTitle = "Laboratory for " + matcher.group(1);
-                    String canvasId = matcher.group(2);
 
-                    // Get points from Points Possible row
                     Integer labPoints = 1; // Default to 1 point if parsing fails
-                    try {
-                        if (i < points.length && !points[i].trim().isEmpty()) {
-                            labPoints = (int) Double.parseDouble(points[i].trim());
+                    if (pointsRecord != null && i < pointsRecord.size()) {
+                        String pointsValue = pointsRecord.get(i);
+                        try {
+                            if (pointsValue != null && !pointsValue.trim().isEmpty()) {
+                                labPoints = (int) Double.parseDouble(pointsValue.trim());
+                            }
+                        } catch (NumberFormatException ignored) {
+                            // keep default
                         }
-                    } catch (NumberFormatException e) {
-                        // Use default value of 1
                     }
 
-                    // Create Lab entity
                     Lab lab = new Lab(
                             classId,
                             labTitle,
@@ -244,22 +266,19 @@ public class ClassService {
                 labService.upsert(lab);
             }
 
-            // Parse student roster (rows 3+)
-            String line;
-            while ((line = reader.readLine()) != null) {
-                List<String> columns = parseCsvLine(line);
-
-                if (!columns.isEmpty()) {
-                    String studentName = unquote(columns.get(0));
-                    if (studentName.isEmpty() || studentName.equals("Student, Test")) {
-                        continue;
-                    }
-
-                    rosterEntries.add(studentName);
+            // Parse student roster records (skip points row and empty Student values)
+            for (CSVRecord record : records) {
+                String studentName = getValue(record, studentHeader, headerLookup);
+                if (studentName == null) {
+                    continue;
                 }
+                String normalized = studentName.trim();
+                if (normalized.isEmpty() || normalized.toLowerCase().contains("points possible")) {
+                    continue;
+                }
+                rosterEntries.add(normalized);
             }
 
-            // Add all students to roster
             for (String entry : rosterEntries) {
                 classEntity.addStudentToRoster(entry);
             }
@@ -269,6 +288,30 @@ public class ClassService {
         } catch (Exception e) {
             throw new RuntimeException("Failed to import roster from CSV: " + e.getMessage(), e);
         }
+    }
+
+    private String getValue(CSVRecord record, String logicalHeader, Map<String, String> headerLookup) {
+        if (record == null || logicalHeader == null) {
+            return null;
+        }
+        String key = headerLookup.get(normalizeHeader(logicalHeader));
+        if (key != null && record.isMapped(key)) {
+            return record.get(key);
+        }
+        // Fallback: try any header that normalizes to the same value
+        for (var entry : headerLookup.entrySet()) {
+            if (normalizeHeader(logicalHeader).equals(entry.getKey()) && record.isMapped(entry.getValue())) {
+                return record.get(entry.getValue());
+            }
+        }
+        return null;
+    }
+
+    private String normalizeHeader(String header) {
+        if (header == null) {
+            return "";
+        }
+        return header.replace("\uFEFF", "").trim().toLowerCase();
     }
 
     /**
