@@ -7,23 +7,16 @@ import com.example.lab_signoff_backend.model.enums.GroupStatus;
 import com.example.lab_signoff_backend.service.GroupService;
 import com.example.lab_signoff_backend.service.LabService;
 import com.example.lab_signoff_backend.service.SignoffEventService;
-import com.example.lab_signoff_backend.websocket.LabWebSocketController; // ✅ ADD THIS IMPORT
+import com.example.lab_signoff_backend.websocket.LabWebSocketController;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
-/**
- * REST controller for lab and group management operations.
- *
- * Provides endpoints for retrieving labs, creating/updating labs,
- * and fetching groups associated with specific labs.
- *
- * Includes WebSocket broadcasting for group pass/return events.
- */
 @RestController
 @RequestMapping("/lti")
 public class LabController {
@@ -31,176 +24,129 @@ public class LabController {
     private final LabService labService;
     private final GroupService groupService;
     private final SignoffEventService signoffEventService;
-    private final LabWebSocketController wsController; // ✅ NEW
+    private final LabWebSocketController wsController;
 
-    /**
-     * Constructor for LabController.
-     */
     @Autowired
-    public LabController(
-            LabService labService,
-            GroupService groupService,
-            SignoffEventService signoffEventService,
-            LabWebSocketController wsController // ✅ Inject WebSocket controller
-    ) {
+    public LabController(LabService labService,
+                         GroupService groupService,
+                         SignoffEventService signoffEventService,
+                         LabWebSocketController wsController) {
         this.labService = labService;
         this.groupService = groupService;
         this.signoffEventService = signoffEventService;
         this.wsController = wsController;
     }
 
-    /** Retrieves all labs. */
     @GetMapping("/labs")
     public List<Lab> getLabs() {
         return labService.getAll();
     }
 
-    /** Creates or updates a lab. */
-    @PostMapping("/labs")
-    public Lab createOrUpdateLab(@RequestBody Lab lab) {
-        return labService.upsert(lab);
-    }
-
-    /** Retrieves all groups associated with a specific lab. */
     @GetMapping("/labs/{id}/groups")
     public ResponseEntity<?> getGroupsByLabId(@PathVariable String id) {
         if (id == null || id.trim().isEmpty()) {
             return ResponseEntity.badRequest().body("Lab ID cannot be empty");
         }
 
-        try {
-            if (!labService.labExists(id)) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                        .body("Lab with ID " + id + " not found");
-            }
-
-            List<Group> groups = groupService.getGroupsByLabId(id);
-            return ResponseEntity.ok(groups);
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Error retrieving groups: " + e.getMessage());
+        if (!labService.labExists(id)) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body("Lab with ID " + id + " not found");
         }
+
+        List<Group> groups = groupService.getGroupsByLabId(id);
+        return ResponseEntity.ok(groups);
     }
 
-    /** Marks a group as passed for a specific lab and broadcasts update. */
     @PostMapping("/labs/{labId}/groups/{groupId}/pass")
-    public ResponseEntity<?> passGroup(
-            @PathVariable String labId,
-            @PathVariable String groupId,
-            @RequestParam(required = false) String performedBy,
-            @RequestParam(required = false) String notes) {
+    public ResponseEntity<?> passGroup(@PathVariable String labId,
+                                       @PathVariable String groupId,
+                                       @RequestBody(required = false) Map<String, Object> payload) {
 
-        if (labId == null || labId.trim().isEmpty()) {
-            return ResponseEntity.badRequest().body("Lab ID cannot be empty");
-        }
-        if (groupId == null || groupId.trim().isEmpty()) {
-            return ResponseEntity.badRequest().body("Group ID cannot be empty");
-        }
+        String performedBy = payload != null && payload.get("performedBy") != null
+                ? payload.get("performedBy").toString()
+                : "system";
 
-        try {
-            if (!labService.labExists(labId)) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                        .body("Lab with ID " + labId + " not found");
-            }
+        String notes = payload != null && payload.get("notes") != null
+                ? payload.get("notes").toString()
+                : null;
 
-            Optional<Group> groupOptional = groupService.getAll().stream()
-                    .filter(g -> g.getGroupId().equals(groupId) && g.getLabId().equals(labId))
-                    .findFirst();
+        if (labId == null || labId.trim().isEmpty()) return ResponseEntity.badRequest().body("Lab ID cannot be empty");
+        if (groupId == null || groupId.trim().isEmpty()) return ResponseEntity.badRequest().body("Group ID cannot be empty");
 
-            if (groupOptional.isEmpty()) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                        .body("Group with ID " + groupId + " not found in lab " + labId);
-            }
+        if (!labService.labExists(labId))
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body("Lab with ID " + labId + " not found");
 
-            Group group = groupOptional.get();
-            group.setStatus(GroupStatus.SIGNED_OFF);
-            groupService.upsert(group);
+        Optional<Group> groupOpt = groupService.getAll().stream()
+                .filter(g -> g.getGroupId().equals(groupId) && g.getLabId().equals(labId))
+                .findFirst();
 
-            String performer = (performedBy != null && !performedBy.trim().isEmpty())
-                    ? performedBy : "system";
-            SignoffEvent event = signoffEventService.createEvent(
-                    labId,
-                    groupId,
-                    "PASS",
-                    performer,
-                    notes,
-                    null
-            );
+        if (groupOpt.isEmpty())
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body("Group with ID " + groupId + " not found in lab " + labId);
 
-            // ✅ 🔥 NEW: Broadcast group passed via WebSocket
-            wsController.broadcastGroupPassed(groupId);
+        Group group = groupOpt.get();
+        group.setStatus(GroupStatus.SIGNED_OFF);
+        groupService.upsert(group);
 
-            return ResponseEntity.ok()
-                    .body(new PassReturnResponse(
-                            group,
-                            event,
-                            "Group successfully marked as passed and broadcasted"
-                    ));
+        SignoffEvent event = signoffEventService.createEvent(
+                labId,
+                groupId,
+                "PASS",
+                performedBy,
+                notes,
+                null
+        );
 
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Error updating group status: " + e.getMessage());
-        }
+        wsController.broadcastGroupPassed(labId, groupId);
+
+        return ResponseEntity.ok(new PassReturnResponse(group, event, "Group successfully marked as passed and broadcasted"));
     }
 
-    /** Marks a group as returned and creates an audit entry. */
     @PostMapping("/labs/{labId}/groups/{groupId}/return")
-    public ResponseEntity<?> returnGroup(
-            @PathVariable String labId,
-            @PathVariable String groupId,
-            @RequestParam(required = false) String performedBy,
-            @RequestParam(required = false) String notes) {
+    public ResponseEntity<?> returnGroup(@PathVariable String labId,
+                                         @PathVariable String groupId,
+                                         @RequestBody(required = false) Map<String, Object> payload) {
 
-        if (labId == null || labId.trim().isEmpty()) {
-            return ResponseEntity.badRequest().body("Lab ID cannot be empty");
-        }
-        if (groupId == null || groupId.trim().isEmpty()) {
-            return ResponseEntity.badRequest().body("Group ID cannot be empty");
-        }
+        String performedBy = payload != null && payload.get("performedBy") != null
+                ? payload.get("performedBy").toString()
+                : "system";
 
-        try {
-            if (!labService.labExists(labId)) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                        .body("Lab with ID " + labId + " not found");
-            }
+        String notes = payload != null && payload.get("notes") != null
+                ? payload.get("notes").toString()
+                : null;
 
-            Optional<Group> groupOptional = groupService.getAll().stream()
-                    .filter(g -> g.getGroupId().equals(groupId) && g.getLabId().equals(labId))
-                    .findFirst();
+        if (labId == null || labId.trim().isEmpty()) return ResponseEntity.badRequest().body("Lab ID cannot be empty");
+        if (groupId == null || groupId.trim().isEmpty()) return ResponseEntity.badRequest().body("Group ID cannot be empty");
 
-            if (groupOptional.isEmpty()) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                        .body("Group with ID " + groupId + " not found in lab " + labId);
-            }
+        if (!labService.labExists(labId))
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body("Lab with ID " + labId + " not found");
 
-            Group group = groupOptional.get();
-            group.setStatus(GroupStatus.IN_PROGRESS);
-            groupService.upsert(group);
+        Optional<Group> groupOpt = groupService.getAll().stream()
+                .filter(g -> g.getGroupId().equals(groupId) && g.getLabId().equals(labId))
+                .findFirst();
 
-            String performer = (performedBy != null && !performedBy.trim().isEmpty())
-                    ? performedBy : "system";
-            SignoffEvent event = signoffEventService.createEvent(
-                    labId,
-                    groupId,
-                    "RETURN",
-                    performer,
-                    notes,
-                    null
-            );
+        if (groupOpt.isEmpty())
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body("Group with ID " + groupId + " not found in lab " + labId);
 
-            return ResponseEntity.ok()
-                    .body(new PassReturnResponse(
-                            group,
-                            event,
-                            "Group successfully marked as returned"
-                    ));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Error updating group status: " + e.getMessage());
-        }
+        Group group = groupOpt.get();
+        group.setStatus(GroupStatus.IN_PROGRESS);
+        groupService.upsert(group);
+
+        SignoffEvent event = signoffEventService.createEvent(
+                labId,
+                groupId,
+                "RETURN",
+                performedBy,
+                notes,
+                null
+        );
+
+        return ResponseEntity.ok(new PassReturnResponse(group, event, "Group successfully marked as returned"));
     }
 
-    /** Response class for pass/return operations. */
     private static class PassReturnResponse {
         private final Group group;
         private final SignoffEvent event;

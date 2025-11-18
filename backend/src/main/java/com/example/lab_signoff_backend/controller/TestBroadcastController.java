@@ -1,5 +1,6 @@
 package com.example.lab_signoff_backend.controller;
 
+import com.example.lab_signoff_backend.model.CheckpointUpdate;
 import com.example.lab_signoff_backend.websocket.LabWebSocketController;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -11,10 +12,10 @@ public class TestBroadcastController {
     @Autowired
     private LabWebSocketController wsController;
 
-    // Temporary GET endpoint to trigger broadcast
     @GetMapping("/test-broadcast")
     public String sendTest() {
-        wsController.broadcastCheckpointUpdate("Group-1", 1, "PASS");
-        return "Broadcast sent!";
+        CheckpointUpdate testUpdate = new CheckpointUpdate("lab1", "Group-1", 1, "PASS");
+        wsController.broadcastCheckpointUpdate("lab1", testUpdate);
+        return "✅ Broadcast sent!";
     }
 }

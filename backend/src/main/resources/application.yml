@@ -1,9 +1,10 @@
 lti:
-  issuer: "https://canvas.instructure.com"        # or your institution's Canvas issuer
-  client-id: ${LTI_CLIENT_ID}                     # from Canvas Developer Key
-  jwks-url: "https://canvas.instructure.com/api/lti/security/jwks" # Canvas JWKS
+  issuer: "https://canvas.instructure.com"
+  client-id: ${LTI_CLIENT_ID}
+  jwks-url: "https://canvas.instructure.com/api/lti/security/jwks"
   allowed-clock-skew-seconds: 120
   validation-enabled: false
+
 spring:
   config:
     import: optional:file:.env[.properties],optional:file:../.env[.properties]
@@ -22,15 +23,22 @@ spring:
     name: ${SPRING_APPLICATION_NAME}
   web:
     resources:
-      # Configure static resource handling
       static-locations: classpath:/static/
       cache-period: 3600
+
 app:
   mocks:
     ags:
       enabled: true
+
 server:
   port: ${SERVER_PORT}
 
-
-
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+  endpoint:
+    mappings:
+      enabled: true
