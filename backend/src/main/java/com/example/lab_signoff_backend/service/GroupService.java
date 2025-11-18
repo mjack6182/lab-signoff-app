@@ -184,6 +184,80 @@ public class GroupService {
     }
 
     /**
+     * Bulk update groups for a lab
+     *
+     * This method will:
+     * 1. Delete all existing groups for the lab
+     * 2. Validate that all student IDs belong to enrolled students in the class
+     * 3. Create/update groups based on the provided list
+     *
+     * @param labId The lab identifier
+     * @param groups List of groups to save
+     * @return List of saved groups
+     * @throws RuntimeException if lab not found or validation fails
+     */
+    public List<Group> bulkUpdateGroups(String labId, List<Group> groups) {
+        // Get the lab to access classId for validation
+        Lab lab = labService.getAll().stream()
+                .filter(l -> l.getId().equals(labId))
+                .findFirst()
+                .orElseThrow(() -> new RuntimeException("Lab not found with id: " + labId));
+
+        String classId = lab.getClassId();
+
+        // Get all active students enrolled in the class for validation
+        List<Enrollment> studentEnrollments = enrollmentService.getActiveStudents(classId);
+        List<String> validStudentIds = studentEnrollments.stream()
+                .map(Enrollment::getUserId)
+                .collect(Collectors.toList());
+
+        // Validate all student IDs in the groups belong to the class
+        for (Group group : groups) {
+            if (group.getMembers() != null) {
+                for (GroupMember member : group.getMembers()) {
+                    if (!validStudentIds.contains(member.getUserId())) {
+                        throw new RuntimeException(
+                            "Student with ID " + member.getUserId() +
+                            " is not enrolled in the class associated with this lab"
+                        );
+                    }
+                }
+            }
+        }
+
+        // Delete all existing groups for this lab
+        List<Group> existingGroups = repo.findByLabId(labId);
+        repo.deleteAll(existingGroups);
+
+        // Ensure all groups have the correct labId and set timestamps
+        Instant now = Instant.now();
+        for (Group group : groups) {
+            group.setLabId(labId);
+            if (group.getCreatedAt() == null) {
+                group.setCreatedAt(now);
+            }
+            group.setLastUpdatedAt(now);
+
+            // Set default status if not provided
+            if (group.getStatus() == null) {
+                group.setStatus(GroupStatus.FORMING);
+            }
+        }
+
+        // Save all groups
+        return repo.saveAll(groups);
+    }
+
+    /**
+     * Delete a group by its ID
+     *
+     * @param groupId The MongoDB document ID of the group to delete
+     */
+    public void deleteGroup(String groupId) {
+        repo.deleteById(groupId);
+    }
+
+    /**
      * Calculate the optimal number of groups given total students and size constraints
      *
      * @param totalStudents Total number of students to distribute

@@ -237,6 +237,50 @@ public class LabController {
         }
     }
 
+    /**
+     * Bulk update groups for a lab.
+     * Replaces all existing groups with the provided groups.
+     */
+    @PutMapping("/labs/{labId}/groups")
+    public ResponseEntity<?> updateGroups(
+            @PathVariable String labId,
+            @RequestBody List<Group> groups) {
+
+        if (labId == null || labId.trim().isEmpty()) {
+            return ResponseEntity.badRequest().body("Lab ID cannot be empty");
+        }
+
+        if (groups == null) {
+            return ResponseEntity.badRequest().body("Groups list cannot be null");
+        }
+
+        try {
+            if (!labService.labExists(labId)) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body("Lab with ID " + labId + " not found");
+            }
+
+            List<Group> updatedGroups = groupService.bulkUpdateGroups(labId, groups);
+
+            // Broadcast WebSocket update to notify all clients
+            wsController.broadcastGroupsRandomized(labId);
+
+            return ResponseEntity.ok()
+                    .body(new UpdateGroupsResponse(
+                            updatedGroups,
+                            updatedGroups.size(),
+                            "Groups successfully updated"
+                    ));
+
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body("Error updating groups: " + e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error updating groups: " + e.getMessage());
+        }
+    }
+
     /** Response class for pass/return operations. */
     private static class PassReturnResponse {
         private final Group group;
@@ -261,6 +305,23 @@ public class LabController {
         private final String message;
 
         public RandomizeGroupsResponse(List<Group> groups, int groupCount, String message) {
+            this.groups = groups;
+            this.groupCount = groupCount;
+            this.message = message;
+        }
+
+        public List<Group> getGroups() { return groups; }
+        public int getGroupCount() { return groupCount; }
+        public String getMessage() { return message; }
+    }
+
+    /** Response class for update groups operation. */
+    private static class UpdateGroupsResponse {
+        private final List<Group> groups;
+        private final int groupCount;
+        private final String message;
+
+        public UpdateGroupsResponse(List<Group> groups, int groupCount, String message) {
             this.groups = groups;
             this.groupCount = groupCount;
             this.message = message;
