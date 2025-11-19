@@ -24,6 +24,7 @@ export const api = {
   labJoinStudent: (joinCode) => buildApiUrl(`/api/labs/join/${encodeURIComponent(joinCode)}/students`),
   labDetail: (labId) => buildApiUrl(`/api/labs/${labId}`),
   labGroupDetail: (labId, groupId) => buildApiUrl(`/api/labs/${labId}/groups/${groupId}`),
+  labGradesCsv: (labId) => buildApiUrl(`/api/labs/${labId}/grades/export`),
   classes: (params) => {
     if (!params || Object.keys(params).length === 0) {
       return buildApiUrl('/api/classes');
