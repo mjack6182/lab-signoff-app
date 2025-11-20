@@ -58,7 +58,6 @@ public class GroupService {
         return groups;
     }
 
-
     public Group upsert(Group group) {
         autoInitCheckpoints(group);
         return repo.save(group);
