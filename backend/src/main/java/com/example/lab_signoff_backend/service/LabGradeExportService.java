@@ -63,7 +63,7 @@ public class LabGradeExportService {
      */
     public ExportResult generateCsv(String labId) {
         Lab lab = labService.getById(labId)
-                .orElseThrow(() -> new NoSuchElementException("Lab not found: " + labId));
+                .orElseThrow(() -> new NoSuchElementException("Lab not found"));
         Class classEntity = classService.getClassById(lab.getClassId())
                 .orElseThrow(() -> new NoSuchElementException("Class not found for lab " + labId));
 
