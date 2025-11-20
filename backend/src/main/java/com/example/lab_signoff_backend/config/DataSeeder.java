@@ -19,7 +19,7 @@ import java.util.List;
  * Data includes: Users, Class, Enrollments, Labs, Groups, and HelpQueueItems
  */
 
- //@Configuration 
+//  @Configuration 
 //✅ ENABLED - Comment out to disable seeding
 
 
@@ -129,13 +129,13 @@ public class DataSeeder {
             );
             labSignoffClass.setSection("001");
 
-            // Add roster (all students)
-            labSignoffClass.addStudentToRoster(student1.getId());
-            labSignoffClass.addStudentToRoster(student2.getId());
-            labSignoffClass.addStudentToRoster(student3.getId());
-            labSignoffClass.addStudentToRoster(student4.getId());
-            labSignoffClass.addStudentToRoster(student5.getId());
-            labSignoffClass.addStudentToRoster(student6.getId());
+            // Add roster (all students) - using names to match Canvas CSV import behavior
+            labSignoffClass.addStudentToRoster(student1.getName());
+            labSignoffClass.addStudentToRoster(student2.getName());
+            labSignoffClass.addStudentToRoster(student3.getName());
+            labSignoffClass.addStudentToRoster(student4.getName());
+            labSignoffClass.addStudentToRoster(student5.getName());
+            labSignoffClass.addStudentToRoster(student6.getName());
 
             // Add TA
             labSignoffClass.addTA(ta.getId());
