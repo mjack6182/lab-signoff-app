@@ -1,0 +1,39 @@
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+
+processors:
+  batch: {}
+
+extensions:
+  health_check:
+    endpoint: 0.0.0.0:13133
+
+exporters:
+  # Elastic serverless ingest expects OTLP over HTTP, not the Elasticsearch bulk API.
+  otlphttp/elastic:
+    endpoint: https://fb647e8903fa4c1fbf843df97fb13d6c.ingest.us-central1.gcp.elastic.cloud:443
+    headers:
+      Authorization: "ApiKey ZF9YZm5wb0I5WEo4YnFIYXBJbWQ6eGFobWNSbXpVSFFrNEl0NV9lam1OZw=="
+
+service:
+  extensions: [health_check]
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [otlphttp/elastic]
+
+    metrics:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [otlphttp/elastic]
+
+    logs:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [otlphttp/elastic]

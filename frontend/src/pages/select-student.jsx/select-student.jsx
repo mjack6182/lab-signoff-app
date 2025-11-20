@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import './select-student.css';
+import { api } from '../../config/api';
 
 export default function SelectStudent() {
     const [selectedStudent, setSelectedStudent] = useState('');
@@ -10,16 +11,28 @@ export default function SelectStudent() {
     const navigate = useNavigate();
     const location = useLocation();
 
-    // Get lab code and students from navigation state
-    const { labCode, students } = location.state || {};
+    // Get lab context and students from navigation state
+    const {
+        labCode,
+        students,
+        labId,
+        labTitle,
+        classId,
+        className
+    } = location.state || {};
 
     // Redirect back if no lab data
-    if (!labCode || !students) {
+    if (!labCode || !students || !labId) {
         navigate('/lab-join');
         return null;
     }
 
-    const handleJoinSubmit = (e) => {
+    const handleStudentSelect = (student) => {
+        setSelectedStudent(student);
+        setError(null);
+    };
+
+    const handleJoinSubmit = async (e) => {
         e.preventDefault();
         setError(null);
 
@@ -30,30 +43,60 @@ export default function SelectStudent() {
 
         setSubmitting(true);
 
-        // Simulate joining lab
-        setTimeout(() => {
-            setSubmitting(false);
-            console.log('Joining lab:', { labCode, selectedStudent });
-
-            // Create a mock group ID based on lab code and student name
-            // In a real app, this would come from the backend after joining
-            const mockGroupId = `${labCode}-group-${Math.floor(Math.random() * 10) + 1}`;
-            const mockLabId = labCode.toLowerCase();
-
-            // Navigate to student checkpoints page
-            navigate(`/student-checkpoints/${mockLabId}/${mockGroupId}`, {
-                state: {
-                    studentName: selectedStudent,
-                    labCode: labCode,
-                    groupId: mockGroupId
-                }
+        try {
+            const response = await fetch(api.labJoinStudent(labCode), {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    studentName: selectedStudent
+                })
             });
-        }, 1000);
+
+            const joinData = await response.json().catch(() => ({}));
+
+            if (!response.ok) {
+                throw new Error(joinData.error || 'Unable to join lab with that code');
+            }
+
+            const { lab: joinedLab, group } = joinData;
+            if (!joinedLab || !group) {
+                throw new Error('Unexpected response from server');
+            }
+
+            // Store session data for recovery if tab is closed
+            const sessionData = {
+                studentName: selectedStudent,
+                labCode: joinedLab.labCode,
+                labTitle: joinedLab.labTitle,
+                classId: joinedLab.classId,
+                className: joinedLab.className,
+                groupId: group.id,
+                groupDisplayId: group.groupId,
+                labId: joinedLab.labId,
+                labData: joinedLab,
+                labCheckpoints: joinedLab.checkpoints,
+                groupData: group,
+                timestamp: Date.now()
+            };
+            localStorage.setItem(`lab_session_${joinedLab.labCode}_${selectedStudent}`, JSON.stringify(sessionData));
+
+            navigate(`/student-checkpoints/${joinedLab.labId}/${group.id}`, {
+                state: sessionData
+            });
+        } catch (err) {
+            setError(err.message || 'Failed to join lab');
+        } finally {
+            setSubmitting(false);
+        }
     };
 
     const handleBackToCode = () => {
         navigate('/lab-join');
     };
+
+
 
     return (
         <main className="select-student-container">
@@ -79,27 +122,26 @@ export default function SelectStudent() {
 
                 <form onSubmit={handleJoinSubmit} className="select-student-form">
                     <div className="form-group">
-                        <label htmlFor="studentName" className="form-label">Your Name</label>
-                        <select
-                            id="studentName"
-                            className="form-select"
-                            value={selectedStudent}
-                            onChange={(e) => setSelectedStudent(e.target.value)}
-                            disabled={submitting}
-                        >
-                            <option value="">Choose your name...</option>
+                        <label className="form-label">Your Name</label>
+                        <div className="student-blocks-grid">
                             {students.map((student, index) => (
-                                <option key={index} value={student}>
+                                <button
+                                    key={index}
+                                    type="button"
+                                    className={`student-block ${selectedStudent === student ? 'selected' : ''}`}
+                                    onClick={() => handleStudentSelect(student)}
+                                    disabled={submitting}
+                                >
                                     {student}
-                                </option>
+                                </button>
                             ))}
-                        </select>
+                        </div>
                     </div>
 
                     <button
                         type="submit"
                         className="join-button"
-                        disabled={submitting}
+                        disabled={!selectedStudent || submitting}
                     >
                         {submitting ? 'Joining Lab...' : 'Join Lab'}
                     </button>

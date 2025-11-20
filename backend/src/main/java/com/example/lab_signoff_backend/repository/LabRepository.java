@@ -2,25 +2,19 @@ package com.example.lab_signoff_backend.repository;
 
 import com.example.lab_signoff_backend.model.Lab;
 import org.springframework.data.mongodb.repository.MongoRepository;
-
+import org.springframework.stereotype.Repository;
 import java.util.List;
+import java.util.Optional;
 
-/**
- * Repository interface for Lab entity operations.
- *
- * Provides CRUD operations and custom query methods for Lab documents
- * stored in MongoDB.
- *
- * @author Lab Signoff App Team
- * @version 1.0
- */
+@Repository
 public interface LabRepository extends MongoRepository<Lab, String> {
+    List<Lab> findByClassId(String classId);
 
     /**
-     * Find all labs belonging to a specific class
+     * Find a lab by its join code (case-insensitive).
      *
-     * @param classId The class identifier
-     * @return List of labs for the class
+     * @param joinCode The unique join code students use
+     * @return Optional containing the lab if found
      */
-    List<Lab> findByClassId(String classId);
+    Optional<Lab> findByJoinCodeIgnoreCase(String joinCode);
 }

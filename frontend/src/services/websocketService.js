@@ -1,55 +1,94 @@
-import { Client } from '@stomp/stompjs';
-import SockJS from 'sockjs-client';
+// src/services/websocketService.js
+import { Client } from '@stomp/stompjs'
+import SockJS from 'sockjs-client'
 
-let client;
-let listeners = [];
-let statusListeners = [];
+let client = null
+
+// Use Sets to automatically prevent duplicates
+let listeners = new Set()
+let statusListeners = new Set()
+let activeSubscriptions = new Map()
 
 export const websocketService = {
-  init: () => {
-    if (client) return; // already initialized
+  init() {
+    if (client) return
 
     client = new Client({
-      brokerURL: 'ws://localhost:8080/ws',
       webSocketFactory: () => new SockJS('http://localhost:8080/ws'),
-      reconnectDelay: 5000,
+      reconnectDelay: 3000,
+      debug: (msg) => console.log(msg),
+
       onConnect: () => {
-        console.log('✅ WebSocket connected');
-        statusListeners.forEach(fn => fn('CONNECTED'));
+        console.log('WS CONNECTED')
+        statusListeners.forEach(fn => fn('CONNECTED'))
       },
+
       onStompError: (frame) => console.error('STOMP Error:', frame),
-      onDisconnect: () => statusListeners.forEach(fn => fn('DISCONNECTED')),
-    });
+      onDisconnect: () => {
+        console.log('WS DISCONNECTED')
+        statusListeners.forEach(fn => fn('DISCONNECTED'))
+      }
+    })
 
-    client.activate();
+    client.activate()
   },
 
-  subscribeToGroup: (groupId) => {
-    if (!client) return;
-    return client.subscribe('/topic/group-updates', (message) => {
-      const data = JSON.parse(message.body);
-      listeners.forEach(fn => fn(data));
-    });
+  subscribe(topic) {
+    if (!client || !client.active) {
+      console.warn('Cannot subscribe. Client not active')
+      return
+    }
+
+    if (activeSubscriptions.has(topic)) return
+
+    const sub = client.subscribe(topic, (message) => {
+      let data
+      try {
+        data = JSON.parse(message.body)
+      } catch (e) {
+        console.error('WS parse error:', e)
+        return
+      }
+      listeners.forEach(fn => fn(data))
+    })
+
+    activeSubscriptions.set(topic, sub)
+    console.log(`Subscribed to ${topic}`)
   },
 
-  unsubscribeFromGroup: (groupId) => {
-    if (!client || !client.subscriptions) return;
-    Object.values(client.subscriptions).forEach(sub => sub.unsubscribe());
+  unsubscribe(topic) {
+    const sub = activeSubscriptions.get(topic)
+    if (sub) {
+      sub.unsubscribe()
+      activeSubscriptions.delete(topic)
+      console.log(`Unsubscribed from ${topic}`)
+    }
   },
 
-  addListener: (fn) => {
-    listeners.push(fn);
+  addListener(fn) {
+    listeners.add(fn)
   },
 
-  removeListener: (fn) => {
-    listeners = listeners.filter(f => f !== fn);
+  removeListener(fn) {
+    listeners.delete(fn)
   },
 
-  addStatusListener: (fn) => {
-    statusListeners.push(fn);
+  addStatusListener(fn) {
+    statusListeners.add(fn)
   },
 
-  removeStatusListener: (fn) => {
-    statusListeners = statusListeners.filter(f => f !== fn);
+  removeStatusListener(fn) {
+    statusListeners.delete(fn)
   },
-};
+
+  disconnect() {
+    if (client) {
+      activeSubscriptions.forEach(sub => sub.unsubscribe())
+      activeSubscriptions.clear()
+      client.deactivate()
+      client = null
+      listeners.clear()
+      statusListeners.clear()
+    }
+  }
+}
