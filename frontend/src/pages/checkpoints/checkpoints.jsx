@@ -4,6 +4,7 @@ import SignOffModal from '../../components/SignOffModal';
 import GroupManagementModal from '../../components/GroupManagementModal';
 import Header from '../../components/Header/Header';
 import { api } from '../../config/api';
+import { useAuth } from '../../contexts/AuthContext';
 import { websocketService } from '../../services/websocketService';
 import './checkpoints.css';
 
@@ -24,6 +25,7 @@ import './checkpoints.css';
 export default function CheckpointPage() {
   const { labId, groupId } = useParams();
   const navigate = useNavigate();
+  const { isTeacher } = useAuth();
 
   const [groups, setGroups] = useState([]);
   const [selectedGroupId, setSelectedGroupId] = useState(groupId || null);
@@ -38,6 +40,10 @@ export default function CheckpointPage() {
   const [error, setError] = useState(null);
   const [wsStatus, setWsStatus] = useState('DISCONNECTED');
   const [groupCheckpoints, setGroupCheckpoints] = useState({});
+  const [exporting, setExporting] = useState(false);
+  const [exportError, setExportError] = useState(null);
+
+  const canExportGrades = typeof isTeacher === 'function' ? isTeacher() : false;
 
   const selectedGroup = groups.find(g => g.id === selectedGroupId);
   const currentLab = lab?.courseId || 'Lab';
@@ -169,6 +175,11 @@ export default function CheckpointPage() {
       setGroup(found);
     }
   }, [selectedGroupId, groups]);
+
+  useEffect(() => {
+    setExportError(null);
+    setExporting(false);
+  }, [labId]);
 
   // -------------------------
   // EFFECT 3: WebSocket setup ONCE for app lifecycle
@@ -379,6 +390,36 @@ export default function CheckpointPage() {
     }
   };
 
+  const handleExportCsv = async () => {
+    if (!labId) {
+      return;
+    }
+    setExportError(null);
+    setExporting(true);
+    try {
+      const response = await fetch(api.labGradesCsv(labId), { credentials: 'include' });
+      if (!response.ok) {
+        const message = await response.text();
+        throw new Error(message || 'There was a problem generating the CSV. Please try again or contact support.');
+      }
+      const blob = await response.blob();
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.download = `lab_${labId}_grades.csv`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(downloadUrl);
+    } catch (err) {
+      console.error('Failed to export grades CSV:', err);
+      const fallback = 'There was a problem generating the CSV. Please try again or contact support.';
+      setExportError(err instanceof Error && err.message ? err.message : fallback);
+    } finally {
+      setExporting(false);
+    }
+  };
+
   // -------------------------
   // render
   // -------------------------
@@ -433,9 +474,21 @@ export default function CheckpointPage() {
             >
               {wsStatus}
             </span>
+            {canExportGrades && (
+              <button
+                className="action-btn primary"
+                onClick={handleExportCsv}
+                disabled={exporting}
+              >
+                {exporting ? 'Exporting...' : 'Export Grades (CSV)'}
+              </button>
+            )}
             <button className="action-btn secondary" onClick={handleEditGroups}>✏️ Manage Groups</button>
           </div>
         </div>
+        {exportError && (
+          <div className="export-error-banner">{exportError}</div>
+        )}
 
         {/* ---------- Groups Panel ---------- */}
         <section className="groups-panel">
