@@ -100,6 +100,31 @@
     border-color: #9ca3af;
 }
 
+.action-btn.primary {
+    background: #2563eb;
+    color: #fff;
+    box-shadow: 0 1px 3px rgba(37, 99, 235, 0.25);
+}
+
+.action-btn.primary:hover {
+    background: #1d4ed8;
+}
+
+.action-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.export-error-banner {
+    margin-top: 12px;
+    padding: 10px 14px;
+    border-radius: 10px;
+    border: 1px solid #fecaca;
+    background: #fef2f2;
+    color: #b91c1c;
+    font-size: 14px;
+}
+
 .btn-icon {
     font-size: 16px;
 }

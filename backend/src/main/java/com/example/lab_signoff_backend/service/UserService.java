@@ -4,8 +4,12 @@ import com.example.lab_signoff_backend.model.User;
 import com.example.lab_signoff_backend.repository.UserRepository;
 import org.springframework.stereotype.Service;
 
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 /**
  * Service class for managing user operations.
@@ -56,6 +60,20 @@ public class UserService {
      */
     public List<User> getAllUsers() {
         return userRepository.findAll();
+    }
+
+    /**
+     * Fetch users by their MongoDB identifiers.
+     *
+     * @param userIds Collection of user IDs
+     * @return Map of userId -> User for fast lookups
+     */
+    public Map<String, User> findByIds(Collection<String> userIds) {
+        if (userIds == null || userIds.isEmpty()) {
+            return Collections.emptyMap();
+        }
+        return userRepository.findAllById(userIds).stream()
+                .collect(Collectors.toMap(User::getId, user -> user));
     }
 
     /**
