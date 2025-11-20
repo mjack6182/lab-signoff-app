@@ -58,6 +58,10 @@ public class GroupService {
         return groups;
     }
 
+    public Group upsert(Group group) {
+        autoInitCheckpoints(group);
+        return repo.save(group);
+    }
 
     /**
      * Fetch a group by its Mongo document id or display groupId.
