@@ -50,19 +50,6 @@ public class GroupService {
         return groups;
     }
 
-    /**
-     * Retrieve a group by its MongoDB document ID
-     *
-     * @param id The MongoDB document ID of the group
-     * @return Optional containing the group if found
-     */
-    public Optional<Group> getById(String id) {
-        Optional<Group> groupOpt = repo.findById(id);
-        if (groupOpt.isPresent()) {
-            autoInitCheckpoints(groupOpt.get());
-        }
-        return groupOpt;
-    }
 
     public Group upsert(Group group) {
         autoInitCheckpoints(group);
