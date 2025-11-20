@@ -1,0 +1,64 @@
+# Receivers section: Defines sources from which telemetry data (metrics, logs, traces) are ingested.
+receivers:
+  otlp:
+    protocols:
+      grpc: { endpoint: 0.0.0.0:4317 } # OTLP gRPC endpoint for telemetry clients
+      http: { endpoint: 0.0.0.0:4318 } # OTLP HTTP endpoint for telemetry clients
+
+# Extensions add features such as health endpoints for monitoring collector status.
+extensions:
+  health_check: { endpoint: "0.0.0.0:13133" } # See health status at http://localhost:13133
+
+# Processors handle batching, filtering, or transformation before export.
+processors:
+  batch: {} # Batching can improve performance and reduce exporter calls.
+
+# Exporters send telemetry data to various destinations (debug output, Jaeger, file output, etc.).
+exporters:
+  debug:
+    verbosity: detailed # Enable verbose debug output for troubleshooting.
+
+  otlp/jaeger:
+    endpoint: jaeger:4317   # For Jaeger running in Docker; edit endpoint for your environment.
+    tls: { insecure: true } # 'insecure' disables TLS verification; only suitable for local/dev use.
+
+  # file/metrics:
+  #   path: /otel-out/metrics.json # Custom path; adjust as necessary for metrics file output.
+  # file/logs:
+  #   path: /otel-out/logs.json  # Custom path; adjust as necessary for logs file output.
+
+# Service section ties components together and sets logging level, extensions, and pipelines.
+service:
+  telemetry:
+    logs:
+      level: info # Logging verbosity for the collector itself (debug|info|warn|error).
+  extensions: [health_check] # Enables health check extension.
+
+  pipelines:
+    # Traces pipeline: receives traces via OTLP, batches, and exports to debug and Jaeger.
+    traces:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [debug, otlp/jaeger]
+      # Optional: Add/remove exporters as needed for traces.
+      # Metrics pipeline: receives metrics via OTLP, batches, and exports to debug and JSON file.
+
+      #Optional, added so we dont intentionally get rid of logs and metrics
+    # metrics:
+    #   receivers: [ otlp ]
+    #   processors: [ batch ]
+    #   exporters: [ debug, file/metrics ]
+
+      # Logs pipeline: receives logs via OTLP, batches, and exports to debug and JSON file.
+    # logs:
+    #   receivers: [ otlp ]
+    #   processors: [ batch ]
+    #   exporters: [ debug, file/logs ]
+
+      # GENERAL NOTES:
+      # - All sections are whitespace-sensitive. Avoid tabs and ensure proper indentation!
+      # - To modify file output locations, adjust 'path' in exporters.
+      # - The health_check extension is useful for monitoring collector status and readiness.
+      # - For local Jaeger deployment, verify networking and security settings (TLS/insecure).
+      # - Enable only the necessary pipelines/exporters for your use case to conserve resources.
+      # - Comment out sections you don’t need with a leading '#'.

@@ -1,0 +1,54 @@
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+
+processors:
+  batch: {}
+
+exporters:
+  # Optional: see what the Collector is receiving/sending
+  logging:
+    verbosity: normal
+
+  # Elasticsearch exporter (from opentelemetry-collector-contrib)
+  elasticsearch:
+    # Change this to your ES URL
+    endpoint: https://fb647e8903fa4c1fbf843df97fb13d6c.ingest.us-central1.gcp.elastic.cloud:443
+    headers:
+      Authorization: "Authorization=ApiKey WmZVMW5wb0I5WEo4YnFIYXlJbGk6NDlWWmU5VVFUVXpaTlU2ejhpTEVFZw=="
+
+    # If your Elasticsearch requires auth, either:
+    # 1) Use basic auth shortcut:
+    # user: elastic
+    # password: your-password
+    #
+    # OR
+    # 2) Use an auth extension and reference it via "auth.authenticator"
+    #
+    # mapping is optional; "otel" is the default and recommended mode.
+    mapping:
+      mode: otel
+
+service:
+  # Add extensions here if you enable auth, health_check, etc.
+  # extensions: [basicauth, health_check]
+
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [elasticsearch, logging]
+
+    metrics:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [elasticsearch, logging]
+
+    logs:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [elasticsearch, logging]
