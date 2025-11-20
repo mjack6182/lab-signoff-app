@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import './select-student.css';
 import { api } from '../../config/api';
@@ -26,6 +26,11 @@ export default function SelectStudent() {
         navigate('/lab-join');
         return null;
     }
+
+    const handleStudentSelect = (student) => {
+        setSelectedStudent(student);
+        setError(null);
+    };
 
     const handleJoinSubmit = async (e) => {
         e.preventDefault();
@@ -60,19 +65,25 @@ export default function SelectStudent() {
                 throw new Error('Unexpected response from server');
             }
 
+            // Store session data for recovery if tab is closed
+            const sessionData = {
+                studentName: selectedStudent,
+                labCode: joinedLab.labCode,
+                labTitle: joinedLab.labTitle,
+                classId: joinedLab.classId,
+                className: joinedLab.className,
+                groupId: group.id,
+                groupDisplayId: group.groupId,
+                labId: joinedLab.labId,
+                labData: joinedLab,
+                labCheckpoints: joinedLab.checkpoints,
+                groupData: group,
+                timestamp: Date.now()
+            };
+            localStorage.setItem(`lab_session_${joinedLab.labCode}_${selectedStudent}`, JSON.stringify(sessionData));
+
             navigate(`/student-checkpoints/${joinedLab.labId}/${group.id}`, {
-                state: {
-                    studentName: selectedStudent,
-                    labCode: joinedLab.labCode,
-                    labTitle: joinedLab.labTitle,
-                    classId: joinedLab.classId,
-                    className: joinedLab.className,
-                    groupId: group.id,
-                    groupDisplayId: group.groupId,
-                    labData: joinedLab,
-                    labCheckpoints: joinedLab.checkpoints,
-                    groupData: group
-                }
+                state: sessionData
             });
         } catch (err) {
             setError(err.message || 'Failed to join lab');
@@ -84,6 +95,8 @@ export default function SelectStudent() {
     const handleBackToCode = () => {
         navigate('/lab-join');
     };
+
+
 
     return (
         <main className="select-student-container">
@@ -109,27 +122,26 @@ export default function SelectStudent() {
 
                 <form onSubmit={handleJoinSubmit} className="select-student-form">
                     <div className="form-group">
-                        <label htmlFor="studentName" className="form-label">Your Name</label>
-                        <select
-                            id="studentName"
-                            className="form-select"
-                            value={selectedStudent}
-                            onChange={(e) => setSelectedStudent(e.target.value)}
-                            disabled={submitting}
-                        >
-                            <option value="">Choose your name...</option>
+                        <label className="form-label">Your Name</label>
+                        <div className="student-blocks-grid">
                             {students.map((student, index) => (
-                                <option key={index} value={student}>
+                                <button
+                                    key={index}
+                                    type="button"
+                                    className={`student-block ${selectedStudent === student ? 'selected' : ''}`}
+                                    onClick={() => handleStudentSelect(student)}
+                                    disabled={submitting}
+                                >
                                     {student}
-                                </option>
+                                </button>
                             ))}
-                        </select>
+                        </div>
                     </div>
 
                     <button
                         type="submit"
                         className="join-button"
-                        disabled={submitting}
+                        disabled={!selectedStudent || submitting}
                     >
                         {submitting ? 'Joining Lab...' : 'Join Lab'}
                     </button>
