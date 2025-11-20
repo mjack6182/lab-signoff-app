@@ -50,14 +50,38 @@ public class GroupService {
         return groups;
     }
 
-    // ✅ REQUIRED BY LabJoinController (this was missing)
+    /**
+     * Retrieve a group by its MongoDB document ID
+     *
+     * @param id The MongoDB document ID of the group
+     * @return Optional containing the group if found
+     */
     public Optional<Group> getById(String id) {
-        return repo.findById(id);
+        Optional<Group> groupOpt = repo.findById(id);
+        if (groupOpt.isPresent()) {
+            autoInitCheckpoints(groupOpt.get());
+        }
+        return groupOpt;
     }
 
     public Group upsert(Group group) {
         autoInitCheckpoints(group);
         return repo.save(group);
+    }
+
+    /**
+     * Fetch a group by its Mongo document id or display groupId.
+     * Auto-initialises checkpoint progress to avoid nulls when returned to callers.
+     */
+    public Optional<Group> getById(String idOrGroupId) {
+        Optional<Group> groupOpt = repo.findById(idOrGroupId);
+
+        if (groupOpt.isEmpty()) {
+            groupOpt = repo.findByGroupId(idOrGroupId);
+        }
+
+        groupOpt.ifPresent(this::autoInitCheckpoints);
+        return groupOpt;
     }
 
     public CheckpointProgress updateCheckpointProgress(

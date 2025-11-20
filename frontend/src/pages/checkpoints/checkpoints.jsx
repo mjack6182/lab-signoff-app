@@ -99,8 +99,21 @@ export default function CheckpointPage() {
         return res.json();
       })
     ])
-      .then(([allLabs, groupsData]) => {
-        const currentLab = allLabs.find(l => l.id === labId);
+      .then(async ([allLabs, groupsData]) => {
+        let currentLab = allLabs.find(l => l.id === labId);
+
+        // Fallback: fetch detailed lab info (with checkpoints) if not found or missing checkpoints
+        if (!currentLab || !Array.isArray(currentLab.checkpoints) || currentLab.checkpoints.length === 0) {
+          try {
+            const detailRes = await fetch(api.labDetail(labId));
+            if (detailRes.ok) {
+              currentLab = await detailRes.json();
+            }
+          } catch (e) {
+            console.warn('Failed to load lab detail fallback', e);
+          }
+        }
+
         setLab(currentLab);
 
         const groupsArray = Array.isArray(groupsData) ? groupsData : [];
@@ -221,7 +234,7 @@ export default function CheckpointPage() {
               };
             }
           } else if (normalized === 'RETURN') {
-            const { [cpKey]: removed, ...rest } = next[update.groupId];
+            const { [cpKey]: _removed, ...rest } = next[update.groupId];
             next[update.groupId] = rest;
           }
         }
