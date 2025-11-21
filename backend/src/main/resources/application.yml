@@ -7,11 +7,11 @@ lti:
 
 # CORS configuration - supports comma-separated list of origins
 cors:
-  allowed-origins: ${ALLOWED_ORIGINS:http://localhost:5173,http://localhost:5002,https://lab-signoff-app.web.app,https://lab-signoff-app.firebaseapp.com}
+  allowed-origins: ${ALLOWED_ORIGINS:http://localhost:5173,http://localhost:5002,https://lab-signoff-app.web.app,https://lab-signoff-app.firebaseapp.com,https://lab-signoff-app-jack-cbee.up.railway.app}
 
 # WebSocket configuration - supports comma-separated list of origins
 websocket:
-  allowed-origins: ${WEBSOCKET_ALLOWED_ORIGINS:http://localhost:5173,http://localhost:3000}
+  allowed-origins: ${WEBSOCKET_ALLOWED_ORIGINS:http://localhost:5173,http://localhost:3000,https://lab-signoff-app-jack-cbee.up.railway.app}
 
 spring:
   config:
