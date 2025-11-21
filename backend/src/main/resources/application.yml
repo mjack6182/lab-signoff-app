@@ -41,7 +41,7 @@ app:
     ags:
       enabled: true
 server:
-  port: ${SERVER_PORT}
+  port: ${PORT:8080}
 
 
 
