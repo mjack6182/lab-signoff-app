@@ -20,8 +20,8 @@ spring:
     mongodb:
       uri: ${SPRING_DATA_MONGODB_URI}
     redis:
-      host: ${REDIS_HOST:localhost}
-      port: ${REDIS_PORT:6379}
+      host: ${REDISHOST:localhost}
+      port: ${REDISPORT:6379}
       repositories:
         enabled: false
       jedis:
