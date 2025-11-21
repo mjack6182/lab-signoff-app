@@ -1,5 +1,6 @@
 package com.example.lab_signoff_backend.config;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.lang.NonNull;
 import org.springframework.messaging.simp.config.MessageBrokerRegistry;
@@ -15,6 +16,8 @@ import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerCo
  * communication between the server and client, enabling real-time updates
  * for lab signoff status changes.
  *
+ * Allowed origins are configured via the WEBSOCKET_ALLOWED_ORIGINS environment variable (comma-separated).
+ *
  * @author Lab Signoff App Team
  * @version 1.0
  */
@@ -23,14 +26,15 @@ import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerCo
 @EnableWebSocketMessageBroker
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
+    @Value("${websocket.allowed-origins}")
+    private String allowedOrigins;
+
     @Override
     public void registerStompEndpoints(@NonNull StompEndpointRegistry registry) {
         // Client connects here (e.g., SockJS + STOMP)
+        String[] origins = allowedOrigins.split(",");
         registry.addEndpoint("/ws")
-                .setAllowedOrigins(
-                        "http://localhost:5173",  // Vite default
-                        "http://localhost:3000"   // CRA default (if used)
-                )
+                .setAllowedOrigins(origins)
                 .withSockJS(); // fallback for older browsers
     }
 

@@ -4,6 +4,15 @@ lti:
   jwks-url: "https://canvas.instructure.com/api/lti/security/jwks" # Canvas JWKS
   allowed-clock-skew-seconds: 120
   validation-enabled: false
+
+# CORS configuration - supports comma-separated list of origins
+cors:
+  allowed-origins: ${ALLOWED_ORIGINS:http://localhost:5173,http://localhost:5002,https://lab-signoff-app.web.app,https://lab-signoff-app.firebaseapp.com}
+
+# WebSocket configuration - supports comma-separated list of origins
+websocket:
+  allowed-origins: ${WEBSOCKET_ALLOWED_ORIGINS:http://localhost:5173,http://localhost:3000}
+
 spring:
   config:
     import: optional:file:.env[.properties],optional:file:../.env[.properties]
