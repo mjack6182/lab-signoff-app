@@ -67,6 +67,16 @@ public class GroupService {
     }
 
     /**
+     * Retrieve a group by its MongoDB document ID
+     *
+     * @param id The MongoDB document ID of the group
+     * @return Optional containing the group if found
+     */
+    public Optional<Group> getById(String id) {
+        return repo.findById(id);
+    }
+
+    /**
      * Create or update a group
      *
      * @param group The group to save
