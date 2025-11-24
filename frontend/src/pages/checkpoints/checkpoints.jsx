@@ -188,90 +188,97 @@ export default function CheckpointPage() {
   // - remove listeners on unmount but intentionally keep subscription live while dev server runs
   // -------------------------
   useEffect(() => {
-    websocketService.init();
+  websocketService.init();
 
-    const topic = '/topic/group-updates';
+  const topic = '/topic/group-updates';
 
-    const statusHandler = (status) => {
-      console.log(`WebSocket: ${status}`);
-      setWsStatus(status);
-      if (status === 'CONNECTED') {
-        websocketService.subscribe(topic);
-      }
-    };
+  const statusHandler = (status) => {
+    console.log(`WebSocket: ${status}`);
+    setWsStatus(status);
 
-    const updateHandler = (update) => {
-      if (!update || !update.groupId) return;
-
-      if (update.checkpointNumber != null) {
-        console.log(`WS: group ${update.groupId} cp ${update.checkpointNumber} -> ${update.status}`);
-      } else if (update.status === 'GROUP_PASSED') {
-        console.log(`WS: group ${update.groupId} -> SIGNED OFF`);
-      } else {
-        console.log('WS update:', update);
-      }
-
-      setGroupCheckpoints(prev => {
-        const next = { ...prev };
-
-        if (!next[update.groupId]) next[update.groupId] = {};
-
-        const cpNum = update.checkpointNumber;
-        if (cpNum != null) {
-          const cpKey = normalizeToCpKey(cpNum);
-          const existing = next[update.groupId][cpKey];
-
-          const normalized = String(update.status).toUpperCase();
-
-          if (normalized === 'PASS' || normalized === 'SIGNED_OFF') {
-            if (existing && existing.completed) {
-              // already marked completed. still update metadata in case timestamp or name changed
-              next[update.groupId] = {
-                ...next[update.groupId],
-                [cpKey]: {
-                  ...existing,
-                  completedAt: update.timestamp || existing.completedAt,
-                  completedBy: update.signedOffByName || update.signedOffBy || existing.completedBy
-                }
-              };
-            } else {
-              next[update.groupId] = {
-                ...next[update.groupId],
-                [cpKey]: {
-                  completed: true,
-                  completedAt: update.timestamp || new Date().toISOString(),
-                  completedBy: update.signedOffByName || update.signedOffBy || 'TA'
-                }
-              };
-            }
-          } else if (normalized === 'RETURN') {
-            const { [cpKey]: _removed, ...rest } = next[update.groupId];
-            next[update.groupId] = rest;
-          }
-        }
-
-        if (update.status === 'GROUP_PASSED') {
-          setGroups(prevGroups => prevGroups.map(g => g.id === update.groupId ? { ...g, status: 'passed' } : g));
-        }
-
-        return next;
-      });
-    };
-
-    websocketService.addStatusListener(statusHandler);
-    websocketService.addListener(updateHandler);
-
-    if (wsStatus === 'CONNECTED') {
+    if (status === 'CONNECTED') {
       websocketService.subscribe(topic);
     }
+  };
 
-    return () => {
-      websocketService.removeListener(updateHandler);
-      websocketService.removeStatusListener(statusHandler);
-    };
-    // run once on mount
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  const updateHandler = (update) => {
+    if (!update || !update.groupId) return;
+
+    if (update.checkpointNumber != null) {
+      console.log(`WS: group ${update.groupId} cp ${update.checkpointNumber} -> ${update.status}`);
+    } else if (update.status === 'GROUP_PASSED') {
+      console.log(`WS: group ${update.groupId} -> SIGNED OFF`);
+    } else {
+      console.log('WS update:', update);
+    }
+
+    setGroupCheckpoints(prev => {
+      const next = { ...prev };
+
+      if (!next[update.groupId]) next[update.groupId] = {};
+
+      const cpNum = update.checkpointNumber;
+      if (cpNum != null) {
+        const cpKey = normalizeToCpKey(cpNum);
+        const existing = next[update.groupId][cpKey];
+
+        const normalized = String(update.status).toUpperCase();
+
+        if (normalized === 'PASS' || normalized === 'SIGNED_OFF') {
+          if (existing && existing.completed) {
+            next[update.groupId] = {
+              ...next[update.groupId],
+              [cpKey]: {
+                ...existing,
+                completedAt: update.timestamp || existing.completedAt,
+                completedBy: update.signedOffByName || update.signedOffBy || existing.completedBy
+              }
+            };
+          } else {
+            next[update.groupId] = {
+              ...next[update.groupId],
+              [cpKey]: {
+                completed: true,
+                completedAt: update.timestamp || new Date().toISOString(),
+                completedBy: update.signedOffByName || update.signedOffBy || 'TA'
+              }
+            };
+          }
+        } else if (normalized === 'RETURN') {
+          const { [cpKey]: _removed, ...rest } = next[update.groupId];
+          next[update.groupId] = rest;
+        }
+      }
+
+      if (update.status === 'GROUP_PASSED') {
+        setGroups(prevGroups =>
+          prevGroups.map(g =>
+            g.id === update.groupId ? { ...g, status: 'passed' } : g
+          )
+        );
+      }
+
+      return next;
+    });
+  };
+
+  websocketService.addStatusListener(statusHandler);
+  websocketService.addListener(updateHandler);
+
+  if (wsStatus === 'CONNECTED') {
+    websocketService.subscribe(topic);
+  }
+
+  return () => {
+    websocketService.removeListener(updateHandler);
+    websocketService.removeStatusListener(statusHandler);
+
+    // the missing cleanup
+    websocketService.disconnect();
+  };
+  // run once on mount
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+}, []);
 
   // -------------------------
   // UI Handlers
