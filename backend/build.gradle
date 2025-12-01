@@ -2,6 +2,7 @@ plugins {
 	id 'java'
 	id 'org.springframework.boot' version '3.5.6'
 	id 'io.spring.dependency-management' version '1.1.7'
+	id 'jacoco'
 }
 
 group = 'com.example'
@@ -58,7 +59,20 @@ tasks.named('test') {
 	useJUnitPlatform()
 }
 
+test {
+        finalizedBy jacocoTestReport // Ensure the report is generated after tests
+    }
 
+
+jacocoTestReport {
+        reports {
+            xml.required = true // Generate XML report
+            html.required = true // Generate HTML report
+            csv.required = false // Optionally generate CSV report
+        }
+        // Exclude specific classes or packages from coverage analysis
+        // excludes = ['**/some/package/**', '**/SomeClass.class']
+    }
 //Configure basic WebSocket endpoint in backend.
 
 
