@@ -7,4 +7,23 @@ export default defineConfig({
   define: {
     global: 'window',
   },
+  test: {
+    environment: 'jsdom',
+    globals: true,
+    setupFiles: './src/tests/setupTests.js', // you'll create this next
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'html', 'lcov'],
+      include: ['src/**/*.{js,jsx,ts,tsx}'],
+      exclude: [
+        'src/main.jsx',
+        'src/tests/**',
+        '**/*.config.*',
+      ],
+      lines: 80,
+      functions: 80,
+      branches: 80,
+      statements: 80,
+    },
+  },
 })

@@ -13,13 +13,14 @@ export default function ProfileCompletionModal({ isOpen }) {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        setError('');
 
         // Validate input
         if (!firstName.trim() || !lastName.trim()) {
             setError('Please enter both first and last name');
             return;
         }
+
+        setError('');
 
         setLoading(true);
 
@@ -44,7 +45,7 @@ export default function ProfileCompletionModal({ isOpen }) {
                         <p>Welcome! Please provide your name to complete your profile.</p>
                     </div>
 
-                    <form onSubmit={handleSubmit} className="profile-form">
+                    <form onSubmit={handleSubmit} className="profile-form" noValidate>
                         <div className="form-field">
                             <label htmlFor="firstName" className="form-label">
                                 First Name <span className="required">*</span>
