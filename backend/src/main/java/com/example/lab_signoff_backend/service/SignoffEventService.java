@@ -1,3 +1,12 @@
+
+/**
+ * Service class for managing checkpoint signoffs and audit events.
+ *
+ * This class handles creating, retrieving, and deleting SignoffEvent entries in MongoDB.
+ * It ensures that every checkpoint signoff and group action is persisted before any
+ * WebSocket broadcast occurs, so that progress is not lost on page reloads.
+ */
+
 package com.example.lab_signoff_backend.service;
 
 import com.example.lab_signoff_backend.model.SignoffEvent;
@@ -9,51 +18,25 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
-/**
- * Service class for SignoffEvent entity business logic.
- *
- * Provides methods for creating audit entries, retrieving signoff event history,
- * and managing signoff event operations.
- *
- * @author Lab Signoff App Team
- * @version 1.0
- */
 @Service
 public class SignoffEventService {
 
     private final SignoffEventRepository repository;
 
-    /**
-     * Constructor for SignoffEventService.
-     *
-     * @param repository The SignoffEventRepository for database operations
-     */
+    // Constructor injection of repository
     public SignoffEventService(SignoffEventRepository repository) {
         this.repository = repository;
     }
 
-    /**
-     * Create a new signoff event audit entry
-     *
-     * @param signoffEvent The signoff event to create
-     * @return The created signoff event with generated ID
-     */
+    // Save a new signoff event
     public SignoffEvent createEvent(SignoffEvent signoffEvent) {
         if (signoffEvent.getTimestamp() == null) {
-            signoffEvent.setTimestamp(Instant.now());
+            signoffEvent.setTimestamp(Instant.now()); // set current time if missing
         }
-        return repository.save(signoffEvent);
+        return repository.save(signoffEvent); // persist to MongoDB
     }
 
-    /**
-     * Create a signoff event with basic information
-     *
-     * @param labId       The lab identifier
-     * @param groupId     The group identifier
-     * @param action      The action (PASS or RETURN)
-     * @param performedBy Who performed the action
-     * @return The created signoff event
-     */
+    // Convenience method with basic info
     public SignoffEvent createEvent(String labId, String groupId, String action, String performedBy) {
         SignoffEvent event = new SignoffEvent();
         event.setLabId(labId);
@@ -63,17 +46,7 @@ public class SignoffEventService {
         return repository.save(event);
     }
 
-    /**
-     * Create a signoff event with additional details
-     *
-     * @param labId            The lab identifier
-     * @param groupId          The group identifier
-     * @param action           The action (PASS or RETURN)
-     * @param performedBy      Who performed the action
-     * @param notes            Optional notes about the action
-     * @param checkpointNumber Optional checkpoint number
-     * @return The created signoff event
-     */
+    // Extended creation method with notes and checkpoint number
     public SignoffEvent createEvent(String labId, String groupId, String action,
                                    String performedBy, String notes, Integer checkpointNumber) {
         SignoffEvent event = new SignoffEvent();
@@ -86,102 +59,52 @@ public class SignoffEventService {
         return repository.save(event);
     }
 
-    /**
-     * Retrieve all signoff events for a specific lab
-     *
-     * @param labId The lab identifier
-     * @return List of signoff events for the lab
-     */
+    // Get all events for a lab
     public List<SignoffEvent> getEventsByLabId(String labId) {
         return repository.findByLabId(labId);
     }
 
-    /**
-     * Retrieve all signoff events for a specific group
-     *
-     * @param groupId The group identifier
-     * @return List of signoff events for the group
-     */
+    // Get all events for a group
     public List<SignoffEvent> getEventsByGroupId(String groupId) {
         return repository.findByGroupId(groupId);
     }
 
-    /**
-     * Retrieve all signoff events for a specific lab and group
-     *
-     * @param labId   The lab identifier
-     * @param groupId The group identifier
-     * @return List of signoff events for the lab and group
-     */
+    // Get events for a specific lab and group
     public List<SignoffEvent> getEventsByLabIdAndGroupId(String labId, String groupId) {
         return repository.findByLabIdAndGroupId(labId, groupId);
     }
 
-    /**
-     * Retrieve all signoff events performed by a specific user
-     *
-     * @param performedBy The user identifier
-     * @return List of signoff events performed by the user
-     */
+    // Get events performed by a specific user
     public List<SignoffEvent> getEventsByPerformedBy(String performedBy) {
         return repository.findByPerformedBy(performedBy);
     }
 
-    /**
-     * Retrieve all signoff events within a time range
-     *
-     * @param start Start of the time range
-     * @param end   End of the time range
-     * @return List of signoff events within the time range
-     */
+    // Get events within a time range
     public List<SignoffEvent> getEventsByTimeRange(Instant start, Instant end) {
         return repository.findByTimestampBetween(start, end);
     }
 
-    /**
-     * Retrieve all signoff events of a specific action type
-     *
-     * @param action The action type (PASS or RETURN)
-     * @return List of signoff events with the specified action
-     */
+    // Get events by action type (PASS or RETURN)
     public List<SignoffEvent> getEventsByAction(String action) {
         return repository.findByAction(action);
     }
 
-    /**
-     * Retrieve all signoff events
-     *
-     * @return List of all signoff events
-     */
+    // Get all signoff events
     public List<SignoffEvent> getAllEvents() {
         return repository.findAll();
     }
 
-    /**
-     * Retrieve a specific signoff event by ID
-     *
-     * @param id The signoff event identifier
-     * @return Optional containing the signoff event if found
-     */
+    // Get event by ID
     public Optional<SignoffEvent> getEventById(String id) {
         return repository.findById(id);
     }
 
-    /**
-     * Delete a signoff event by ID
-     *
-     * @param id The signoff event identifier
-     */
+    // Delete event by ID
     public void deleteEvent(String id) {
         repository.deleteById(id);
     }
 
-    /**
-     * Count all signoff events for a specific lab
-     *
-     * @param labId The lab identifier
-     * @return Number of signoff events for the lab
-     */
+    // Count events for a lab
     public long countEventsByLabId(String labId) {
         return repository.findByLabId(labId).size();
     }

@@ -1,32 +1,25 @@
 package com.example.lab_signoff_backend.service;
 import com.example.lab_signoff_backend.model.Group;
 import com.example.lab_signoff_backend.model.Lab;
+import com.example.lab_signoff_backend.model.embedded.CheckpointProgress;
+import com.example.lab_signoff_backend.model.enums.SignoffAction;
 import com.example.lab_signoff_backend.model.User;
 import com.example.lab_signoff_backend.model.Enrollment;
 import com.example.lab_signoff_backend.model.embedded.GroupMember;
 import com.example.lab_signoff_backend.model.enums.GroupStatus;
 import com.example.lab_signoff_backend.repository.GroupRepository;
+import com.example.lab_signoff_backend.repository.LabRepository;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
-/**
- * Service class for Group entity business logic.
- *
- * Provides methods for managing student groups including retrieval by lab,
- * creation, and updates.
- *
- * @author Lab Signoff App Team
- * @version 1.0
- */
 @Service
 public class GroupService {
+
     private final GroupRepository repo;
+    private final LabRepository labRepo;
     private final LabService labService;
     private final EnrollmentService enrollmentService;
     private final UserService userService;
@@ -35,35 +28,34 @@ public class GroupService {
      * Constructor for GroupService.
      *
      * @param repo The GroupRepository for database operations
+     * @param labRepo The LabRepository for direct database operations
      * @param labService The LabService for lab operations
      * @param enrollmentService The EnrollmentService for enrollment operations
      * @param userService The UserService for user operations
      */
-    public GroupService(GroupRepository repo, LabService labService,
+    public GroupService(GroupRepository repo, LabRepository labRepo, LabService labService,
                        EnrollmentService enrollmentService, UserService userService) {
         this.repo = repo;
+        this.labRepo = labRepo;
         this.labService = labService;
         this.enrollmentService = enrollmentService;
         this.userService = userService;
     }
 
-    /**
-     * Retrieve all groups for a specific lab
-     *
-     * @param labId The lab identifier
-     * @return List of groups associated with the lab
-     */
     public List<Group> getGroupsByLabId(String labId) {
-        return repo.findByLabId(labId);
+        List<Group> groups = repo.findByLabId(labId);
+        for (Group g : groups) {
+            autoInitCheckpoints(g);
+        }
+        return groups;
     }
 
-    /**
-     * Retrieve all groups
-     *
-     * @return List of all groups
-     */
     public List<Group> getAll() {
-        return repo.findAll();
+        List<Group> groups = repo.findAll();
+        for (Group g : groups) {
+            autoInitCheckpoints(g);
+        }
+        return groups;
     }
 
     /**
@@ -83,7 +75,109 @@ public class GroupService {
      * @return The saved group
      */
     public Group upsert(Group group) {
+        autoInitCheckpoints(group);
         return repo.save(group);
+    }
+
+    /**
+     * Fetch a group by its Mongo document id or display groupId.
+     * Auto-initialises checkpoint progress to avoid nulls when returned to callers.
+     */
+  
+  /**
+    public Optional<Group> getById(String idOrGroupId) {
+        Optional<Group> groupOpt = repo.findById(idOrGroupId);
+
+        if (groupOpt.isEmpty()) {
+            groupOpt = repo.findByGroupId(idOrGroupId);
+        }
+
+        groupOpt.ifPresent(this::autoInitCheckpoints);
+        return groupOpt;
+    }
+    */
+
+    public CheckpointProgress updateCheckpointProgress(
+            String groupIdOrId,
+            Integer checkpointNumber,
+            String statusString,
+            String signedOffBy,
+            String signedOffByName,
+            String notes,
+            Integer pointsAwarded) {
+
+        Optional<Group> maybeGroup = repo.findByGroupId(groupIdOrId);
+        if (maybeGroup.isEmpty()) {
+            maybeGroup = repo.findById(groupIdOrId);
+        }
+
+        if (maybeGroup.isEmpty()) {
+            throw new RuntimeException("Group not found: " + groupIdOrId);
+        }
+
+        Group group = maybeGroup.get();
+
+        autoInitCheckpoints(group);
+
+        List<CheckpointProgress> progressList = group.getCheckpointProgress();
+
+        CheckpointProgress target = progressList.stream()
+                .filter(cp -> Objects.equals(cp.getCheckpointNumber(), checkpointNumber))
+                .findFirst()
+                .orElse(null);
+
+        if (target == null) {
+            target = new CheckpointProgress();
+            target.setCheckpointNumber(checkpointNumber);
+            progressList.add(target);
+        }
+
+        SignoffAction action = SignoffAction.valueOf(statusString);
+        target.setStatus(action);
+        target.setSignedOffBy(signedOffBy);
+        target.setSignedOffByName(signedOffByName);
+        target.setTimestamp(Instant.now());
+        target.setNotes(notes);
+        target.setPointsAwarded(pointsAwarded);
+
+        group.updateTimestamp();
+        Group saved = repo.save(group);
+
+        return saved.getCheckpointProgress().stream()
+                .filter(cp -> Objects.equals(cp.getCheckpointNumber(), checkpointNumber))
+                .findFirst()
+                .orElseThrow(() -> new RuntimeException("Failed to persist checkpoint progress"));
+    }
+
+    private void autoInitCheckpoints(Group group) {
+        if (group.getCheckpointProgress() != null && !group.getCheckpointProgress().isEmpty()) {
+            return;
+        }
+
+        Optional<Lab> labOpt = labRepo.findById(group.getLabId());
+        if (labOpt.isEmpty()) {
+            throw new RuntimeException("Lab not found for group " + group.getId());
+        }
+
+        Lab lab = labOpt.get();
+        int totalCheckpoints = lab.getPoints();
+
+        List<CheckpointProgress> list = new ArrayList<>();
+
+        for (int i = 1; i <= totalCheckpoints; i++) {
+            CheckpointProgress cp = new CheckpointProgress();
+            cp.setCheckpointNumber(i);
+            cp.setStatus(null);
+            cp.setSignedOffBy(null);
+            cp.setSignedOffByName(null);
+            cp.setTimestamp(null);
+            cp.setNotes("");
+            cp.setPointsAwarded(null);
+            list.add(cp);
+        }
+
+        group.setCheckpointProgress(list);
+        repo.save(group);
     }
 
     /**

@@ -4,17 +4,29 @@ import SignOffModal from '../../components/SignOffModal';
 import GroupManagementModal from '../../components/GroupManagementModal';
 import Header from '../../components/Header/Header';
 import { api } from '../../config/api';
+import { useAuth } from '../../contexts/AuthContext';
 import { websocketService } from '../../services/websocketService';
 import './checkpoints.css';
 
+/**
+ * CheckpointPage (fixed real-time updates)
+ *
+ * Key fixes:
+ * - WebSocket subscription is established once on mount (stable)
+ * - We no longer repeatedly subscribe/unsubscribe when selectedGroup changes
+ * - Incoming updates are merged into groupCheckpoints with safe state updates
+ * - Prevent duplicate checkpoint entries when optimistic update and WS update both occur
+ * - Normalizes checkpoint id formats so UI logic is robust
+ * - Status logging is concise and developer friendly
+ *
+ * Important: UI layout and classes were not changed
+ */
+
 export default function CheckpointPage() {
-  // ================================================================
-  // 🔧 ROUTER + STATE HOOKS
-  // ================================================================
   const { labId, groupId } = useParams();
   const navigate = useNavigate();
+  const { isTeacher } = useAuth();
 
-  // Core app states
   const [groups, setGroups] = useState([]);
   const [selectedGroupId, setSelectedGroupId] = useState(groupId || null);
   const [showSignOffModal, setShowSignOffModal] = useState(false);
@@ -28,9 +40,40 @@ export default function CheckpointPage() {
   const [error, setError] = useState(null);
   const [wsStatus, setWsStatus] = useState('DISCONNECTED');
   const [groupCheckpoints, setGroupCheckpoints] = useState({});
+  const [exporting, setExporting] = useState(false);
+  const [exportError, setExportError] = useState(null);
+
+  const canExportGrades = typeof isTeacher === 'function' ? isTeacher() : false;
 
   const selectedGroup = groups.find(g => g.id === selectedGroupId);
   const currentLab = lab?.courseId || 'Lab';
+
+  // ---------- Helper utilities for checkpoint id normalization ----------
+  // Acceptable checkpoint id shapes: "cp-1", "1", "checkpoint-1" etc
+  // All internal storage keys use "cp-<num>" format
+  const normalizeToCpKey = (checkpointId) => {
+    if (checkpointId == null) return null;
+    // if already cp-<num>
+    const cpMatch = String(checkpointId).match(/^cp-(\d+)$/i);
+    if (cpMatch) return `cp-${parseInt(cpMatch[1], 10)}`;
+
+    // if numeric string like "1"
+    const numMatch = String(checkpointId).match(/^(\d+)$/);
+    if (numMatch) return `cp-${parseInt(numMatch[1], 10)}`;
+
+    // if something like "checkpoint-1" or "checkpoint_1"
+    const otherMatch = String(checkpointId).match(/(\d+)$/);
+    if (otherMatch) return `cp-${parseInt(otherMatch[1], 10)}`;
+
+    // fallback to the raw id as key
+    return String(checkpointId);
+  };
+
+  const checkpointIdToNumber = (checkpointId) => {
+    if (checkpointId == null) return null;
+    const numMatch = String(checkpointId).match(/(\d+)$/);
+    return numMatch ? parseInt(numMatch[1], 10) : null;
+  };
 
   // Get checkpoints from lab (stored in MongoDB) or use empty array as fallback
   const checkpoints = lab?.checkpoints || [];
@@ -52,39 +95,37 @@ export default function CheckpointPage() {
     if (!labId) return;
     setLoading(true);
 
-    console.log('[Checkpoints] Fetching data for labId:', labId);
-
-    // Fetch all labs and the groups for the current lab
     Promise.all([
       fetch(api.labs()).then(res => res.json()),
       fetch(api.labGroups(labId)).then(async res => {
         if (!res.ok) {
           const errorText = await res.text();
-          console.error('[Checkpoints] Failed to fetch groups:', {
-            status: res.status,
-            statusText: res.statusText,
-            url: res.url,
-            errorBody: errorText
-          });
           throw new Error(`Failed to fetch groups: ${res.status} - ${errorText}`);
         }
         return res.json();
       })
     ])
-      .then(([allLabs, groupsData]) => {
-        console.log('[Checkpoints] Successfully fetched labs and groups:', {
-          totalLabs: allLabs.length,
-          totalGroups: groupsData.length
-        });
+      .then(async ([allLabs, groupsData]) => {
+        let currentLab = allLabs.find(l => l.id === labId);
 
-        // Match labId to its data
-        const currentLab = allLabs.find(l => l.id === labId);
+        // Fallback: fetch detailed lab info (with checkpoints) if not found or missing checkpoints
+        if (!currentLab || !Array.isArray(currentLab.checkpoints) || currentLab.checkpoints.length === 0) {
+          try {
+            const detailRes = await fetch(api.labDetail(labId));
+            if (detailRes.ok) {
+              currentLab = await detailRes.json();
+            }
+          } catch (e) {
+            console.warn('Failed to load lab detail fallback', e);
+          }
+        }
+
         setLab(currentLab);
 
         const groupsArray = Array.isArray(groupsData) ? groupsData : [];
         setGroups(groupsArray);
 
-        // Pre-select group if one is in URL
+        // select group if provided, otherwise pick first
         if (groupId) {
           const foundGroup = groupsArray.find(g => g.id === groupId);
           setGroup(foundGroup);
@@ -93,117 +134,148 @@ export default function CheckpointPage() {
           setSelectedGroupId(groupsArray[0].id);
         }
 
-        // Initialize empty checkpoints for each group
+        // initialize checkpoints state for each group
         const initial = {};
-        groupsArray.forEach(group => {
-          initial[group.id] = {};
+        groupsArray.forEach(g => {
+          // If backend provides checkpointProgress array, hydrate it
+          if (Array.isArray(g.checkpointProgress) && g.checkpointProgress.length > 0) {
+            initial[g.id] = {};
+            g.checkpointProgress.forEach(cp => {
+              const cpNum = cp.checkpointNumber || cp.getCheckpointNumber?.();
+              const cpId = normalizeToCpKey(cpNum || cp.checkpointNumber || cp.getCheckpointNumber?.());
+              const statusVal = cp.status ? (typeof cp.status === 'string' ? cp.status : cp.status.name || cp.status) : null;
+              if (statusVal === 'PASS' || statusVal === 'SIGNED_OFF') {
+                initial[g.id][cpId] = {
+                  completed: true,
+                  completedAt: cp.timestamp || new Date().toISOString(),
+                  completedBy: cp.signedOffByName || cp.signedOffBy || 'TA'
+                };
+              }
+            });
+          } else {
+            initial[g.id] = {};
+          }
         });
+
         setGroupCheckpoints(initial);
       })
       .catch(err => {
-        console.error('[Checkpoints] Error fetching data:', err);
-        setError(err.message);
+        console.error('Error loading lab/groups:', err);
+        setError(err.message || String(err));
       })
       .finally(() => setLoading(false));
   }, [labId, groupId]);
 
-  // ================================================================
-  // 🧭 EFFECT 2: Keep selected group in sync when list changes
-  // ================================================================
+  // -------------------------
+  // EFFECT 2: Keep selected group in sync when groups list or selection changes
+  // -------------------------
   useEffect(() => {
     if (selectedGroupId && groups.length > 0) {
-      const foundGroup = groups.find(g => g.id === selectedGroupId);
-      setGroup(foundGroup);
+      const found = groups.find(g => g.id === selectedGroupId);
+      setGroup(found);
     }
   }, [selectedGroupId, groups]);
 
-  // ================================================================
-  // 🔌 EFFECT 3: WebSocket setup — real-time updates between tabs
-  // ================================================================
   useEffect(() => {
-    let isActive = true;
-    websocketService.init(); // Initialize WebSocket client
+    setExportError(null);
+    setExporting(false);
+  }, [labId]);
 
-    // Track connection status (Connected / Disconnected / Reconnecting)
-    const handleStatusChange = (status) => {
-      console.log('[WebSocket STATUS]', status);
+  // -------------------------
+  // EFFECT 3: WebSocket setup ONCE for app lifecycle
+  // - subscribe once to /topic/group-updates
+  // - add listener that updates local state
+  // - remove listeners on unmount but intentionally keep subscription live while dev server runs
+  // -------------------------
+  useEffect(() => {
+    websocketService.init();
+
+    const topic = '/topic/group-updates';
+
+    const statusHandler = (status) => {
+      console.log(`WebSocket: ${status}`);
       setWsStatus(status);
-
-      // Subscribe to updates only when connected
-      if (status === 'CONNECTED' && isActive) {
-        console.log('[WebSocket] Subscribing to group:', selectedGroupId || 'Group-1');
-        websocketService.subscribeToGroup(selectedGroupId || 'Group-1');
+      if (status === 'CONNECTED') {
+        websocketService.subscribe(topic);
       }
     };
 
-    // Handle incoming WebSocket messages from backend
-    const handleUpdate = (update) => {
-      console.log('📡 WebSocket update received:', update);
+    const updateHandler = (update) => {
+      if (!update || !update.groupId) return;
 
-      // 🎓 Case 1: Group fully passed → Update status for all tabs
-      if (update.status === 'GROUP_PASSED') {
-        console.log('🎓 Group fully passed! Updating status in all tabs.');
-        setGroups(prev =>
-          prev.map(g =>
-            g.groupId === update.groupId ? { ...g, status: 'passed' } : g
-          )
-        );
-        return;
+      if (update.checkpointNumber != null) {
+        console.log(`WS: group ${update.groupId} cp ${update.checkpointNumber} -> ${update.status}`);
+      } else if (update.status === 'GROUP_PASSED') {
+        console.log(`WS: group ${update.groupId} -> SIGNED OFF`);
+      } else {
+        console.log('WS update:', update);
       }
 
-      // ✅ Case 2: Individual checkpoint updates (PASS / RETURN)
-      if (update.checkpointNumber !== undefined) {
-        setGroupCheckpoints(prev => {
-          const updated = { ...prev };
-          const gid = update.groupId;
-          const checkpointNum = update.checkpointNumber;
-          const status = update.status;
+      setGroupCheckpoints(prev => {
+        const next = { ...prev };
 
-          if (!updated[gid]) updated[gid] = {};
-          const checkpointId = `checkpoint-${checkpointNum}`;
+        if (!next[update.groupId]) next[update.groupId] = {};
 
-          console.log('✅ Backend checkpoint number', checkpointNum, '→ Frontend ID:', checkpointId);
+        const cpNum = update.checkpointNumber;
+        if (cpNum != null) {
+          const cpKey = normalizeToCpKey(cpNum);
+          const existing = next[update.groupId][cpKey];
 
-          if (status === 'PASS') {
-            updated[gid][checkpointId] = {
-              completed: true,
-              completedAt: new Date().toISOString().split('T')[0],
-              completedBy: 'instructor',
-            };
-          } else if (status === 'RETURN') {
-            delete updated[gid][checkpointId];
+          const normalized = String(update.status).toUpperCase();
+
+          if (normalized === 'PASS' || normalized === 'SIGNED_OFF') {
+            if (existing && existing.completed) {
+              // already marked completed. still update metadata in case timestamp or name changed
+              next[update.groupId] = {
+                ...next[update.groupId],
+                [cpKey]: {
+                  ...existing,
+                  completedAt: update.timestamp || existing.completedAt,
+                  completedBy: update.signedOffByName || update.signedOffBy || existing.completedBy
+                }
+              };
+            } else {
+              next[update.groupId] = {
+                ...next[update.groupId],
+                [cpKey]: {
+                  completed: true,
+                  completedAt: update.timestamp || new Date().toISOString(),
+                  completedBy: update.signedOffByName || update.signedOffBy || 'TA'
+                }
+              };
+            }
+          } else if (normalized === 'RETURN') {
+            const { [cpKey]: _removed, ...rest } = next[update.groupId];
+            next[update.groupId] = rest;
           }
+        }
 
-          return updated;
-        });
-      }
+        if (update.status === 'GROUP_PASSED') {
+          setGroups(prevGroups => prevGroups.map(g => g.id === update.groupId ? { ...g, status: 'passed' } : g));
+        }
+
+        return next;
+      });
     };
 
-    // Register WebSocket listeners
-    websocketService.addListener(handleUpdate);
-    if (websocketService.addStatusListener) {
-      websocketService.addStatusListener(handleStatusChange);
-    } else {
-      websocketService.subscribeToGroup(selectedGroupId || 'Group-1');
-      setWsStatus('CONNECTED');
+    websocketService.addStatusListener(statusHandler);
+    websocketService.addListener(updateHandler);
+
+    if (wsStatus === 'CONNECTED') {
+      websocketService.subscribe(topic);
     }
 
-    // Cleanup when leaving the page
     return () => {
-      isActive = false;
-      websocketService.removeListener(handleUpdate);
-      if (websocketService.removeStatusListener) {
-        websocketService.removeStatusListener(handleStatusChange);
-      }
-      websocketService.unsubscribeFromGroup(selectedGroupId || 'Group-1');
+      websocketService.removeListener(updateHandler);
+      websocketService.removeStatusListener(statusHandler);
     };
-  }, [selectedGroupId]);
+    // run once on mount
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-  // ================================================================
-  // 🧠 UI HANDLERS
-  // ================================================================
-
-  // Opens modal to pass/return a checkpoint
+  // -------------------------
+  // UI Handlers
+  // -------------------------
   const handleSignOffClick = (checkpoint, status) => {
     if (status === 'return') {
       handleUndoCheckpoint(checkpoint);
@@ -215,107 +287,85 @@ export default function CheckpointPage() {
     }
   };
 
-  // Undo a checkpoint (mark as RETURNED)
   const handleUndoCheckpoint = async (checkpoint) => {
-    if (!selectedGroup) return;
-    const checkpointNum = parseInt(checkpoint.id.split('-')[1]);
-    console.log('🔍 Undoing checkpoint:', checkpoint.id, '→ Number:', checkpointNum);
+    if (!selectedGroup || !lab) return;
+    const checkpointNum = checkpointIdToNumber(checkpoint.id);
 
-    // Optimistic UI update (instant feedback)
-    setGroupCheckpoints(prev => {
-      const updated = { ...prev };
-      if (updated[selectedGroup.id]) {
-        delete updated[selectedGroup.id][checkpoint.id];
-      }
-      return updated;
-    });
+    if (checkpointNum == null) {
+      console.warn('Cannot parse checkpoint number for undo', checkpoint);
+      return;
+    }
 
-    // Notify backend to broadcast RETURN
     try {
-      await fetch(`http://localhost:8080/groups/${selectedGroup.id}/return`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ checkpointNumber: checkpointNum })
-      });
-      console.log(`✅ Undo checkpoint ${checkpointNum} - backend notified`);
+      const response = await fetch(
+        `http://localhost:8080/labs/${lab.id}/groups/${selectedGroup.id}/return`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            checkpointNumber: checkpointNum,
+            performedBy: 'instructor1'
+          })
+        }
+      );
+      if (!response.ok) {
+        const txt = await response.text();
+        throw new Error(txt || 'Failed');
+      }
+      // rely on backend broadcast to update local state
     } catch (e) {
-      console.error('❌ Error undoing checkpoint:', e);
+      console.error('Failed undoing checkpoint:', e);
     }
   };
 
-  // Confirm Sign Off (PASS a checkpoint)
   const handleSignOffConfirm = async () => {
-    if (!selectedCheckpoint || !selectedGroup) return;
+    if (!selectedCheckpoint || !selectedGroup || !lab) return;
+
     const isPassing = signOffStatus === 'pass';
-    const checkpointNum = parseInt(selectedCheckpoint.id.split('-')[1]);
-
-    console.log('🔍 Checkpoint:', selectedCheckpoint.id, '→ Number:', checkpointNum);
-
-    // Optimistic local update
-    const next = { ...groupCheckpoints };
-    if (!next[selectedGroup.id]) next[selectedGroup.id] = {};
-
-    if (isPassing) {
-      next[selectedGroup.id][selectedCheckpoint.id] = {
-        completed: true,
-        completedAt: new Date().toISOString().split('T')[0],
-        completedBy: 'instructor',
-        notes: signOffNotes
-      };
-    } else {
-      delete next[selectedGroup.id][selectedCheckpoint.id];
+    const checkpointNum = checkpointIdToNumber(selectedCheckpoint.id);
+    if (checkpointNum == null) {
+      console.warn('Cannot parse checkpoint number for sign off', selectedCheckpoint);
+      setShowSignOffModal(false);
+      return;
     }
-    setGroupCheckpoints(next);
 
     try {
-      // Update backend (triggers WebSocket broadcast)
       const endpoint = isPassing ? 'pass' : 'return';
-      const response = await fetch(`http://localhost:8080/groups/${selectedGroup.id}/${endpoint}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ checkpointNumber: checkpointNum, notes: signOffNotes })
-      });
-
-      if (!response.ok) throw new Error('Failed to update checkpoint');
-      console.log(`✅ Backend API called for checkpoint ${checkpointNum}`);
-
-      // 🎯 If all checkpoints are completed → mark full group as passed
-      const allCompleted = formattedCheckpoints.every(
-        cp => next[selectedGroup.id]?.[cp.id]?.completed
+      const response = await fetch(
+        `http://localhost:8080/labs/${lab.id}/groups/${selectedGroup.id}/${endpoint}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            checkpointNumber: checkpointNum,
+            notes: signOffNotes,
+            performedBy: 'instructor1'
+          })
+        }
       );
 
-      if (isPassing && allCompleted) {
-        try {
-          const res = await fetch(`http://localhost:8080/lti/labs/${labId}/groups/${selectedGroup.groupId}/pass`, {
-            method: 'POST'
-          });
-
-          if (res.ok) {
-            setGroups(prev =>
-              prev.map(g => g.id === selectedGroup.id ? { ...g, status: 'passed' } : g)
-            );
-            console.log('🎉 All checkpoints complete - Group marked as PASSED!');
-          }
-        } catch (e) {
-          console.error('Error marking group as passed:', e);
-        }
+      if (!response.ok) {
+        const txt = await response.text();
+        throw new Error(txt || 'Failed to update checkpoint');
       }
-    } catch (e) {
-      console.error('❌ Error calling backend API:', e);
-    }
 
-    // Close modal
-    setShowSignOffModal(false);
-    setSelectedCheckpoint(null);
-    setSignOffNotes('');
+      // rely on backend broadcast to update local state
+    } catch (e) {
+      console.error('Error calling backend API:', e);
+    } finally {
+      setShowSignOffModal(false);
+      setSelectedCheckpoint(null);
+      setSignOffNotes('');
+    }
   };
 
-  // ================================================================
-  // 🧩 Helper functions
-  // ================================================================
+  // -------------------------
+  // helpers
+  // -------------------------
   const isCheckpointCompleted = (checkpointId) => {
     if (!selectedGroup) return false;
-    return groupCheckpoints[selectedGroup.id]?.[checkpointId]?.completed || false;
+    const cpKey = normalizeToCpKey(checkpointId);
+    return !!groupCheckpoints[selectedGroup.id]?.[cpKey]?.completed;
   };
 
   const getCompletedCount = (groupId) => {
@@ -324,6 +374,7 @@ export default function CheckpointPage() {
   };
 
   const handleEditGroups = () => setShowGroupManagement(true);
+
   const handleUpdateGroups = async () => {
     // Refetch groups after update
     try {
@@ -339,10 +390,42 @@ export default function CheckpointPage() {
     }
   };
 
-  // ================================================================
-  // 🌀 UI STATES: Loading / Error
-  // ================================================================
-  if (loading) {
+  const handleExportCsv = async () => {
+    if (!labId) {
+      return;
+    }
+    setExportError(null);
+    setExporting(true);
+    try {
+      const response = await fetch(api.labGradesCsv(labId), { credentials: 'include' });
+      if (!response.ok) {
+        const message = await response.text();
+        throw new Error(message || 'There was a problem generating the CSV. Please try again or contact support.');
+      }
+      const blob = await response.blob();
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.download = `lab_${labId}_grades.csv`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(downloadUrl);
+    } catch (err) {
+      console.error('Failed to export grades CSV:', err);
+      const fallback = 'There was a problem generating the CSV. Please try again or contact support.';
+      setExportError(err instanceof Error && err.message ? err.message : fallback);
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  // -------------------------
+  // render
+  // -------------------------
+  console.log('🌀 Rendering UI with groupCheckpoints:', groupCheckpoints);
+
+  if (loading)
     return (
       <>
         <Header />
@@ -351,9 +434,8 @@ export default function CheckpointPage() {
         </main>
       </>
     );
-  }
 
-  if (error) {
+  if (error)
     return (
       <>
         <Header />
@@ -365,11 +447,7 @@ export default function CheckpointPage() {
         </main>
       </>
     );
-  }
 
-  // ================================================================
-  // 🎨 MAIN RENDER — groups and checkpoints
-  // ================================================================
   return (
     <>
       <Header />
@@ -386,73 +464,62 @@ export default function CheckpointPage() {
             {group && <span className="checkpoint-subtitle"> - {group.groupId}</span>}
           </div>
 
-          {/* Connection + Management */}
           <div className="checkpoint-actions">
             <span
               className={`font-semibold ${
-                wsStatus === 'CONNECTED'
-                  ? 'text-green-600'
-                  : wsStatus === 'RECONNECTING'
-                  ? 'text-orange-500'
-                  : 'text-red-600'
+                wsStatus === 'CONNECTED' ? 'text-green-600' :
+                wsStatus === 'RECONNECTING' ? 'text-orange-500' :
+                'text-red-600'
               }`}
             >
               {wsStatus}
             </span>
-            <button className="action-btn secondary" onClick={handleEditGroups}>
-              ✏️ Manage Groups
-            </button>
+            {canExportGrades && (
+              <button
+                className="action-btn primary"
+                onClick={handleExportCsv}
+                disabled={exporting}
+              >
+                {exporting ? 'Exporting...' : 'Export Grades (CSV)'}
+              </button>
+            )}
+            <button className="action-btn secondary" onClick={handleEditGroups}>✏️ Manage Groups</button>
           </div>
         </div>
+        {exportError && (
+          <div className="export-error-banner">{exportError}</div>
+        )}
 
         {/* ---------- Groups Panel ---------- */}
         <section className="groups-panel">
           <header className="panel-header">
             <h2 className="panel-title">Groups</h2>
-            <span className="groups-count">
-              {groups.length} group{groups.length !== 1 ? 's' : ''}
-            </span>
+            <span className="groups-count">{groups.length} group{groups.length !== 1 ? 's' : ''}</span>
           </header>
-
           <div className="groups-list">
-            {groups.map(group => {
-              const completedCount = getCompletedCount(group.id);
+            {groups.map(g => {
+              const completedCount = getCompletedCount(g.id);
               const totalCount = formattedCheckpoints.length;
               const progressPercent = Math.round((completedCount / totalCount) * 100);
-              const isSelected = group.id === selectedGroupId;
+              const isSelected = g.id === selectedGroupId;
 
               return (
-                <div
-                  key={group.id}
-                  className={`group-card ${isSelected ? 'selected' : ''}`}
-                  onClick={() => setSelectedGroupId(group.id)}
-                >
+                <div key={g.id} className={`group-card ${isSelected ? 'selected' : ''}`} onClick={() => setSelectedGroupId(g.id)}>
                   <div className="group-card-header">
-                    <h3 className="group-name">{group.groupId}</h3>
-                    <span className={`group-status ${group.status.toLowerCase().replace(' ', '-')}`}>
-                      {group.status}
-                    </span>
+                    <h3 className="group-name">{g.groupId}</h3>
+                    <span className={`group-status ${String(g.status || '').toLowerCase().replace(' ', '-')}`}>{g.status}</span>
                   </div>
-
                   <div className="group-card-body">
                     <div className="group-members">
                       <div className="members-list">
-                        {group.members && group.members.map((member, index) => {
-                          const displayName = typeof member === 'string'
-                            ? member
-                            : (member.name || member.email || member.userId || 'Unknown');
-                          return (
-                            <span key={index} className="member-name">
-                              {displayName}{index < group.members.length - 1 ? ', ' : ''}
-                            </span>
-                          );
-                        })}
+                        {g.members && g.members.map((member, index) => (
+                          <span key={index} className="member-name">
+                            {typeof member === 'string' ? member : (member.name || member.email || member.userId || 'Unknown')}{index < g.members.length - 1 ? ', ' : ''}
+                          </span>
+                        ))}
                       </div>
-                      <span className="members-count">
-                        {group.members?.length || 0} member{group.members?.length !== 1 ? 's' : ''}
-                      </span>
+                      <span className="members-count">{g.members?.length || 0} member{g.members?.length !== 1 ? 's' : ''}</span>
                     </div>
-
                     <div className="group-progress">
                       <div className="progress-header">
                         <span className="progress-text">Checkpoints</span>
@@ -477,33 +544,24 @@ export default function CheckpointPage() {
               {selectedGroup ? getCompletedCount(selectedGroup.id) : 0}/{formattedCheckpoints.length}
             </span>
           </header>
-
           <div className="checkpoint-list">
             {formattedCheckpoints.map((checkpoint, index) => {
               const isCompleted = isCheckpointCompleted(checkpoint.id);
               return (
                 <div key={checkpoint.id} className={`checkpoint-item ${isCompleted ? 'completed' : 'pending'}`}>
                   <div className="checkpoint-indicator">
-                    <div className="checkpoint-number">
-                      {isCompleted ? '✓' : index + 1}
-                    </div>
+                    <div className="checkpoint-number">{isCompleted ? '✓' : index + 1}</div>
                   </div>
-
                   <div className="checkpoint-details">
                     <div className="checkpoint-main">
                       <h3 className="checkpoint-name">{checkpoint.name}</h3>
                       <p className="checkpoint-description">{checkpoint.description}</p>
                     </div>
-
                     <div className="checkpoint-actions">
                       {!isCompleted ? (
-                        <button className="checkpoint-btn pass" onClick={() => handleSignOffClick(checkpoint, 'pass')}>
-                          Sign Off
-                        </button>
+                        <button className="checkpoint-btn pass" onClick={() => handleSignOffClick(checkpoint, 'pass')}>Sign Off</button>
                       ) : (
-                        <button className="checkpoint-btn return" onClick={() => handleSignOffClick(checkpoint, 'return')}>
-                          Undo
-                        </button>
+                        <button className="checkpoint-btn return" onClick={() => handleSignOffClick(checkpoint, 'return')}>Undo</button>
                       )}
                     </div>
                   </div>

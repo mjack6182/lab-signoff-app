@@ -1,56 +1,22 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import { mockCheckpoints } from '../../mock/checkpoints';
 import GroupManagementModal from '../../components/GroupManagementModal';
 import Header from '../../components/Header/Header';
 import { api } from '../../config/api';
 import './checkpoints.css';
-
-const normalizeCheckpoints = (definitions = []) => {
-    const isPlaceholderCheckpoint = (definition) => {
-        if (!definition || !definition.name) return true;
-        const placeholderName = /^checkpoint\s+\d+$/i.test(definition.name.trim());
-        const description = definition.description || '';
-        const placeholderDescription = description.trim().toLowerCase()
-            .startsWith('complete checkpoint');
-        return placeholderName && placeholderDescription;
-    };
-
-    const shouldUseMock = !Array.isArray(definitions) ||
-        definitions.length === 0 ||
-        definitions.every(isPlaceholderCheckpoint);
-
-    const source = shouldUseMock ? mockCheckpoints : definitions;
-
-    return source.map((checkpoint, index) => {
-        const number = checkpoint.number ?? checkpoint.order ?? index + 1;
-        return {
-            ...checkpoint,
-            id: checkpoint.id || `checkpoint-${number}`,
-            number,
-            order: number,
-            name: checkpoint.name || `Checkpoint ${number}`,
-            description: checkpoint.description || 'Complete this checkpoint',
-            points: checkpoint.points || 1
-        };
-    }).sort((a, b) => (a.order || 0) - (b.order || 0));
-};
 
 const buildCheckpointMap = (groupEntity, checkpointDefs = []) => {
     if (!groupEntity || !groupEntity.id) {
         return {};
     }
 
-    const definitions = checkpointDefs.length > 0 ? checkpointDefs : normalizeCheckpoints();
     const progressEntries = {};
 
     (groupEntity.checkpointProgress || []).forEach(progressItem => {
-        const definition = definitions.find(def => def.number === progressItem.checkpointNumber);
-        const checkpointId = definition
-            ? definition.id
-            : `checkpoint-${progressItem.checkpointNumber}`;
+        const cpNumber = progressItem.checkpointNumber;
+        const checkpointId = `cp-${cpNumber}`;
         const status = (progressItem.status || '').toString().toUpperCase();
-        const completed = status === 'PASS' || status === 'COMPLETE';
+        const completed = status === 'PASS' || status === 'COMPLETE' || status === 'SIGNED_OFF';
 
         progressEntries[checkpointId] = {
             completed,
@@ -107,21 +73,12 @@ export default function CheckpointPage() {
     const [showGroupManagement, setShowGroupManagement] = useState(false);
     const [group, setGroup] = useState(initialGroup);
     const [lab, setLab] = useState(initialLab);
-    const [labCheckpoints, setLabCheckpoints] = useState(
-        stateLabCheckpoints || initialLab?.checkpoints || []
-    );
     const [loading, setLoading] = useState(!(initialLab && initialGroupId));
     const [error, setError] = useState(null);
 
-    const normalizedCheckpoints = useMemo(
-        () => normalizeCheckpoints(labCheckpoints),
-        [labCheckpoints]
-    );
     const [groupCheckpoints, setGroupCheckpoints] = useState(() => {
         if (initialGroup && initialGroup.id) {
-            const initialDefs = normalizeCheckpoints(
-                stateLabCheckpoints || initialLab?.checkpoints || []
-            );
+            const initialDefs = initialLab?.checkpoints || [];
             return {
                 [initialGroup.id]: buildCheckpointMap(initialGroup, initialDefs)
             };
@@ -132,8 +89,21 @@ export default function CheckpointPage() {
     const selectedGroup = groups.find(g => g.id === selectedGroupId) ||
         groups.find(g => g.groupId === selectedGroupId || g.groupId === stateGroupDisplayId);
     const currentLab = lab?.title || lab?.courseId || stateLabTitle || stateLabCode || "Lab";
-    const checkpoints = normalizedCheckpoints;
-    const totalCheckpoints = checkpoints.length;
+
+    // Get checkpoints from lab (stored in MongoDB) or use empty array as fallback
+    const checkpoints = lab?.checkpoints || [];
+
+    // Transform checkpoints to match the expected format with IDs
+    const formattedCheckpoints = checkpoints.map(cp => ({
+        id: `cp-${cp.number}`,
+        name: cp.name,
+        description: cp.description,
+        points: cp.points,
+        order: cp.number,
+        number: cp.number
+    }));
+
+    const totalCheckpoints = formattedCheckpoints.length;
 
     // Load real lab/group data when component mounts
     useEffect(() => {
@@ -147,14 +117,13 @@ export default function CheckpointPage() {
         const targetGroupId = routeGroupId || initialGroupId;
         setLoading(true);
 
-        const fetchLabPromise = lab && lab.checkpoints?.length
-            ? Promise.resolve(lab)
-            : fetch(api.labDetail(labId)).then(res => {
-                if (!res.ok) {
-                    throw new Error('Failed to load lab information');
-                }
-                return res.json();
-            });
+        // Always fetch lab detail to ensure we have the latest checkpoint definitions
+        const fetchLabPromise = fetch(api.labDetail(labId)).then(res => {
+            if (!res.ok) {
+                throw new Error('Failed to load lab information');
+            }
+            return res.json();
+        });
 
         const fetchGroupPromise = fetch(api.labGroupDetail(labId, targetGroupId))
             .then(res => {
@@ -172,7 +141,6 @@ export default function CheckpointPage() {
 
                 if (labData) {
                     setLab(labData);
-                    setLabCheckpoints(labData.checkpoints || []);
                 }
 
                 if (groupData) {
@@ -211,13 +179,13 @@ export default function CheckpointPage() {
     }, [selectedGroupId, groups]);
 
     useEffect(() => {
-        if (group && group.id) {
+        if (group && group.id && lab?.checkpoints) {
             setGroupCheckpoints(prev => ({
                 ...prev,
-                [group.id]: buildCheckpointMap(group, normalizedCheckpoints)
+                [group.id]: buildCheckpointMap(group, lab.checkpoints)
             }));
         }
-    }, [group, normalizedCheckpoints]);
+    }, [group, lab]);
 
     // Helper function to check if a checkpoint is completed for the selected group
     const isCheckpointCompleted = (checkpointId) => {
@@ -330,7 +298,7 @@ export default function CheckpointPage() {
                         </header>
 
                         <div className="checkpoint-list">
-                            {checkpoints.map((checkpoint, index) => {
+                            {formattedCheckpoints.map((checkpoint, index) => {
                                 const isCompleted = isCheckpointCompleted(checkpoint.id);
 
                                 return (
