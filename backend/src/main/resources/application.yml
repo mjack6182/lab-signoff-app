@@ -5,6 +5,14 @@ lti:
   allowed-clock-skew-seconds: 120
   validation-enabled: false
 
+# CORS configuration - supports comma-separated list of origins
+cors:
+  allowed-origins: ${ALLOWED_ORIGINS:http://localhost:5173,http://localhost:5002,https://lab-signoff-app.web.app,https://lab-signoff-app.firebaseapp.com,https://lab-signoff-app-jack-cbee.up.railway.app}
+
+# WebSocket configuration - supports comma-separated list of origins
+websocket:
+  allowed-origins: ${WEBSOCKET_ALLOWED_ORIGINS:http://localhost:5173,http://localhost:3000,https://lab-signoff-app-jack-cbee.up.railway.app}
+
 spring:
   config:
     import: optional:file:.env[.properties],optional:file:../.env[.properties]
@@ -12,8 +20,8 @@ spring:
     mongodb:
       uri: ${SPRING_DATA_MONGODB_URI}
     redis:
-      host: ${REDIS_HOST:localhost}
-      port: ${REDIS_PORT:6379}
+      host: ${REDISHOST:localhost}
+      port: ${REDISPORT:6379}
       repositories:
         enabled: false
       jedis:
@@ -34,7 +42,7 @@ app:
       enabled: true
 
 server:
-  port: ${SERVER_PORT}
+  port: ${PORT:8080}
 
 management:
   endpoints:
