@@ -1,4 +1,4 @@
-import { StaffOnly } from '../RoleGuard';
+import { StaffOnly } from '../RoleGuard/RoleGuard';
 
 // Simple, reusable card to display a group
 export default function GroupCard({

@@ -3661,3 +3661,152 @@
         padding: 10px 16px;
     }
 }
+
+/* --- Student mobile polish overrides --- */
+.student-mobile-summary {
+    display: none;
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 14px;
+    padding: 12px 14px;
+    box-shadow: 0 4px 18px rgba(2, 6, 23, 0.06);
+    gap: 12px;
+    width: 100%;
+}
+
+.student-summary-block {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex: 1;
+}
+
+.student-summary-block .summary-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: #64748b;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.student-summary-block .summary-value {
+    font-size: 16px;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.summary-progress-bar {
+    height: 6px;
+    background: #f1f5f9;
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.summary-progress-bar .fill {
+    height: 100%;
+    background: linear-gradient(90deg, #016836, #014a28);
+    border-radius: 3px;
+}
+
+.help-btn.condensed {
+    padding: 10px 12px;
+    font-size: 13px;
+}
+
+@media (max-width: 1024px) {
+    .checkpoint-content {
+        grid-template-columns: 1fr;
+        gap: 16px;
+    }
+
+    .student-sidebar {
+        position: static;
+        top: auto;
+    }
+}
+
+@media (max-width: 768px) {
+    .checkpoint-shell {
+        padding: 22px 14px 32px;
+        padding-top: 88px;
+        gap: 16px;
+    }
+
+    .checkpoint-page-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+
+    .checkpoint-nav {
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    .checkpoint-title {
+        font-size: 22px;
+    }
+
+    .checkpoint-content {
+        gap: 14px;
+    }
+
+    .student-mobile-summary {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    }
+
+    .student-sidebar {
+        display: none;
+    }
+
+    .checkpoint-item {
+        padding: 14px 16px;
+        gap: 12px;
+        align-items: flex-start;
+    }
+
+    .checkpoint-details {
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .checkpoint-actions {
+        margin-left: 0;
+        width: 100%;
+        justify-content: flex-start;
+    }
+
+    .checkpoint-status {
+        align-self: flex-start;
+    }
+
+    .breadcrumb-back {
+        font-size: 14px;
+    }
+}
+
+@media (max-width: 480px) {
+    .checkpoint-title {
+        font-size: 20px;
+    }
+
+    .student-mobile-summary {
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+
+    .student-summary-block .summary-value {
+        font-size: 15px;
+    }
+
+    .checkpoint-item {
+        padding: 12px 14px;
+    }
+
+    .checkpoint-number {
+        width: 28px;
+        height: 28px;
+        font-size: 12px;
+    }
+}

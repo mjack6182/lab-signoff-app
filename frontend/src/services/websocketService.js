@@ -2,6 +2,8 @@
 import { Client } from '@stomp/stompjs'
 import SockJS from 'sockjs-client'
 
+const WS_URL = import.meta.env.VITE_WS_URL || 'http://localhost:8080/ws'
+
 let client = null
 
 // Use Sets to automatically prevent duplicates
@@ -14,7 +16,7 @@ export const websocketService = {
     if (client) return
 
     client = new Client({
-      webSocketFactory: () => new SockJS('http://localhost:8080/ws'),
+      webSocketFactory: () => new SockJS(WS_URL),
       reconnectDelay: 3000,
       debug: (msg) => console.log(msg),
 
