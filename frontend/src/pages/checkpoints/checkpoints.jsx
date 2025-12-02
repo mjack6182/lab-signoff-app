@@ -56,8 +56,7 @@ export default function CheckpointPage() {
   const [error, setError] = useState(null);
 
   // WebSocket status
-  const [wsEnabled, setWsEnabled] = useState(false);
-  const [wsStatus, setWsStatus] = useState('OFF');
+  const [wsStatus, setWsStatus] = useState('CONNECTING');
 
   // Checkpoint state per-group
   const [groupCheckpoints, setGroupCheckpoints] = useState({});
@@ -76,14 +75,12 @@ export default function CheckpointPage() {
   const currentLab = lab?.courseId || 'Lab';
 
   // WebSocket display helpers
-  const wsDisplayStatus = wsEnabled ? wsStatus : 'OFF';
-  const wsStatusClass = !wsEnabled
-    ? 'text-gray-600'
-    : wsStatus === 'CONNECTED'
-    ? 'text-green-600'
-    : wsStatus === 'RECONNECTING'
-    ? 'text-orange-500'
-    : 'text-red-600';
+  const wsStatusClass =
+    wsStatus === 'CONNECTED'
+      ? 'text-green-600'
+      : wsStatus === 'RECONNECTING' || wsStatus === 'CONNECTING'
+      ? 'text-orange-500'
+      : 'text-red-600';
 
   // -----------------------------------------------------------
   // Helper: make sure checkpoint IDs use the format "cp-1"
@@ -214,15 +211,10 @@ export default function CheckpointPage() {
   }, [labId]);
 
   // ===================================================================
-  // EFFECT 3 — WebSocket setup (opt-in via Start/Stop)
+  // EFFECT 3 — WebSocket setup (always on with auto-reconnect)
   // ===================================================================
   useEffect(() => {
     const topic = '/topic/group-updates';
-
-    if (!wsEnabled) {
-      setWsStatus('OFF');
-      return;
-    }
 
     setWsStatus('CONNECTING');
     websocketService.init(); // open connection
@@ -283,14 +275,14 @@ export default function CheckpointPage() {
     websocketService.addStatusListener(statusHandler);
     websocketService.addListener(updateHandler);
 
-    // Cleanup on unmount or when toggling off
+    // Cleanup on unmount
     return () => {
       websocketService.removeListener(updateHandler);
       websocketService.removeStatusListener(statusHandler);
       websocketService.unsubscribe(topic);
       websocketService.disconnect();
     };
-  }, [wsEnabled]);
+  }, [labId]);
 
   // -----------------------------------------------------------
   // Open sign-off modal or undo a checkpoint
@@ -480,16 +472,8 @@ export default function CheckpointPage() {
             <span
               className={`font-semibold ${wsStatusClass}`}
             >
-              {wsDisplayStatus}
+              {wsStatus}
             </span>
-
-            {/* Toggle WebSocket usage */}
-            <button
-              className="action-btn secondary"
-              onClick={() => setWsEnabled(prev => !prev)}
-            >
-              {wsEnabled ? 'Stop Live Updates' : 'Start Live Updates'}
-            </button>
 
             {/* CSV exporting button (teachers only) */}
             {canExportGrades && (
