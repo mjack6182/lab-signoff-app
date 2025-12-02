@@ -376,6 +376,13 @@ export default function CheckpointPage() {
     return Object.values(groupCheckpoints[groupId] || {}).filter(cp => cp.completed).length;
   };
 
+  // Derived progress stats for the selected group
+  const totalCheckpointsCount = formattedCheckpoints.length;
+  const selectedCompletedCount = selectedGroup ? getCompletedCount(selectedGroup.id) : 0;
+  const selectedProgressPercent = totalCheckpointsCount
+    ? Math.min(100, Math.round((selectedCompletedCount / totalCheckpointsCount) * 100))
+    : 0;
+
   // Open group management modal
   const handleEditGroups = () => setShowGroupManagement(true);
 
@@ -468,7 +475,7 @@ export default function CheckpointPage() {
             {group && <span className="checkpoint-subtitle"> - {group.groupId}</span>}
           </div>
 
-          <div className="checkpoint-actions">
+          <div className="checkpoint-header-actions">
             {/* WebSocket connection state */}
             <span
               className={`font-semibold ${wsStatusClass}`}
@@ -500,107 +507,128 @@ export default function CheckpointPage() {
 
         {exportError && <div className="export-error-banner">{exportError}</div>}
 
+        {selectedGroup && (
+          <div className="mobile-group-summary">
+            <div className="summary-block">
+              <span className="summary-label">Group</span>
+              <span className="summary-value">{selectedGroup.groupId}</span>
+            </div>
+            <div className="summary-block">
+              <span className="summary-label">Progress</span>
+              <span className="summary-value">
+                {selectedCompletedCount}/{totalCheckpointsCount}
+              </span>
+              <div className="summary-progress-bar">
+                <div className="fill" style={{ width: `${selectedProgressPercent}%` }}></div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* ---------- GROUPS PANEL ---------- */}
-        <section className="groups-panel">
-          <header className="panel-header">
-            <h2 className="panel-title">Groups</h2>
-            <span className="groups-count">{groups.length} group{groups.length !== 1 ? 's' : ''}</span>
-          </header>
+        <div className="checkpoint-content">
+          {/* ---------- CHECKPOINTS PANEL ---------- */}
+          <section className="checkpoint-panel">
+            <header className="panel-header">
+              <h2 className="panel-title">Checkpoints</h2>
+              <span className="checkpoint-count">
+                {selectedCompletedCount}/{formattedCheckpoints.length}
+              </span>
+            </header>
 
-          {/* list of groups */}
-          <div className="groups-list">
-            {groups.map(g => {
-              const completed = getCompletedCount(g.id);
-              const total = formattedCheckpoints.length;
-              const percent = Math.round((completed / total) * 100);
-              const isSelected = g.id === selectedGroupId;
+            <div className="checkpoint-list">
+              {formattedCheckpoints.map((cp, index) => {
+                const isComplete = isCheckpointCompleted(cp.id);
 
-              return (
-                <div
-                  key={g.id}
-                  className={`group-card ${isSelected ? 'selected' : ''}`}
-                  onClick={() => setSelectedGroupId(g.id)}
-                >
-                  <div className="group-card-header">
-                    <h3 className="group-name">{g.groupId}</h3>
-                    <span className={`group-status ${String(g.status || '').toLowerCase()}`}>{g.status}</span>
-                  </div>
-
-                  <div className="group-card-body">
-                    {/* Member names */}
-                    <div className="group-members">
-                      <div className="members-list">
-                        {g.members?.map((m, index) => (
-                          <span key={index} className="member-name">
-                            {typeof m === 'string' ? m : m.name || m.email || m.userId || 'Unknown'}
-                            {index < g.members.length - 1 ? ', ' : ''}
-                          </span>
-                        ))}
-                      </div>
-                      <span className="members-count">
-                        {g.members?.length || 0} member{g.members?.length !== 1 ? 's' : ''}
-                      </span>
+                return (
+                  <div key={cp.id} className={`checkpoint-item ${isComplete ? 'completed' : 'pending'}`}>
+                    <div className="checkpoint-indicator">
+                      <div className="checkpoint-number">{isComplete ? '✓' : index + 1}</div>
                     </div>
 
-                    {/* Progress bar */}
-                    <div className="group-progress">
-                      <div className="progress-header">
-                        <span className="progress-text">Checkpoints</span>
-                        <span className="progress-value">{completed}/{total}</span>
+                    <div className="checkpoint-details">
+                      <div className="checkpoint-main">
+                        <h3 className="checkpoint-name">{cp.name}</h3>
+                        <p className="checkpoint-description">{cp.description}</p>
                       </div>
-                      <div className="progress-bar">
-                        <div className="progress-fill" style={{ width: `${percent}%` }}></div>
+
+                      <div className="checkpoint-item-actions">
+                        {!isComplete ? (
+                          <button className="checkpoint-btn pass" onClick={() => handleSignOffClick(cp, 'pass')}>
+                            Sign Off
+                          </button>
+                        ) : (
+                          <button className="checkpoint-btn return" onClick={() => handleSignOffClick(cp, 'return')}>
+                            Undo
+                          </button>
+                        )}
                       </div>
                     </div>
                   </div>
-                </div>
-              );
-            })}
-          </div>
-        </section>
+                );
+              })}
+            </div>
+          </section>
 
-        {/* ---------- CHECKPOINTS PANEL ---------- */}
-        <section className="checkpoint-panel">
-          <header className="panel-header">
-            <h2 className="panel-title">Checkpoints</h2>
-            <span className="checkpoint-count">
-              {selectedGroup ? getCompletedCount(selectedGroup.id) : 0}/{formattedCheckpoints.length}
-            </span>
-          </header>
+          {/* ---------- GROUPS PANEL ---------- */}
+          <section className="groups-panel">
+            <header className="panel-header">
+              <h2 className="panel-title">Groups</h2>
+              <span className="groups-count">{groups.length} group{groups.length !== 1 ? 's' : ''}</span>
+            </header>
 
-          <div className="checkpoint-list">
-            {formattedCheckpoints.map((cp, index) => {
-              const isComplete = isCheckpointCompleted(cp.id);
+            {/* list of groups */}
+            <div className="groups-list">
+              {groups.map(g => {
+                const completed = getCompletedCount(g.id);
+                const total = formattedCheckpoints.length;
+                const percent = total ? Math.round((completed / total) * 100) : 0;
+                const isSelected = g.id === selectedGroupId;
 
-              return (
-                <div key={cp.id} className={`checkpoint-item ${isComplete ? 'completed' : 'pending'}`}>
-                  <div className="checkpoint-indicator">
-                    <div className="checkpoint-number">{isComplete ? '✓' : index + 1}</div>
-                  </div>
-
-                  <div className="checkpoint-details">
-                    <div className="checkpoint-main">
-                      <h3 className="checkpoint-name">{cp.name}</h3>
-                      <p className="checkpoint-description">{cp.description}</p>
+                return (
+                  <div
+                    key={g.id}
+                    className={`group-card ${isSelected ? 'selected' : ''}`}
+                    onClick={() => setSelectedGroupId(g.id)}
+                  >
+                    <div className="group-card-header">
+                      <h3 className="group-name">{g.groupId}</h3>
+                      <span className={`group-status ${String(g.status || '').toLowerCase()}`}>{g.status}</span>
                     </div>
 
-                    <div className="checkpoint-actions">
-                      {!isComplete ? (
-                        <button className="checkpoint-btn pass" onClick={() => handleSignOffClick(cp, 'pass')}>
-                          Sign Off
-                        </button>
-                      ) : (
-                        <button className="checkpoint-btn return" onClick={() => handleSignOffClick(cp, 'return')}>
-                          Undo
-                        </button>
-                      )}
+                    <div className="group-card-body">
+                      {/* Member names */}
+                      <div className="group-members">
+                        <div className="members-list">
+                          {g.members?.map((m, index) => (
+                            <span key={index} className="member-name">
+                              {typeof m === 'string' ? m : m.name || m.email || m.userId || 'Unknown'}
+                              {index < g.members.length - 1 ? ', ' : ''}
+                            </span>
+                          ))}
+                        </div>
+                        <span className="members-count">
+                          {g.members?.length || 0} member{g.members?.length !== 1 ? 's' : ''}
+                        </span>
+                      </div>
+
+                      {/* Progress bar */}
+                      <div className="group-progress">
+                        <div className="progress-header">
+                          <span className="progress-text">Checkpoints</span>
+                          <span className="progress-value">{completed}/{total}</span>
+                        </div>
+                        <div className="progress-bar">
+                          <div className="progress-fill" style={{ width: `${percent}%` }}></div>
+                        </div>
+                      </div>
                     </div>
                   </div>
-                </div>
-              );
-            })}
-          </div>
-        </section>
+                );
+              })}
+            </div>
+          </section>
+        </div>
 
         {/* ---------- Modals ---------- */}
         <SignOffModal
