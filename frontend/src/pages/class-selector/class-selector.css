@@ -113,7 +113,8 @@
     transition: all 0.2s ease;
     display: flex;
     flex-direction: column;
-    height: 320px;
+    min-height: 320px;
+    max-height: 360px;
     width: 100%;
     cursor: pointer;
 }
@@ -138,6 +139,12 @@
     color: #0f172a;
     line-height: 1.3;
     flex: 1;
+    /* Truncate long titles to 2 lines */
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .lab-card-status {
@@ -401,7 +408,8 @@
     }
 
     .lab-card {
-        height: 280px;
+        min-height: 280px;
+        max-height: 320px;
     }
 }
 
@@ -411,7 +419,8 @@
     }
 
     .lab-card {
-        height: 260px;
+        min-height: 260px;
+        max-height: 300px;
     }
 
     .class-selector-heading h1 {
@@ -431,7 +440,8 @@
     }
 
     .lab-card {
-        height: 300px;
+        min-height: 300px;
+        max-height: 340px;
     }
 }
 
@@ -443,6 +453,7 @@
     }
 
     .lab-card {
-        height: 340px;
+        min-height: 340px;
+        max-height: 380px;
     }
 }

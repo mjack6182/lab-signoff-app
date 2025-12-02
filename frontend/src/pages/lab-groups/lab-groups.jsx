@@ -17,7 +17,7 @@ export default function LabGroups() {
   const [error, setError] = useState(null)
   const [wsStatus, setWsStatus] = useState('DISCONNECTED')
 
-  // ✅ Fetch lab and groups on mount
+  // Fetch lab and groups on mount
   useEffect(() => {
     Promise.all([
       fetch(api.labs()).then(res => res.json()),
@@ -39,7 +39,7 @@ export default function LabGroups() {
       })
   }, [labId])
 
-  // ✅ WebSocket setup for live updates
+  // WebSocket setup for live updates
   useEffect(() => {
     const onUpdate = (update) => {
       console.log('📡 WebSocket update received:', update)
@@ -59,12 +59,15 @@ export default function LabGroups() {
     websocketService.init()
     websocketService.addListener(onUpdate)
     websocketService.addStatusListener?.(onStatusChange)
-    websocketService.subscribeToGroup('Group-1') // TEMP: adjust later for dynamic group
+    websocketService.subscribeToGroup('Group-1') // TEMP: change later
 
     return () => {
       websocketService.removeListener(onUpdate)
       websocketService.removeStatusListener?.(onStatusChange)
       websocketService.unsubscribeFromGroup('Group-1')
+
+      // The missing cleanup
+      websocketService.disconnect()
     }
   }, [])
 
@@ -76,7 +79,6 @@ export default function LabGroups() {
     navigate('/class-selector')
   }
 
-  // ✅ Loading or Error states
   if (loading) {
     return (
       <>
@@ -102,12 +104,10 @@ export default function LabGroups() {
     )
   }
 
-  // ✅ UI
   return (
     <>
       <Header />
       <main className="lab-groups-shell">
-        {/* Page Header */}
         <div
           className="page-header"
           style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}
@@ -122,7 +122,6 @@ export default function LabGroups() {
             </div>
           </div>
 
-          {/* ✅ Connection Status + Test Broadcast */}
           <div className="flex items-center gap-4">
             <span
               className={`font-semibold ${
@@ -146,7 +145,6 @@ export default function LabGroups() {
           </div>
         </div>
 
-        {/* Groups Section */}
         <section className="groups-section">
           <div className="section-header">
             <h2 className="section-title">Groups</h2>

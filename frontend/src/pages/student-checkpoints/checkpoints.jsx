@@ -1,57 +1,40 @@
-import { useState, useEffect, useMemo } from 'react';
+// React + Router hooks
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import { mockCheckpoints } from '../../mock/checkpoints';
+
+// UI components + helpers
 import GroupManagementModal from '../../components/GroupManagementModal';
 import Header from '../../components/Header/Header';
 import { api } from '../../config/api';
 import './checkpoints.css';
+import { websocketService } from '../../services/websocketService';
 
-const normalizeCheckpoints = (definitions = []) => {
-    const isPlaceholderCheckpoint = (definition) => {
-        if (!definition || !definition.name) return true;
-        const placeholderName = /^checkpoint\s+\d+$/i.test(definition.name.trim());
-        const description = definition.description || '';
-        const placeholderDescription = description.trim().toLowerCase()
-            .startsWith('complete checkpoint');
-        return placeholderName && placeholderDescription;
-    };
-
-    const shouldUseMock = !Array.isArray(definitions) ||
-        definitions.length === 0 ||
-        definitions.every(isPlaceholderCheckpoint);
-
-    const source = shouldUseMock ? mockCheckpoints : definitions;
-
-    return source.map((checkpoint, index) => {
-        const number = checkpoint.number ?? checkpoint.order ?? index + 1;
-        return {
-            ...checkpoint,
-            id: checkpoint.id || `checkpoint-${number}`,
-            number,
-            order: number,
-            name: checkpoint.name || `Checkpoint ${number}`,
-            description: checkpoint.description || 'Complete this checkpoint',
-            points: checkpoint.points || 1
-        };
-    }).sort((a, b) => (a.order || 0) - (b.order || 0));
-};
-
+/**
+ * Converts a group's checkpoint progress into an easier-to-use map.
+ * This lets us check completion status fast by checkpointId (e.g., "cp-1").
+ */
 const buildCheckpointMap = (groupEntity, checkpointDefs = []) => {
     if (!groupEntity || !groupEntity.id) {
         return {};
     }
 
-    const definitions = checkpointDefs.length > 0 ? checkpointDefs : normalizeCheckpoints();
     const progressEntries = {};
 
+    // Loop through all progress data the group has
     (groupEntity.checkpointProgress || []).forEach(progressItem => {
-        const definition = definitions.find(def => def.number === progressItem.checkpointNumber);
-        const checkpointId = definition
-            ? definition.id
-            : `checkpoint-${progressItem.checkpointNumber}`;
-        const status = (progressItem.status || '').toString().toUpperCase();
-        const completed = status === 'PASS' || status === 'COMPLETE';
+        const cpNumber = progressItem.checkpointNumber;
+        const checkpointId = `cp-${cpNumber}`;
 
+        // Normalize status into uppercase so it's consistent
+        const status = (progressItem.status || '').toString().toUpperCase();
+
+        // Determine whether the checkpoint counts as completed
+        const completed =
+            status === 'PASS' ||
+            status === 'COMPLETE' ||
+            status === 'SIGNED_OFF';
+
+        // Store progress info for this checkpoint
         progressEntries[checkpointId] = {
             completed,
             completedAt: progressItem.timestamp
@@ -66,25 +49,23 @@ const buildCheckpointMap = (groupEntity, checkpointDefs = []) => {
 };
 
 /**
- * CheckpointPage Component (Student View)
+ * Student Checkpoint Page
  *
- * Displays read-only checkpoints for a specific lab with group selection.
- * Students can view checkpoint progress but cannot modify completion status.
+ * This page shows a student:
+ * - Their lab
+ * - Their group
+ * - Their checkpoint progress (read-only)
  *
- * URL Parameters:
- * - labId: The ID of the lab (required)
- * - groupId: The ID of the group (optional - for backward compatibility and direct group access)
- *
- * Features:
- * - Auto-selects first group if no groupId is provided
- * - Displays all groups for the lab with progress indicators
- * - Allows switching between groups without navigation
- * - Read-only view of checkpoint completion status
- * - Support for help requests (future feature)
+ * Students cannot change checkpoint status — only view it.
  */
 export default function CheckpointPage() {
+    // Read route params, e.g., /lab/123/group/5
     const { labId, groupId: routeGroupId } = useParams();
+
+    // Used for going back / redirecting
     const navigate = useNavigate();
+
+    // Data passed from previous page (lab list → checkpoint page)
     const location = useLocation();
     const {
         studentName,
@@ -98,30 +79,33 @@ export default function CheckpointPage() {
         groupData: stateGroupData
     } = location.state || {};
 
+    // Initial values (if passed from previous page)
     const initialLab = stateLabData || null;
     const initialGroup = stateGroupData || null;
-    const initialGroupId = routeGroupId || initialGroup?.id || stateGroupId || null;
+    const initialGroupId =
+        routeGroupId || initialGroup?.id || stateGroupId || null;
 
+    // Component state
     const [groups, setGroups] = useState(initialGroup ? [initialGroup] : []);
     const [selectedGroupId, setSelectedGroupId] = useState(initialGroupId);
     const [showGroupManagement, setShowGroupManagement] = useState(false);
     const [group, setGroup] = useState(initialGroup);
     const [lab, setLab] = useState(initialLab);
-    const [labCheckpoints, setLabCheckpoints] = useState(
-        stateLabCheckpoints || initialLab?.checkpoints || []
-    );
     const [loading, setLoading] = useState(!(initialLab && initialGroupId));
     const [error, setError] = useState(null);
 
-    const normalizedCheckpoints = useMemo(
-        () => normalizeCheckpoints(labCheckpoints),
-        [labCheckpoints]
-    );
+    /**
+     * Stores checkpoint progress per group:
+     * {
+     *   groupId123: {
+     *      "cp-1": { completed: true, ... },
+     *      "cp-2": { completed: false, ... }
+     *   }
+     * }
+     */
     const [groupCheckpoints, setGroupCheckpoints] = useState(() => {
         if (initialGroup && initialGroup.id) {
-            const initialDefs = normalizeCheckpoints(
-                stateLabCheckpoints || initialLab?.checkpoints || []
-            );
+            const initialDefs = initialLab?.checkpoints || [];
             return {
                 [initialGroup.id]: buildCheckpointMap(initialGroup, initialDefs)
             };
@@ -129,13 +113,96 @@ export default function CheckpointPage() {
         return {};
     });
 
-    const selectedGroup = groups.find(g => g.id === selectedGroupId) ||
+    // Find currently selected group
+    const selectedGroup =
+        groups.find(g => g.id === selectedGroupId) ||
         groups.find(g => g.groupId === selectedGroupId || g.groupId === stateGroupDisplayId);
-    const currentLab = lab?.title || lab?.courseId || stateLabTitle || stateLabCode || "Lab";
-    const checkpoints = normalizedCheckpoints;
-    const totalCheckpoints = checkpoints.length;
 
-    // Load real lab/group data when component mounts
+    // Choose lab title fallback
+    const currentLab =
+        lab?.title || lab?.courseId || stateLabTitle || stateLabCode || 'Lab';
+
+    // Get checkpoint definitions from the lab
+    const checkpoints = lab?.checkpoints || [];
+
+    // Normalize checkpoints into a consistent structure
+    const formattedCheckpoints = checkpoints.map(cp => ({
+        id: `cp-${cp.number}`,
+        name: cp.name,
+        description: cp.description,
+        points: cp.points,
+        order: cp.number,
+        number: cp.number
+    }));
+
+    const totalCheckpoints = formattedCheckpoints.length;
+
+    /**
+     * WebSocket setup — listens for real-time checkpoint updates.
+     * When a TA signs off a checkpoint, the student sees it instantly.
+     */
+    useEffect(() => {
+        websocketService.init();
+        const topic = '/topic/group-updates';
+
+        // Handle connection status
+        const statusHandler = (status) => {
+            if (status === 'CONNECTED') {
+                websocketService.subscribe(topic);
+            }
+        };
+
+        // Handle new messages pushed from server
+        const updateHandler = (update) => {
+            if (!update || !update.groupId) return;
+
+            // Only update if this student's group matches the update
+            if (update.groupId !== selectedGroupId) return;
+
+            setGroupCheckpoints(prev => {
+                const next = { ...prev };
+                if (!next[update.groupId]) next[update.groupId] = {};
+
+                const cpId = `cp-${update.checkpointNumber}`;
+
+                // If checkpoint passed → mark as completed
+                if (update.status === 'PASS' || update.status === 'SIGNED_OFF') {
+                    next[update.groupId][cpId] = {
+                        completed: true,
+                        completedAt: update.timestamp || new Date().toISOString(),
+                        completedBy:
+                            update.signedOffByName ||
+                            update.signedOffBy ||
+                            'TA'
+                    };
+                }
+
+                // If checkpoint returned → remove completion
+                if (update.status === 'RETURN') {
+                    const { [cpId]: removed, ...rest } = next[update.groupId];
+                    next[update.groupId] = rest;
+                }
+
+                return next;
+            });
+        };
+
+        // Add listeners
+        websocketService.addStatusListener(statusHandler);
+        websocketService.addListener(updateHandler);
+
+        // Cleanup when leaving page
+        return () => {
+            websocketService.removeListener(updateHandler);
+            websocketService.removeStatusListener(statusHandler);
+            websocketService.disconnect();
+        };
+    }, [selectedGroupId]);
+
+    /**
+     * Fetch the lab + group data from backend when page loads
+     * or when route changes.
+     */
     useEffect(() => {
         if (!labId || !initialGroupId) {
             setError('Missing lab or group information');
@@ -145,36 +212,29 @@ export default function CheckpointPage() {
 
         let isActive = true;
         const targetGroupId = routeGroupId || initialGroupId;
+
         setLoading(true);
 
-        const fetchLabPromise = lab && lab.checkpoints?.length
-            ? Promise.resolve(lab)
-            : fetch(api.labDetail(labId)).then(res => {
-                if (!res.ok) {
-                    throw new Error('Failed to load lab information');
-                }
+        // Fetch latest lab checkpoint definitions
+        const fetchLabPromise = fetch(api.labDetail(labId))
+            .then(res => {
+                if (!res.ok) throw new Error('Failed to load lab information');
                 return res.json();
             });
 
+        // Fetch group info
         const fetchGroupPromise = fetch(api.labGroupDetail(labId, targetGroupId))
             .then(res => {
-                if (!res.ok) {
-                    throw new Error('Failed to load group information');
-                }
+                if (!res.ok) throw new Error('Failed to load group information');
                 return res.json();
             });
 
+        // Run both requests at once
         Promise.all([fetchLabPromise, fetchGroupPromise])
             .then(([labData, groupData]) => {
-                if (!isActive) {
-                    return;
-                }
+                if (!isActive) return;
 
-                if (labData) {
-                    setLab(labData);
-                    setLabCheckpoints(labData.checkpoints || []);
-                }
-
+                if (labData) setLab(labData);
                 if (groupData) {
                     setGroup(groupData);
                     setGroups([groupData]);
@@ -184,25 +244,22 @@ export default function CheckpointPage() {
                 setError(null);
             })
             .catch(err => {
-                if (isActive) {
-                    setError(err.message || 'Failed to load lab information');
-                }
+                if (isActive) setError(err.message || 'Failed to load lab information');
             })
             .finally(() => {
-                if (isActive) {
-                    setLoading(false);
-                }
+                if (isActive) setLoading(false);
             });
 
-        return () => {
-            isActive = false;
-        };
+        return () => { isActive = false; };
     }, [labId, routeGroupId, initialGroupId]);
 
-    // Update selected group when selectedGroupId changes
+    /**
+     * Update selected group whenever selectedGroupId changes.
+     */
     useEffect(() => {
         if (selectedGroupId && groups.length > 0) {
-            const foundGroup = groups.find(g => g.id === selectedGroupId) ||
+            const foundGroup =
+                groups.find(g => g.id === selectedGroupId) ||
                 groups.find(g => g.groupId === selectedGroupId);
             if (foundGroup) {
                 setGroup(foundGroup);
@@ -210,43 +267,50 @@ export default function CheckpointPage() {
         }
     }, [selectedGroupId, groups]);
 
+    /**
+     * Rebuild the progress map whenever lab or group changes.
+     * Ensures UI stays synced with updated data.
+     */
     useEffect(() => {
-        if (group && group.id) {
+        if (group && group.id && lab?.checkpoints) {
             setGroupCheckpoints(prev => ({
                 ...prev,
-                [group.id]: buildCheckpointMap(group, normalizedCheckpoints)
+                [group.id]: buildCheckpointMap(group, lab.checkpoints)
             }));
         }
-    }, [group, normalizedCheckpoints]);
+    }, [group, lab]);
 
-    // Helper function to check if a checkpoint is completed for the selected group
+    // Helper: is a specific checkpoint completed?
     const isCheckpointCompleted = (checkpointId) => {
         if (!selectedGroup) return false;
         return groupCheckpoints[selectedGroup.id]?.[checkpointId]?.completed || false;
     };
 
-    // Helper function to get completed checkpoints count for a group
+    // Helper: count completed checkpoints
     const getCompletedCount = (groupId) => {
         if (!groupId || !groupCheckpoints[groupId]) return 0;
         return Object.values(groupCheckpoints[groupId]).filter(cp => cp.completed).length;
     };
 
+    // Helper: compute completion % for progress bar
     const getCompletionPercent = (groupId) => {
         if (!groupId || totalCheckpoints === 0) return 0;
         return Math.round((getCompletedCount(groupId) / totalCheckpoints) * 100);
     };
 
+    // Open Group Management
     const handleEditGroups = () => {
         setShowGroupManagement(true);
     };
 
+    // When groups updated from modal
     const handleUpdateGroups = (updatedGroups) => {
-        // Update the groups state with the modified groups data
         setGroups(updatedGroups);
-        console.log('Groups updated successfully!', updatedGroups);
     };
 
-    // Add loading and error states to the render
+    /**
+     * LOADING + ERROR UI
+     */
     if (loading) {
         return (
             <>
@@ -299,26 +363,36 @@ export default function CheckpointPage() {
         );
     }
 
+    /**
+     * MAIN PAGE UI
+     */
     return (
         <>
             <Header />
+
             <main className="checkpoint-shell">
-                {/* Header with breadcrumb and actions */}
+                {/* Top breadcrumb + page header */}
                 <div className="checkpoint-page-header">
                     <div className="checkpoint-nav">
-                        <button className="breadcrumb-back" onClick={() => navigate('/lab-join')}>
+                        <button
+                            className="breadcrumb-back"
+                            onClick={() => navigate('/lab-join')}
+                        >
                             <span className="back-arrow">←</span>
                             <span>Back to Lab Join</span>
                         </button>
+
                         <span className="breadcrumb-separator">/</span>
                         <h1 className="checkpoint-title">{currentLab}</h1>
-                        {group && <span className="checkpoint-subtitle"> - {group.groupId}</span>}
+
+                        {group && (
+                            <span className="checkpoint-subtitle"> - {group.groupId}</span>
+                        )}
                     </div>
                 </div>
 
-                {/* Main Content Grid - Checkpoints take up most space, sidebar on right */}
                 <div className="checkpoint-content">
-                    {/* Checkpoint List Panel - Takes up most of the screen */}
+                    {/* LEFT SIDE — list of checkpoints */}
                     <section className="checkpoint-panel" aria-labelledby="checkpoints-title">
                         <header className="panel-header">
                             <h2 id="checkpoints-title" className="panel-title">
@@ -330,30 +404,46 @@ export default function CheckpointPage() {
                         </header>
 
                         <div className="checkpoint-list">
-                            {checkpoints.map((checkpoint, index) => {
+                            {formattedCheckpoints.map((checkpoint, index) => {
                                 const isCompleted = isCheckpointCompleted(checkpoint.id);
 
                                 return (
-                                    <div key={checkpoint.id} className={`checkpoint-item ${isCompleted ? 'completed' : 'pending'}`}>
+                                    <div
+                                        key={checkpoint.id}
+                                        className={`checkpoint-item ${isCompleted ? 'completed' : 'pending'}`}
+                                    >
+                                        {/* Left: number + progress line */}
                                         <div className="checkpoint-indicator">
                                             <div className="checkpoint-number">
                                                 {isCompleted ? '✓' : index + 1}
                                             </div>
-                                            <div className="checkpoint-progress-line" style={{
-                                                background: isCompleted
-                                                    ? '#016836'
-                                                    : index < checkpoints.findIndex(cp => !isCheckpointCompleted(cp.id))
+
+                                            {/* Green if completed or past checkpoints */}
+                                            <div
+                                                className="checkpoint-progress-line"
+                                                style={{
+                                                    background: isCompleted
                                                         ? '#016836'
-                                                        : '#e5e7eb'
-                                            }}></div>
+                                                        : index < checkpoints.findIndex(cp => !isCheckpointCompleted(cp.id))
+                                                            ? '#016836'
+                                                            : '#e5e7eb'
+                                                }}
+                                            ></div>
                                         </div>
 
+                                        {/* Right: main checkpoint info */}
                                         <div className="checkpoint-details">
                                             <div className="checkpoint-main">
                                                 <h3 className="checkpoint-name">{checkpoint.name}</h3>
-                                                <p className="checkpoint-description">{checkpoint.description}</p>
+                                                <p className="checkpoint-description">
+                                                    {checkpoint.description}
+                                                </p>
+
                                                 <div className="checkpoint-meta">
-                                                    <span className="checkpoint-points">{checkpoint.points} pt</span>
+                                                    <span className="checkpoint-points">
+                                                        {checkpoint.points} pt
+                                                    </span>
+
                                                     {isCompleted && selectedGroup && (
                                                         <span className="checkpoint-completed-info">
                                                             Completed {groupCheckpoints[selectedGroup.id]?.[checkpoint.id]?.completedAt}
@@ -362,6 +452,7 @@ export default function CheckpointPage() {
                                                 </div>
                                             </div>
 
+                                            {/* Right side status label */}
                                             {selectedGroup && (
                                                 <div className="checkpoint-actions">
                                                     <span className={`checkpoint-status ${isCompleted ? 'completed' : 'pending'}`}>
@@ -376,9 +467,8 @@ export default function CheckpointPage() {
                         </div>
                     </section>
 
-                    {/* Right Sidebar - Student Group Info */}
+                    {/* RIGHT SIDEBAR — student group info */}
                     <aside className="student-sidebar">
-                        {/* Student Group Info */}
                         {selectedGroup && (
                             <section className="student-group-panel">
                                 <header className="panel-header">
@@ -392,22 +482,33 @@ export default function CheckpointPage() {
                                         </div>
 
                                         <div className="group-card-body">
+                                            {/* Group members */}
                                             <div className="group-members">
                                                 <div className="members-title">Members:</div>
+
                                                 <div className="members-list">
                                                     {(selectedGroup.members || []).map((member, index) => {
-                                                        const displayName = typeof member === 'string'
-                                                            ? member
-                                                            : member.name || member.displayName || member.email || member.userId || `Member ${index + 1}`;
+                                                        const displayName =
+                                                            typeof member === 'string'
+                                                                ? member
+                                                                : member.name ||
+                                                                  member.displayName ||
+                                                                  member.email ||
+                                                                  member.userId ||
+                                                                  `Member ${index + 1}`;
+
                                                         return (
                                                             <div key={index} className="member-item">
-                                                                <span className="member-name">{displayName}</span>
+                                                                <span className="member-name">
+                                                                    {displayName}
+                                                                </span>
                                                             </div>
                                                         );
                                                     })}
                                                 </div>
                                             </div>
 
+                                            {/* Group progress bar */}
                                             <div className="group-progress">
                                                 <div className="progress-header">
                                                     <span className="progress-text">Progress</span>
@@ -415,6 +516,7 @@ export default function CheckpointPage() {
                                                         {getCompletedCount(selectedGroup.id)}/{totalCheckpoints}
                                                     </span>
                                                 </div>
+
                                                 <div className="progress-bar">
                                                     <div
                                                         className="progress-fill"
@@ -423,8 +525,9 @@ export default function CheckpointPage() {
                                                         }}
                                                     ></div>
                                                 </div>
+
                                                 <div className="progress-percentage">
-                                                    {getCompletionPercent(selectedGroup?.id)}% Complete
+                                                    {getCompletionPercent(selectedGroup.id)}% Complete
                                                 </div>
                                             </div>
                                         </div>
@@ -433,11 +536,13 @@ export default function CheckpointPage() {
                             </section>
                         )}
 
-                        {/* Help Section */}
+                        {/* Request help button */}
                         <section className="help-section">
                             <button
                                 className="help-btn"
-                                onClick={() => alert('Help request sent to instructor!')}
+                                onClick={() =>
+                                    alert('Help request sent to instructor!')
+                                }
                             >
                                 <span className="help-text">Request Help</span>
                             </button>
@@ -445,7 +550,7 @@ export default function CheckpointPage() {
                     </aside>
                 </div>
 
-                {/* Group Management Modal */}
+                {/* Group management modal (students normally won't use this) */}
                 <GroupManagementModal
                     isOpen={showGroupManagement}
                     onClose={() => setShowGroupManagement(false)}

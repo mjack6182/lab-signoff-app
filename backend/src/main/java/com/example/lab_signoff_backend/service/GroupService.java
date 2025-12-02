@@ -58,7 +58,22 @@ public class GroupService {
         return groups;
     }
 
+    /**
+     * Retrieve a group by its MongoDB document ID
+     *
+     * @param id The MongoDB document ID of the group
+     * @return Optional containing the group if found
+     */
+    public Optional<Group> getById(String id) {
+        return repo.findById(id);
+    }
 
+    /**
+     * Create or update a group
+     *
+     * @param group The group to save
+     * @return The saved group
+     */
     public Group upsert(Group group) {
         autoInitCheckpoints(group);
         return repo.save(group);
@@ -68,6 +83,8 @@ public class GroupService {
      * Fetch a group by its Mongo document id or display groupId.
      * Auto-initialises checkpoint progress to avoid nulls when returned to callers.
      */
+  
+  /**
     public Optional<Group> getById(String idOrGroupId) {
         Optional<Group> groupOpt = repo.findById(idOrGroupId);
 
@@ -78,6 +95,7 @@ public class GroupService {
         groupOpt.ifPresent(this::autoInitCheckpoints);
         return groupOpt;
     }
+    */
 
     public CheckpointProgress updateCheckpointProgress(
             String groupIdOrId,
