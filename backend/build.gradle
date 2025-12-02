@@ -70,9 +70,15 @@ jacocoTestReport {
             html.required = true // Generate HTML report
             csv.required = false // Optionally generate CSV report
         }
-        // Exclude specific classes or packages from coverage analysis
-        // excludes = ['**/some/package/**', '**/SomeClass.class']
+        // Exclude infrastructure and generated-style classes from coverage to focus on business logic
+        def excludes = [
+                '**/config/DataSeeder*',
+                '**/repository/**',
+                '**/LabSignoffBackendApplication*'
+        ]
+        classDirectories.setFrom(files(classDirectories.files.collect {
+            fileTree(dir: it, exclude: excludes)
+        }))
     }
 //Configure basic WebSocket endpoint in backend.
-
 
