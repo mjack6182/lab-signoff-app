@@ -1,15 +1,19 @@
 package com.example.lab_signoff_backend.controller;
 
 import com.example.lab_signoff_backend.model.Class;
+import com.example.lab_signoff_backend.model.Enrollment;
 import com.example.lab_signoff_backend.model.Group;
 import com.example.lab_signoff_backend.model.Lab;
 import com.example.lab_signoff_backend.model.embedded.CheckpointDefinition;
 import com.example.lab_signoff_backend.model.embedded.CheckpointProgress;
 import com.example.lab_signoff_backend.model.embedded.GroupMember;
+import com.example.lab_signoff_backend.model.User;
 import com.example.lab_signoff_backend.model.enums.GroupStatus;
 import com.example.lab_signoff_backend.service.ClassService;
+import com.example.lab_signoff_backend.service.EnrollmentService;
 import com.example.lab_signoff_backend.service.GroupService;
 import com.example.lab_signoff_backend.service.LabService;
+import com.example.lab_signoff_backend.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -27,6 +31,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 
 /**
  * Controller exposing student-facing lab endpoints (join + detail lookup).
@@ -47,16 +52,22 @@ public class LabJoinController {
     private final LabService labService;
     private final ClassService classService;
     private final GroupService groupService;
+    private final UserService userService;
+    private final EnrollmentService enrollmentService;
 
     @Autowired
     public LabJoinController(
             LabService labService,
             ClassService classService,
-            GroupService groupService
+            GroupService groupService,
+            UserService userService,
+            EnrollmentService enrollmentService
     ) {
         this.labService = labService;
         this.classService = classService;
         this.groupService = groupService;
+        this.userService = userService;
+        this.enrollmentService = enrollmentService;
     }
 
     /**
@@ -119,10 +130,13 @@ public class LabJoinController {
                     .body(Map.of("error", "Student is not listed on this class roster"));
         }
 
-        Group group = ensureStudentGroup(lab, normalizedStudentName, request.getStudentEmail());
+        User studentUser = ensureStudentUser(normalizedStudentName, request.getStudentEmail());
+        ensureStudentEnrollment(studentUser.getId(), classEntity.getId());
+
+        Group group = ensureStudentGroup(lab, studentUser);
 
         return ResponseEntity.ok(new StudentJoinResponse(
-                normalizedStudentName,
+                studentUser.getName(),
                 buildLabResponse(lab, classEntity),
                 new GroupSummary(group)
         ));
@@ -195,45 +209,56 @@ public class LabJoinController {
                 .anyMatch(name -> name.equalsIgnoreCase(studentName));
     }
 
-    private Group ensureStudentGroup(Lab lab, String studentName, String email) {
+    private Group ensureStudentGroup(Lab lab, User studentUser) {
         List<Group> groups = groupService.getGroupsByLabId(lab.getId());
         Optional<Group> existing = groups.stream()
                 .filter(group -> group.getMembers() != null && group.getMembers().stream()
-                        .anyMatch(member -> member.getName().equalsIgnoreCase(studentName)))
+                        .anyMatch(member ->
+                                studentUser.getId().equals(member.getUserId()) ||
+                                member.getName().equalsIgnoreCase(studentUser.getName())))
                 .findFirst();
 
         if (existing.isPresent()) {
             Group group = existing.get();
             boolean hasMember = group.getMembers().stream()
-                    .anyMatch(member -> member.getName().equalsIgnoreCase(studentName));
+                    .anyMatch(member -> member.getUserId().equals(studentUser.getId())
+                            || member.getName().equalsIgnoreCase(studentUser.getName()));
             if (!hasMember) {
-                group.getMembers().add(createGroupMember(studentName, email));
-                return groupService.upsert(group);
+                group.getMembers().add(createGroupMember(studentUser));
+            } else {
+                // Sync existing member with canonical user info
+                group.getMembers().forEach(member -> {
+                    if (member.getName().equalsIgnoreCase(studentUser.getName())
+                            || studentUser.getId().equals(member.getUserId())) {
+                        member.setUserId(studentUser.getId());
+                        member.setName(studentUser.getName());
+                        member.setEmail(studentUser.getEmail());
+                    }
+                });
             }
-            return group;
+            return groupService.upsert(group);
         }
 
         Group newGroup = new Group();
         newGroup.setLabId(lab.getId());
-        newGroup.setGroupId(generateGroupDisplayId(studentName, groups.size() + 1));
+        newGroup.setGroupId(generateGroupDisplayId(studentUser.getName(), groups.size() + 1));
         newGroup.setGroupNumber(groups.size() + 1);
         newGroup.setStatus(GroupStatus.FORMING);
 
         List<GroupMember> members = new ArrayList<>();
-        members.add(createGroupMember(studentName, email));
+        members.add(createGroupMember(studentUser));
         newGroup.setMembers(members);
         newGroup.setCheckpointProgress(new ArrayList<>());
 
         return groupService.upsert(newGroup);
     }
 
-    private GroupMember createGroupMember(String studentName, String email) {
-        String slug = slugify(studentName);
-        String safeEmail = StringUtils.hasText(email)
-                ? email.trim()
-                : slug + "@students.local";
-        String userId = "student-" + slug;
-        return new GroupMember(userId, studentName, safeEmail);
+    private GroupMember createGroupMember(User user) {
+        return new GroupMember(
+                user.getId(),
+                user.getName(),
+                user.getEmail()
+        );
     }
 
     private String generateGroupDisplayId(String studentName, int fallbackNumber) {
@@ -241,6 +266,47 @@ public class LabJoinController {
             return studentName;
         }
         return "Group-" + fallbackNumber;
+    }
+
+    private User ensureStudentUser(String studentName, String email) {
+        if (StringUtils.hasText(email)) {
+            Optional<User> existingByEmail = userService.findByEmail(email.trim());
+            if (existingByEmail.isPresent()) {
+                return existingByEmail.get();
+            }
+        }
+
+        String slug = slugify(studentName);
+        String safeEmail = StringUtils.hasText(email)
+                ? email.trim()
+                : slug + "@students.local";
+
+        User user = new User();
+        user.setAuth0Id("local|" + UUID.randomUUID());
+        user.setEmail(safeEmail);
+        user.setName(studentName);
+        user.setRoles(List.of("Student"));
+        user.setPrimaryRole("Student");
+        user.setCreatedAt(java.time.Instant.now());
+        user.setLastLogin(java.time.Instant.now());
+
+        if (StringUtils.hasText(studentName)) {
+            String[] parts = studentName.trim().split("\\s+", 2);
+            user.setFirstName(parts[0]);
+            if (parts.length > 1) {
+                user.setLastName(parts[1]);
+            }
+        }
+
+        return userService.syncUserFromAuth0Data(user);
+    }
+
+    private Enrollment ensureStudentEnrollment(String userId, String classId) {
+        Optional<Enrollment> existing = enrollmentService.getEnrollment(userId, classId);
+        if (existing.isPresent()) {
+            return existing.get();
+        }
+        return enrollmentService.enrollStudent(userId, classId);
     }
 
     private String slugify(String value) {
