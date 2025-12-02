@@ -62,6 +62,18 @@ class HelpQueueServiceTest {
     }
 
     @Test
+    void raiseHand_firstEntryAssignsPositionOne() {
+        when(repository.findByLabIdAndStatusIn(eq("lab-2"), any())).thenReturn(List.of());
+        when(repository.findFirstByLabIdOrderByPositionDesc("lab-2")).thenReturn(Optional.empty());
+        when(repository.save(any(HelpQueueItem.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        HelpQueueItem saved = service.raiseHand("lab-2", "g1", "u1", " ");
+
+        assertEquals(1, saved.getPosition());
+        assertNull(saved.getDescription());
+    }
+
+    @Test
     void claimRequest_transitionsWaitingToClaimed() {
         HelpQueueItem queueItem = new HelpQueueItem("lab-1", "group-1", "student", 1);
         when(repository.findById("item-1")).thenReturn(Optional.of(queueItem));
@@ -118,6 +130,88 @@ class HelpQueueServiceTest {
 
         assertTrue(service.hasActiveRequest("lab-1", "group-1"));
         assertFalse(service.hasActiveRequest("lab-1", "other-group"));
+    }
+
+    @Test
+    void getQueueHelpers_delegateToRepository() {
+        when(repository.findByLabId("lab-1")).thenReturn(List.of(new HelpQueueItem()));
+        when(repository.findWaitingByLab("lab-1")).thenReturn(List.of(new HelpQueueItem()));
+        when(repository.findClaimedByLab("lab-1")).thenReturn(List.of(new HelpQueueItem()));
+        when(repository.findById("item-9")).thenReturn(Optional.of(new HelpQueueItem()));
+
+        assertEquals(1, service.getQueueForLab("lab-1").size());
+        assertEquals(1, service.getWaitingQueue("lab-1").size());
+        assertEquals(1, service.getClaimedQueue("lab-1").size());
+        assertTrue(service.getQueueItem("item-9").isPresent());
+    }
+
+    @Test
+    void getActiveRequestForGroup_checksWaitingThenClaimed() {
+        HelpQueueItem waiting = new HelpQueueItem("lab-1", "g1", "student", 1);
+        when(repository.findByLabIdAndGroupIdAndStatus("lab-1", "g1", HelpQueueStatus.WAITING))
+                .thenReturn(Optional.of(waiting));
+
+        Optional<HelpQueueItem> result = service.getActiveRequestForGroup("lab-1", "g1");
+        assertTrue(result.isPresent());
+    }
+
+    @Test
+    void getActiveRequestForGroup_fallsBackToClaimed() {
+        HelpQueueItem claimed = new HelpQueueItem("lab-1", "g1", "student", 1);
+        claimed.claim("ta");
+        when(repository.findByLabIdAndGroupIdAndStatus("lab-1", "g1", HelpQueueStatus.WAITING))
+                .thenReturn(Optional.empty());
+        when(repository.findByLabIdAndGroupIdAndStatus("lab-1", "g1", HelpQueueStatus.CLAIMED))
+                .thenReturn(Optional.of(claimed));
+
+        Optional<HelpQueueItem> result = service.getActiveRequestForGroup("lab-1", "g1");
+        assertTrue(result.isPresent());
+        assertEquals(HelpQueueStatus.CLAIMED, result.get().getStatus());
+    }
+
+    @Test
+    void clearClosedItems_deletesResolvedOrCancelled() {
+        HelpQueueItem resolved = new HelpQueueItem("lab-1", "g1", "u", 1);
+        resolved.resolve();
+        HelpQueueItem cancelled = new HelpQueueItem("lab-1", "g2", "u", 2);
+        cancelled.cancel();
+        HelpQueueItem active = new HelpQueueItem("lab-1", "g3", "u", 3);
+        when(repository.findByLabId("lab-1")).thenReturn(List.of(resolved, cancelled, active));
+
+        service.clearClosedItems("lab-1");
+
+        verify(repository, times(2)).delete(any(HelpQueueItem.class));
+    }
+
+    @Test
+    void claimRequest_whenNotWaitingThrows() {
+        HelpQueueItem item = new HelpQueueItem("lab-1", "g1", "u", 1);
+        item.claim("ta");
+        when(repository.findById("item-claim")).thenReturn(Optional.of(item));
+
+        RuntimeException ex = assertThrows(RuntimeException.class, () -> service.claimRequest("item-claim", "ta2"));
+        assertTrue(ex.getMessage().contains("waiting"));
+    }
+
+    @Test
+    void resolveRequest_missing_throwsRuntime() {
+        when(repository.findById("missing")).thenReturn(Optional.empty());
+        assertThrows(RuntimeException.class, () -> service.resolveRequest("missing"));
+    }
+
+    @Test
+    void cancelRequest_notActive_throws() {
+        HelpQueueItem item = new HelpQueueItem("lab-1", "g1", "u", 1);
+        item.resolve();
+        when(repository.findById("item-cancel")).thenReturn(Optional.of(item));
+
+        assertThrows(RuntimeException.class, () -> service.cancelRequest("item-cancel"));
+    }
+
+    @Test
+    void setUrgent_missing_throws() {
+        when(repository.findById("missing")).thenReturn(Optional.empty());
+        assertThrows(RuntimeException.class, () -> service.setUrgent("missing"));
     }
 
     @Test
