@@ -20,6 +20,53 @@ describe("apiService", () => {
     vi.restoreAllMocks();
   });
 
+  it("returns text when content-type is not json", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      text: async () => "ok-text",
+      headers: { get: () => "text/plain" },
+    });
+
+    const result = await apiService.getLabByCode("abc");
+    expect(global.fetch).toHaveBeenCalledWith(
+      "https://api/api/labs/code/ABC",
+      expect.objectContaining({ method: "GET" })
+    );
+    expect(result).toBe("ok-text");
+  });
+
+  it("selectStudent sends payload and returns data", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ success: true }),
+      headers: { get: () => "application/json" },
+    });
+
+    const result = await apiService.selectStudent("lab1", "Alice", "fp");
+    expect(global.fetch).toHaveBeenCalledWith(
+      "https://api/api/labs/lab1/select-student",
+      expect.objectContaining({
+        method: "POST",
+      })
+    );
+    expect(result).toEqual({ success: true });
+  });
+
+  it("gets student selections", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ items: [] }),
+      headers: { get: () => "application/json" },
+    });
+
+    const result = await apiService.getStudentSelections("lab1");
+    expect(global.fetch).toHaveBeenCalledWith(
+      "https://api/api/labs/lab1/selections",
+      expect.objectContaining({ method: "GET" })
+    );
+    expect(result).toEqual({ items: [] });
+  });
+
   it("handles a successful JSON response", async () => {
     global.fetch = vi.fn().mockResolvedValue({
       ok: true,

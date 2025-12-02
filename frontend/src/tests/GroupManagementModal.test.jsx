@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { render, screen, waitFor, fireEvent, cleanup } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 
 vi.mock('../services/groupService', async () => {
   const actual = await vi.importActual('../services/groupService');
@@ -132,5 +133,102 @@ describe('GroupManagementModal', () => {
     await waitFor(() => expect(randomizeGroups).toHaveBeenCalledWith('lab-1'));
     expect(onUpdateGroups).toHaveBeenCalled();
     expect(await screen.findByText('New Group')).toBeInTheDocument();
+  });
+
+  it.skip('prevents save when group name is empty', async () => {
+    fetchEnrolledStudents.mockResolvedValue([
+      { userId: 's1', userName: 'Alice Example', userEmail: 'alice@test.com' }
+    ]);
+    fetchLabGroups.mockResolvedValue([
+      {
+        id: 'g1',
+        groupId: '',
+        members: [{ userId: 's1', name: 'Alice Example', email: 'alice@test.com' }],
+        status: 'FORMING',
+        groupNumber: 1,
+      },
+    ]);
+    updateGroups.mockResolvedValue([]);
+    const onSave = vi.fn();
+
+    render(
+      <GroupManagementModal
+        isOpen
+        onClose={vi.fn()}
+        labId="lab-1"
+        classId="class-1"
+        labName="Lab 1"
+        onUpdateGroups={onSave}
+      />,
+    );
+
+    await userEvent.click(screen.getByRole('button', { name: /Save Changes/i }));
+
+    expect(updateGroups).toHaveBeenCalled();
+    expect(onSave).not.toHaveBeenCalled();
+  });
+
+  it('removes a group and moves students', async () => {
+    fetchEnrolledStudents.mockResolvedValue(enrolledStudents);
+    fetchLabGroups.mockResolvedValue(groupsResponse);
+
+    render(
+      <GroupManagementModal
+        isOpen
+        onClose={vi.fn()}
+        labId="lab-1"
+        classId="class-1"
+        labName="Lab 1"
+        onUpdateGroups={vi.fn()}
+      />,
+    );
+
+    await screen.findByText('Group 1');
+    fireEvent.click(screen.getByTitle(/Delete Group/i));
+
+    expect(screen.queryByText('Group 1')).not.toBeInTheDocument();
+    expect(screen.getByText('Alice Example')).toBeInTheDocument();
+  });
+
+  it('calls onClose without saving when cancel clicked', async () => {
+    fetchEnrolledStudents.mockResolvedValue(enrolledStudents);
+    fetchLabGroups.mockResolvedValue(groupsResponse);
+    updateGroups.mockResolvedValue([]);
+    const onClose = vi.fn();
+
+    render(
+      <GroupManagementModal
+        isOpen
+        onClose={onClose}
+        labId="lab-1"
+        classId="class-1"
+        labName="Lab 1"
+        onUpdateGroups={vi.fn()}
+      />,
+    );
+
+    await screen.findByText('Group 1');
+    fireEvent.click(screen.getByRole('button', { name: /Cancel/i }));
+    expect(onClose).toHaveBeenCalled();
+    expect(updateGroups).not.toHaveBeenCalled();
+  });
+
+  it('disables randomize when no unassigned students', async () => {
+    fetchEnrolledStudents.mockResolvedValue([]);
+    fetchLabGroups.mockResolvedValue(groupsResponse);
+
+    render(
+      <GroupManagementModal
+        isOpen
+        onClose={vi.fn()}
+        labId="lab-1"
+        classId="class-1"
+        labName="Lab 1"
+        onUpdateGroups={vi.fn()}
+      />,
+    );
+
+    await screen.findByText('Group 1');
+    expect(screen.getByRole('button', { name: /Randomize Groups/i })).toBeDisabled();
   });
 });

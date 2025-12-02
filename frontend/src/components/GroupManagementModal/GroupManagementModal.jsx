@@ -263,6 +263,13 @@ export default function GroupManagementModal({
                 status: group.status || 'FORMING'
             }));
 
+            // Validate group names (cannot be empty)
+            const hasInvalidName = groupsToSave.some(g => !String(g.groupId || '').trim());
+            if (hasInvalidName) {
+                setLoading(false);
+                return;
+            }
+
             await updateGroupsAPI(labId, groupsToSave);
 
             // Notify parent component to refresh
