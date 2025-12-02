@@ -86,6 +86,36 @@ describe("RoleGuard", () => {
     expect(screen.getByText("No access")).toBeInTheDocument();
     expect(screen.queryByText("Teacher content")).not.toBeInTheDocument();
   });
+
+  it("renders children when user role is allowed", () => {
+    setAuthState({
+      user: { role: "Admin" },
+      hasAnyRole: vi.fn().mockReturnValue(true),
+    });
+
+    render(
+      <RoleGuard roles={["Admin", "Teacher"]}>
+        <div>Allowed Content</div>
+      </RoleGuard>
+    );
+
+    expect(screen.getByText("Allowed Content")).toBeInTheDocument();
+  });
+
+  it("hides children when user role is not allowed", () => {
+    setAuthState({
+      user: { role: "Student" },
+      hasAnyRole: vi.fn().mockReturnValue(false),
+    });
+
+    render(
+      <RoleGuard roles={["Admin", "Teacher"]}>
+        <div>Hidden Content</div>
+      </RoleGuard>
+    );
+
+    expect(screen.queryByText("Hidden Content")).not.toBeInTheDocument();
+  });
 });
 
 describe("Convenience guards", () => {

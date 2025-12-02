@@ -39,8 +39,14 @@ describe("SelectStudent page", () => {
 
     expect(screen.getByRole("heading", { name: /Select Your Name/i })).toBeInTheDocument();
     const user = userEvent.setup();
-    await user.selectOptions(screen.getByLabelText(/Your Name/i), "Alice");
-    await user.click(screen.getByRole("button", { name: /Join Lab/i }));
+    const joinButton = screen.getByRole("button", { name: /Join Lab/i });
+    expect(joinButton).toBeDisabled();
+
+    const aliceButton = screen.getByRole("button", { name: /Alice/i });
+    await user.click(aliceButton);
+    expect(joinButton).toBeEnabled();
+
+    await user.click(joinButton);
 
     expect(global.fetch).toHaveBeenCalled();
     expect(mockNavigate).toHaveBeenCalledWith(

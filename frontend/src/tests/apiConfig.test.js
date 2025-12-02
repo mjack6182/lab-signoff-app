@@ -1,21 +1,34 @@
-import { describe, it, expect, vi } from "vitest";
-import { API_BASE_URL, buildApiUrl, api } from "../config/api";
+import { describe, it, expect, afterEach, vi } from "vitest";
+
+const resetModulesAndEnv = async () => {
+  vi.resetModules();
+  vi.unstubAllEnvs();
+};
 
 describe("api config", () => {
-  it("builds URLs with default base", () => {
+  afterEach(async () => {
+    await resetModulesAndEnv();
+  });
+
+  it("uses VITE_API_URL when provided", async () => {
+    vi.stubEnv("VITE_API_URL", "https://example.test");
+    const { API_BASE_URL, buildApiUrl, api } = await import("../config/api");
+
+    expect(API_BASE_URL).toBe("https://example.test");
+    expect(buildApiUrl("foo")).toBe("https://example.test/foo");
+    expect(api.labDetail("123")).toBe("https://example.test/api/labs/123");
+  });
+
+  it("falls back to localhost when VITE_API_URL is missing", async () => {
+    const { API_BASE_URL, buildApiUrl } = await import("../config/api");
+
     expect(API_BASE_URL).toBe("http://localhost:8080");
-    expect(buildApiUrl("/test")).toBe("http://localhost:8080/test");
+    expect(buildApiUrl("/api/test")).toBe("http://localhost:8080/api/test");
   });
 
-  it("exposes lab endpoints", () => {
-    expect(api.labs()).toContain("/lti/labs");
-    expect(api.labs.join()).toContain("/api/labs/join");
-    expect(api.labs.byCode("ABC")).toContain("ABC");
-    expect(api.ws()).toContain("/ws");
-  });
-
-  it("builds class list with params", () => {
-    const url = api.classes({ search: "foo" });
-    expect(url).toContain("search=foo");
+  it("builds class list URL with query parameters", async () => {
+    const { api } = await import("../config/api");
+    const url = api.classes({ term: "Fall", section: "001" });
+    expect(url).toBe("http://localhost:8080/api/classes?term=Fall&section=001");
   });
 });
