@@ -14,6 +14,8 @@ export default function ClassDetail() {
   const [labs, setLabs] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [regenError, setRegenError] = useState(null)
+  const [regeneratingLabId, setRegeneratingLabId] = useState(null)
 
   const canEdit = typeof isTeacherOrTA === 'function' ? isTeacherOrTA() : true
 
@@ -59,6 +61,35 @@ export default function ClassDetail() {
 
   const handleLabClick = (lab) => {
     navigate(`/labs/${lab.id}/checkpoints`)
+  }
+
+  const handleRegenerateJoinCode = async (lab) => {
+    if (!classId || !lab?.id) return
+
+    setRegenError(null)
+    setRegeneratingLabId(lab.id)
+
+    try {
+      const response = await fetch(api.regenerateLabJoinCode(classId, lab.id), {
+        method: 'POST',
+        credentials: 'include'
+      })
+
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}))
+        throw new Error(data.error || 'Failed to regenerate join code')
+      }
+
+      const updated = await response.json()
+      setLabs((prev) =>
+        prev.map((existing) => (existing.id === updated.id ? updated : existing))
+      )
+    } catch (err) {
+      console.error('Error regenerating join code:', err)
+      setRegenError(err instanceof Error ? err.message : 'Failed to regenerate join code')
+    } finally {
+      setRegeneratingLabId(null)
+    }
   }
 
   const startEditing = () => {
@@ -261,6 +292,9 @@ export default function ClassDetail() {
               <h2>Labs</h2>
               <span>{labs.length} lab{labs.length === 1 ? '' : 's'}</span>
             </div>
+            {regenError && (
+              <div className="class-detail-edit-error">{regenError}</div>
+            )}
 
             {labs.length === 0 ? (
               <div className="class-detail-card-empty">
@@ -277,12 +311,33 @@ export default function ClassDetail() {
                       <div className="lab-card-meta">
                         <span>Checkpoints: {Array.isArray(lab.checkpoints) ? lab.checkpoints.length : lab.points}</span>
                         <span>Status: {lab.status}</span>
-                        {lab.joinCode && <span>Join Code: {lab.joinCode}</span>}
+                        {lab.joinCode && (
+                          <span className="lab-join-row">
+                            Join Code: <strong>{lab.joinCode}</strong>
+                            {canEdit && (
+                              <button
+                                type="button"
+                                className="class-detail-ghost small-icon"
+                                onClick={() => handleRegenerateJoinCode(lab)}
+                                disabled={regeneratingLabId === lab.id}
+                                title="Generate a fresh join code for this lab"
+                                aria-label={regeneratingLabId === lab.id ? 'Regenerating join code' : 'Regenerate join code'}
+                              >
+                                <i className="fa-solid fa-rotate-right" aria-hidden="true" />
+                              </button>
+                            )}
+                          </span>
+                        )}
                       </div>
                     </div>
-                    <button onClick={() => handleLabClick(lab)}>
-                      View Checkpoints
-                    </button>
+                    <div className="lab-card-actions">
+                      <button
+                        className="class-detail-primary"
+                        onClick={() => handleLabClick(lab)}
+                      >
+                        View Checkpoints
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>

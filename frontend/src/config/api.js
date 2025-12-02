@@ -25,6 +25,7 @@ export const api = {
   labDetail: (labId) => buildApiUrl(`/api/labs/${labId}`),
   labGroupDetail: (labId, groupId) => buildApiUrl(`/api/labs/${labId}/groups/${groupId}`),
   labGradesCsv: (labId) => buildApiUrl(`/api/labs/${labId}/grades/export`),
+  regenerateLabJoinCode: (classId, labId) => buildApiUrl(`/api/classes/${classId}/labs/${labId}/regenerate-code`),
   // Lab group checkpoint actions (e.g., pass/fail/reset)
   labGroupCheckpoint: (labId, groupId, endpoint) =>
     buildApiUrl(`/labs/${labId}/groups/${groupId}/${endpoint}`),
