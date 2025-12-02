@@ -296,11 +296,14 @@ export default function CheckpointPage() {
     if (cpNum == null) return;
 
     try {
-      const res = await fetch(`http://localhost:8080/labs/${lab.id}/groups/${selectedGroup.id}/return`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ checkpointNumber: cpNum, performedBy: 'instructor1' })
-      });
+      const res = await fetch(
+        api.labGroupCheckpoint(lab.id, selectedGroup.id, 'return'),
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ checkpointNumber: cpNum, performedBy: 'instructor1' })
+        }
+      );
 
       if (!res.ok) throw new Error(await res.text());
     } catch (e) {
@@ -319,7 +322,7 @@ export default function CheckpointPage() {
 
     try {
       const response = await fetch(
-        `http://localhost:8080/labs/${lab.id}/groups/${selectedGroup.id}/${endpoint}`,
+        api.labGroupCheckpoint(lab.id, selectedGroup.id, endpoint),
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
