@@ -184,6 +184,26 @@ public class ClassController {
     }
 
     /**
+     * Regenerate a lab's join code for a class
+     * POST /api/classes/{classId}/labs/{labId}/regenerate-code
+     */
+    @PostMapping("/{classId}/labs/{labId}/regenerate-code")
+    public ResponseEntity<?> regenerateLabJoinCode(
+            @PathVariable String classId,
+            @PathVariable String labId
+    ) {
+        try {
+            Lab updated = classService.regenerateLabJoinCode(classId, labId);
+            return ResponseEntity.ok(updated);
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Failed to regenerate join code"));
+        }
+    }
+
+    /**
      * Update a class
      * PUT /api/classes/{id}
      */

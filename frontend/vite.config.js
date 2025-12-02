@@ -29,10 +29,4 @@ export default defineConfig({
       statements: 80,
     },
   },
-})
-    globals: true,
-    environment: "jsdom",
-    setupFiles: "./vitest.setup.js",
-    css: false,
-  },
 });
