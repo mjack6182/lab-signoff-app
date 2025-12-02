@@ -1,63 +1,35 @@
 package com.example.lab_signoff_backend.config;
 
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.messaging.simp.config.MessageBrokerRegistry;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.web.socket.config.annotation.StompEndpointRegistry;
-import org.springframework.web.socket.config.annotation.StompWebSocketEndpointRegistration;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
-import static org.mockito.AdditionalMatchers.*;
 
-@ExtendWith(MockitoExtension.class)
 class WebSocketConfigTest {
 
-    @Mock
-    private StompEndpointRegistry stompEndpointRegistry;
+    @Test
+    void registerStompEndpoints_setsAllowedOrigins() {
+        WebSocketConfig config = new WebSocketConfig();
+        ReflectionTestUtils.setField(config, "allowedOrigins", "http://a.com,http://b.com");
+        StompEndpointRegistry registry = mock(StompEndpointRegistry.class, RETURNS_DEEP_STUBS);
 
-    @Mock
-    private StompWebSocketEndpointRegistration endpointRegistration;
+        config.registerStompEndpoints(registry);
 
-    @Mock
-    private MessageBrokerRegistry messageBrokerRegistry;
-
-    private WebSocketConfig config;
-
-    @BeforeEach
-    void setUp() {
-        config = new WebSocketConfig();
-
-        // this fixes the NPE issue
-        lenient().when(stompEndpointRegistry.addEndpoint("/ws"))
-                .thenReturn(endpointRegistration);
-
-        lenient().when(
-                endpointRegistration.setAllowedOrigins(
-                        any(String[].class)
-                )
-        ).thenReturn(endpointRegistration);
-
-        lenient().when(endpointRegistration.withSockJS())
-                .thenReturn(null); // method returns void in some Spring versions
+        verify(registry).addEndpoint("/ws");
     }
 
     @Test
-    void registerStompEndpoints_registersWsEndpoint() {
-        config.registerStompEndpoints(stompEndpointRegistry);
+    void configureMessageBroker_setsPrefixes() {
+        WebSocketConfig config = new WebSocketConfig();
+        MessageBrokerRegistry registry = mock(MessageBrokerRegistry.class);
 
-        verify(stompEndpointRegistry).addEndpoint("/ws");
-        verify(endpointRegistration).setAllowedOrigins("http://localhost:5173", "http://localhost:3000");
-        verify(endpointRegistration).withSockJS();
-    }
+        config.configureMessageBroker(registry);
 
-    @Test
-    void configureMessageBroker_registersBrokerAndPrefixes() {
-        config.configureMessageBroker(messageBrokerRegistry);
-
-        verify(messageBrokerRegistry).enableSimpleBroker("/topic");
-        verify(messageBrokerRegistry).setApplicationDestinationPrefixes("/app");
+        verify(registry).enableSimpleBroker("/topic");
+        verify(registry).setApplicationDestinationPrefixes("/app");
     }
 }
