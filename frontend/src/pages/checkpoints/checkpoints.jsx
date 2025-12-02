@@ -214,21 +214,53 @@ export default function CheckpointPage() {
   // EFFECT 3 — WebSocket setup (always on with auto-reconnect)
   // ===================================================================
   useEffect(() => {
-    const topic = '/topic/group-updates';
+    const groupTopic = '/topic/group-updates';
+    const randomizedTopic = `/topic/labs/${labId}/groups-randomized`;
 
     setWsStatus('CONNECTING');
     websocketService.init(); // open connection
+
+    // Refresh groups when we get a groups-randomized broadcast
+    const refreshGroupsFromServer = async () => {
+      try {
+        const res = await fetch(api.labGroups(labId));
+        if (!res.ok) return;
+        const data = await res.json();
+        setGroups(data);
+
+        // Preserve selection if possible; otherwise pick first group
+        if (selectedGroupId) {
+          const stillThere = data.find(g => g.id === selectedGroupId);
+          if (!stillThere && data.length > 0) {
+            setSelectedGroupId(data[0].id);
+          }
+        } else if (data.length > 0) {
+          setSelectedGroupId(data[0].id);
+        }
+      } catch (err) {
+        console.error('Failed to refresh groups after WS event:', err);
+      }
+    };
 
     // Track status for UI
     const statusHandler = (status) => {
       console.log(`WebSocket: ${status}`);
       setWsStatus(status);
 
-      if (status === 'CONNECTED') websocketService.subscribe(topic);
+      if (status === 'CONNECTED') {
+        websocketService.subscribe(groupTopic);
+        websocketService.subscribe(randomizedTopic);
+      }
     };
 
     // Handle incoming updates
-    const updateHandler = (update) => {
+    const updateHandler = (update, destination) => {
+      // Group structure change broadcast
+      if (destination && destination.endsWith('/groups-randomized')) {
+        refreshGroupsFromServer();
+        return;
+      }
+
       if (!update || !update.groupId) return;
 
       // Basic logging
@@ -279,10 +311,11 @@ export default function CheckpointPage() {
     return () => {
       websocketService.removeListener(updateHandler);
       websocketService.removeStatusListener(statusHandler);
-      websocketService.unsubscribe(topic);
+      websocketService.unsubscribe(groupTopic);
+      websocketService.unsubscribe(randomizedTopic);
       websocketService.disconnect();
     };
-  }, [labId]);
+  }, [labId, selectedGroupId]);
 
   // -----------------------------------------------------------
   // Open sign-off modal or undo a checkpoint

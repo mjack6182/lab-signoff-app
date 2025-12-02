@@ -51,7 +51,8 @@ export const websocketService = {
         console.error('WS parse error:', e)
         return
       }
-      listeners.forEach(fn => fn(data))
+      const destination = message.headers?.destination
+      listeners.forEach(fn => fn(data, destination))
     })
 
     activeSubscriptions.set(topic, sub)
