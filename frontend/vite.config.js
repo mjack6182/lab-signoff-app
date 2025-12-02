@@ -1,5 +1,5 @@
-import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
+import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react";
 
 // https://vite.dev/config/
 export default defineConfig({
@@ -8,7 +8,7 @@ export default defineConfig({
     allowedHosts: ['frontend-jack.up.railway.app'],
   },
   define: {
-    global: 'window',
+    global: "window",
   },
   test: {
     environment: 'jsdom',
@@ -30,3 +30,9 @@ export default defineConfig({
     },
   },
 })
+    globals: true,
+    environment: "jsdom",
+    setupFiles: "./vitest.setup.js",
+    css: false,
+  },
+});

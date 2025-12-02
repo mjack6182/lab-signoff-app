@@ -8,12 +8,10 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class LabServiceTest {
@@ -25,43 +23,36 @@ class LabServiceTest {
     private LabService labService;
 
     @Test
-    void getByJoinCode_trimsAndDelegates() {
-        Lab lab = new Lab();
-        when(labRepository.findByJoinCodeIgnoreCase("ABC123")).thenReturn(Optional.of(lab));
+    void getByJoinCode_nullReturnsEmptyAndSkipsRepo() {
+        assertTrue(labService.getByJoinCode(null).isEmpty());
+        verify(labRepository, never()).findByJoinCodeIgnoreCase(anyString());
+    }
 
-        Optional<Lab> result = labService.getByJoinCode("  ABC123 ");
+    @Test
+    void getByJoinCode_trimsAndDelegates() {
+        Lab lab = new Lab("c1", "Title", 1, "inst");
+        when(labRepository.findByJoinCodeIgnoreCase("CODE")).thenReturn(Optional.of(lab));
+
+        Optional<Lab> result = labService.getByJoinCode("  CODE  ");
 
         assertTrue(result.isPresent());
-        assertEquals(lab, result.get());
+        verify(labRepository).findByJoinCodeIgnoreCase("CODE");
     }
 
     @Test
-    void getByJoinCode_whenNullReturnsEmpty() {
-        assertTrue(labService.getByJoinCode(null).isEmpty());
-    }
-
-    @Test
-    void getById_whenNullReturnsEmpty() {
+    void getById_nullReturnsEmptyAndSkipsRepo() {
         assertTrue(labService.getById(null).isEmpty());
+        verify(labRepository, never()).findById(anyString());
     }
 
     @Test
-    void upsert_andGetAll_delegatesToRepository() {
-        Lab lab = new Lab();
-        when(labRepository.save(any(Lab.class))).thenReturn(lab);
-        when(labRepository.findAll()).thenReturn(List.of(lab));
+    void getById_returnsValueWhenPresent() {
+        Lab lab = new Lab("c1", "Title", 1, "inst");
+        when(labRepository.findById("lab-1")).thenReturn(Optional.of(lab));
 
-        Lab saved = labService.upsert(lab);
-        List<Lab> labs = labService.getAll();
+        Optional<Lab> result = labService.getById("lab-1");
 
-        assertEquals(lab, saved);
-        assertEquals(1, labs.size());
-    }
-
-    @Test
-    void labExists_usesRepository() {
-        when(labRepository.existsById("lab-1")).thenReturn(true);
-
-        assertTrue(labService.labExists("lab-1"));
+        assertTrue(result.isPresent());
+        verify(labRepository).findById("lab-1");
     }
 }

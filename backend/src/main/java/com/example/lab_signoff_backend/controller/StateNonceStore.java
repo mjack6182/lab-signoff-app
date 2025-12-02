@@ -57,7 +57,7 @@ public class StateNonceStore {
         String state = UUID.randomUUID().toString();
         Entry entry = new Entry(nonce, Instant.now().plusSeconds(300));
         try (Jedis jedis = jedisPool.getResource()) {
-            String entryJson = objectMapper.writeValueAsString(entry);
+            String entryJson = objectMapper.findAndRegisterModules().writeValueAsString(entry);
             jedis.setex("state:" + state, 300, entryJson); // 300 seconds TTL
         } catch (JsonProcessingException e) {
             throw new RuntimeException("Failed to serialize entry", e);

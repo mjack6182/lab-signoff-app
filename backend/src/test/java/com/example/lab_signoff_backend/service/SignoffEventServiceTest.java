@@ -98,6 +98,22 @@ class SignoffEventServiceTest {
         assertNotNull(captor.getValue().getTimestamp());
     }
 
+    @Test
+    void createEvent_doesNotOverrideExistingTimestamp() {
+        Instant ts = Instant.now().minusSeconds(60);
+        SignoffEvent event = new SignoffEvent();
+        event.setLabId("lab1");
+        event.setGroupId("group1");
+        event.setTimestamp(ts);
+
+        when(repository.save(any(SignoffEvent.class))).thenReturn(event);
+
+        SignoffEvent saved = service.createEvent(event);
+
+        assertEquals(ts, saved.getTimestamp());
+        verify(repository).save(event);
+    }
+
     /**
      * Test: Create event with basic information
      */
@@ -359,5 +375,18 @@ class SignoffEventServiceTest {
         // Assert
         assertEquals(0, count);
         verify(repository).findByLabId("lab1");
+    }
+
+    @Test
+    void testCreateEvent_keepsExistingTimestamp() {
+        Instant timestamp = Instant.parse("2024-01-01T00:00:00Z");
+        SignoffEvent event = new SignoffEvent();
+        event.setTimestamp(timestamp);
+        when(repository.save(any(SignoffEvent.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        SignoffEvent saved = service.createEvent(event);
+
+        assertEquals(timestamp, saved.getTimestamp());
+        verify(repository).save(event);
     }
 }
