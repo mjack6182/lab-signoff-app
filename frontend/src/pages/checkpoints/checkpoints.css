@@ -17,6 +17,7 @@
     grid-template-columns: 1fr 380px;
     gap: 24px;
     align-items: start;
+    width: 100%;
 }
 
 /* === Header Section === */
@@ -70,9 +71,11 @@
     color: #0f172a;
 }
 
-.checkpoint-actions {
+.checkpoint-header-actions {
     display: flex;
     gap: 12px;
+    align-items: center;
+    flex-wrap: wrap;
 }
 
 .action-btn {
@@ -127,6 +130,51 @@
 
 .btn-icon {
     font-size: 16px;
+}
+
+/* === Mobile group summary === */
+.mobile-group-summary {
+    display: none;
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 14px;
+    padding: 12px 16px;
+    box-shadow: 0 4px 18px rgba(2, 6, 23, 0.06);
+    gap: 12px;
+}
+
+.summary-block {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    flex: 1;
+}
+
+.summary-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.summary-value {
+    font-size: 16px;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.summary-progress-bar {
+    height: 6px;
+    background: #f1f5f9;
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.summary-progress-bar .fill {
+    height: 100%;
+    background: linear-gradient(90deg, #016836, #014a28);
+    border-radius: 3px;
 }
 
 /* === Class and Section Selection === */
@@ -360,7 +408,7 @@
 }
 
 /* === Checkpoint Actions === */
-.checkpoint-actions {
+.checkpoint-item-actions {
     display: flex;
     gap: 8px;
     margin-left: 16px;
@@ -447,6 +495,7 @@
     max-width: 280px;
     flex-shrink: 0;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    position: relative;
 }
 
 .group-card:hover:not(.selected) {
@@ -711,7 +760,7 @@
         font-size: 16px;
     }
 
-    .checkpoint-actions {
+    .checkpoint-header-actions {
         justify-content: flex-start;
         flex-wrap: wrap;
     }
@@ -758,7 +807,7 @@
         align-items: stretch;
     }
 
-    .checkpoint-actions {
+    .checkpoint-item-actions {
         margin-left: 0;
         align-self: flex-start;
         flex-direction: row;
@@ -787,6 +836,11 @@
 
     .panel-title {
         font-size: 18px;
+    }
+
+    .mobile-group-summary {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
     }
 }
 
@@ -834,6 +888,12 @@
 
     .breadcrumb-separator {
         font-size: 14px;
+    }
+
+    .mobile-group-summary {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 10px;
     }
 
     /* Groups become vertical stack on small screens */
@@ -911,7 +971,7 @@
         font-size: 11px;
     }
 
-    .checkpoint-actions {
+    .checkpoint-item-actions {
         flex-direction: column;
         gap: 6px;
         width: 100%;
@@ -943,9 +1003,11 @@
     }
 
     /* Action buttons stack on very small screens */
-    .checkpoint-actions {
+    .checkpoint-header-actions {
         flex-direction: column;
         width: 100%;
+        align-items: stretch;
+        gap: 10px;
     }
 
     .action-btn {
@@ -1152,7 +1214,8 @@
         background: white;
     }
 
-    .checkpoint-actions,
+    .checkpoint-header-actions,
+    .checkpoint-item-actions,
     .action-btn,
     .checkpoint-btn {
         display: none;

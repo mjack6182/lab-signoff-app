@@ -25,6 +25,9 @@ export const api = {
   labDetail: (labId) => buildApiUrl(`/api/labs/${labId}`),
   labGroupDetail: (labId, groupId) => buildApiUrl(`/api/labs/${labId}/groups/${groupId}`),
   labGradesCsv: (labId) => buildApiUrl(`/api/labs/${labId}/grades/export`),
+  // Lab group checkpoint actions (e.g., pass/fail/reset)
+  labGroupCheckpoint: (labId, groupId, endpoint) =>
+    buildApiUrl(`/labs/${labId}/groups/${groupId}/${endpoint}`),
   classes: (params) => {
     if (!params || Object.keys(params).length === 0) {
       return buildApiUrl('/api/classes');
@@ -41,6 +44,7 @@ export const api = {
     login: () => buildApiUrl('/api/auth/login'),
   },
   ws: () => buildApiUrl('/ws'),
+  wsTestBroadcast: () => buildApiUrl('/ws-test-broadcast'),
 };
 
 export default API_BASE_URL;

@@ -136,7 +136,7 @@ export default function LabGroups() {
             </span>
             <button
               onClick={() =>
-                fetch('http://localhost:8080/ws-test-broadcast').catch(console.error)
+                fetch(api.wsTestBroadcast()).catch(console.error)
               }
               className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700"
             >

@@ -298,6 +298,12 @@ export default function CheckpointPage() {
         return Math.round((getCompletedCount(groupId) / totalCheckpoints) * 100);
     };
 
+    // Derived values for selected group summary
+    const selectedCompletedCount = selectedGroup ? getCompletedCount(selectedGroup.id) : 0;
+    const progressPercent = totalCheckpoints
+        ? Math.min(100, Math.round((selectedCompletedCount / totalCheckpoints) * 100))
+        : 0;
+
     // Open Group Management
     const handleEditGroups = () => {
         setShowGroupManagement(true);
@@ -306,6 +312,10 @@ export default function CheckpointPage() {
     // When groups updated from modal
     const handleUpdateGroups = (updatedGroups) => {
         setGroups(updatedGroups);
+    };
+
+    const handleHelpRequest = () => {
+        alert('Help request sent to instructor!');
     };
 
     /**
@@ -390,6 +400,29 @@ export default function CheckpointPage() {
                         )}
                     </div>
                 </div>
+
+                {selectedGroup && (
+                    <div className="student-mobile-summary">
+                        <div className="student-summary-block">
+                            <span className="summary-label">Group</span>
+                            <span className="summary-value">{selectedGroup.groupId}</span>
+                        </div>
+                        <div className="student-summary-block">
+                            <span className="summary-label">Progress</span>
+                            <span className="summary-value">
+                                {selectedCompletedCount}/{totalCheckpoints}
+                            </span>
+                            <div className="summary-progress-bar">
+                                <div className="fill" style={{ width: `${progressPercent}%` }}></div>
+                            </div>
+                        </div>
+                        <div className="student-summary-block">
+                            <button className="help-btn condensed" onClick={handleHelpRequest}>
+                                Request Help
+                            </button>
+                        </div>
+                    </div>
+                )}
 
                 <div className="checkpoint-content">
                     {/* LEFT SIDE — list of checkpoints */}
@@ -540,9 +573,7 @@ export default function CheckpointPage() {
                         <section className="help-section">
                             <button
                                 className="help-btn"
-                                onClick={() =>
-                                    alert('Help request sent to instructor!')
-                                }
+                                onClick={handleHelpRequest}
                             >
                                 <span className="help-text">Request Help</span>
                             </button>
