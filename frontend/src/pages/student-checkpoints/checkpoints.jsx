@@ -143,17 +143,54 @@ export default function CheckpointPage() {
      */
     useEffect(() => {
         websocketService.init();
-        const topic = '/topic/group-updates';
+        const groupTopic = '/topic/group-updates';
+        const randomizedTopic = `/topic/labs/${labId}/groups-randomized`;
+
+        const refreshGroupsAfterChange = async () => {
+            try {
+                const res = await fetch(api.labGroups(labId));
+                if (!res.ok) return;
+                const groupsData = await res.json();
+                setGroups(groupsData);
+
+                // Try to keep the student on their group if it still exists
+                let nextGroup =
+                    groupsData.find(g => g.id === selectedGroupId) ||
+                    groupsData.find(g => g.groupId === stateGroupDisplayId || g.groupId === stateGroupId);
+
+                if (!nextGroup && studentName) {
+                    const nameLower = studentName.toLowerCase();
+                    nextGroup = groupsData.find(g =>
+                        (g.members || []).some(m => (m.name || '').toLowerCase() === nameLower)
+                    );
+                }
+
+                if (nextGroup) {
+                    setSelectedGroupId(nextGroup.id);
+                } else if (groupsData.length > 0) {
+                    setSelectedGroupId(groupsData[0].id);
+                }
+            } catch (err) {
+                console.error('Failed to refresh groups after WS event:', err);
+            }
+        };
 
         // Handle connection status
         const statusHandler = (status) => {
             if (status === 'CONNECTED') {
-                websocketService.subscribe(topic);
+                websocketService.subscribe(groupTopic);
+                websocketService.subscribe(randomizedTopic);
             }
         };
 
         // Handle new messages pushed from server
-        const updateHandler = (update) => {
+        const updateHandler = (update, destination) => {
+            // Group list changed – refetch
+            if (destination && destination.endsWith('/groups-randomized')) {
+                refreshGroupsAfterChange();
+                return;
+            }
+
             if (!update || !update.groupId) return;
 
             // Only update if this student's group matches the update
@@ -195,9 +232,11 @@ export default function CheckpointPage() {
         return () => {
             websocketService.removeListener(updateHandler);
             websocketService.removeStatusListener(statusHandler);
+            websocketService.unsubscribe(groupTopic);
+            websocketService.unsubscribe(randomizedTopic);
             websocketService.disconnect();
         };
-    }, [selectedGroupId]);
+    }, [labId, selectedGroupId, studentName, stateGroupDisplayId, stateGroupId]);
 
     /**
      * Fetch the lab + group data from backend when page loads

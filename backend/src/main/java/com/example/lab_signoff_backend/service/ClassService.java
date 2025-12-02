@@ -32,6 +32,8 @@ public class ClassService {
     @Autowired
     private LabService labService;
 
+    private static final int MAX_JOIN_CODE_ATTEMPTS = 10;
+
     /**
      * Create a new class
      */
@@ -106,6 +108,37 @@ public class ClassService {
 
         classEntity.updateTimestamp();
         return classRepository.save(classEntity);
+    }
+
+    /**
+     * Regenerate the join code for a lab that belongs to this class.
+     * Ensures ownership and retries until a unique code is found.
+     */
+    public Lab regenerateLabJoinCode(String classId, String labId) {
+        Class classEntity = classRepository.findById(classId)
+                .orElseThrow(() -> new RuntimeException("Class not found with id: " + classId));
+
+        Lab lab = labService.getById(labId)
+                .orElseThrow(() -> new RuntimeException("Lab not found with id: " + labId));
+
+        if (!lab.getClassId().equals(classEntity.getId())) {
+            throw new RuntimeException("Lab does not belong to class id: " + classId);
+        }
+
+        String nextCode;
+        int attempts = 0;
+        do {
+            nextCode = Lab.generateJoinCode();
+            attempts++;
+        } while (labService.getByJoinCode(nextCode).isPresent() && attempts < MAX_JOIN_CODE_ATTEMPTS);
+
+        if (labService.getByJoinCode(nextCode).isPresent()) {
+            throw new RuntimeException("Failed to generate a unique join code, please retry");
+        }
+
+        lab.setJoinCode(nextCode);
+        lab.updateTimestamp();
+        return labService.upsert(lab);
     }
 
     /**

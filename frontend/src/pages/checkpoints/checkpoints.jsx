@@ -56,8 +56,7 @@ export default function CheckpointPage() {
   const [error, setError] = useState(null);
 
   // WebSocket status
-  const [wsEnabled, setWsEnabled] = useState(false);
-  const [wsStatus, setWsStatus] = useState('OFF');
+  const [wsStatus, setWsStatus] = useState('CONNECTING');
 
   // Checkpoint state per-group
   const [groupCheckpoints, setGroupCheckpoints] = useState({});
@@ -76,14 +75,12 @@ export default function CheckpointPage() {
   const currentLab = lab?.courseId || 'Lab';
 
   // WebSocket display helpers
-  const wsDisplayStatus = wsEnabled ? wsStatus : 'OFF';
-  const wsStatusClass = !wsEnabled
-    ? 'text-gray-600'
-    : wsStatus === 'CONNECTED'
-    ? 'text-green-600'
-    : wsStatus === 'RECONNECTING'
-    ? 'text-orange-500'
-    : 'text-red-600';
+  const wsStatusClass =
+    wsStatus === 'CONNECTED'
+      ? 'text-green-600'
+      : wsStatus === 'RECONNECTING' || wsStatus === 'CONNECTING'
+      ? 'text-orange-500'
+      : 'text-red-600';
 
   // -----------------------------------------------------------
   // Helper: make sure checkpoint IDs use the format "cp-1"
@@ -214,29 +211,56 @@ export default function CheckpointPage() {
   }, [labId]);
 
   // ===================================================================
-  // EFFECT 3 — WebSocket setup (opt-in via Start/Stop)
+  // EFFECT 3 — WebSocket setup (always on with auto-reconnect)
   // ===================================================================
   useEffect(() => {
-    const topic = '/topic/group-updates';
-
-    if (!wsEnabled) {
-      setWsStatus('OFF');
-      return;
-    }
+    const groupTopic = '/topic/group-updates';
+    const randomizedTopic = `/topic/labs/${labId}/groups-randomized`;
 
     setWsStatus('CONNECTING');
     websocketService.init(); // open connection
+
+    // Refresh groups when we get a groups-randomized broadcast
+    const refreshGroupsFromServer = async () => {
+      try {
+        const res = await fetch(api.labGroups(labId));
+        if (!res.ok) return;
+        const data = await res.json();
+        setGroups(data);
+
+        // Preserve selection if possible; otherwise pick first group
+        if (selectedGroupId) {
+          const stillThere = data.find(g => g.id === selectedGroupId);
+          if (!stillThere && data.length > 0) {
+            setSelectedGroupId(data[0].id);
+          }
+        } else if (data.length > 0) {
+          setSelectedGroupId(data[0].id);
+        }
+      } catch (err) {
+        console.error('Failed to refresh groups after WS event:', err);
+      }
+    };
 
     // Track status for UI
     const statusHandler = (status) => {
       console.log(`WebSocket: ${status}`);
       setWsStatus(status);
 
-      if (status === 'CONNECTED') websocketService.subscribe(topic);
+      if (status === 'CONNECTED') {
+        websocketService.subscribe(groupTopic);
+        websocketService.subscribe(randomizedTopic);
+      }
     };
 
     // Handle incoming updates
-    const updateHandler = (update) => {
+    const updateHandler = (update, destination) => {
+      // Group structure change broadcast
+      if (destination && destination.endsWith('/groups-randomized')) {
+        refreshGroupsFromServer();
+        return;
+      }
+
       if (!update || !update.groupId) return;
 
       // Basic logging
@@ -283,14 +307,15 @@ export default function CheckpointPage() {
     websocketService.addStatusListener(statusHandler);
     websocketService.addListener(updateHandler);
 
-    // Cleanup on unmount or when toggling off
+    // Cleanup on unmount
     return () => {
       websocketService.removeListener(updateHandler);
       websocketService.removeStatusListener(statusHandler);
-      websocketService.unsubscribe(topic);
+      websocketService.unsubscribe(groupTopic);
+      websocketService.unsubscribe(randomizedTopic);
       websocketService.disconnect();
     };
-  }, [wsEnabled]);
+  }, [labId, selectedGroupId]);
 
   // -----------------------------------------------------------
   // Open sign-off modal or undo a checkpoint
@@ -480,16 +505,8 @@ export default function CheckpointPage() {
             <span
               className={`font-semibold ${wsStatusClass}`}
             >
-              {wsDisplayStatus}
+              {wsStatus}
             </span>
-
-            {/* Toggle WebSocket usage */}
-            <button
-              className="action-btn secondary"
-              onClick={() => setWsEnabled(prev => !prev)}
-            >
-              {wsEnabled ? 'Stop Live Updates' : 'Start Live Updates'}
-            </button>
 
             {/* CSV exporting button (teachers only) */}
             {canExportGrades && (
