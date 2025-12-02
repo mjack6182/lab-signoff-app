@@ -42,6 +42,17 @@ class ScoreFormulaServiceTest {
     }
 
     @Test
+    void computeFrom_whenScoresMissingFallBackToZero() {
+        ScorePublishRequest req = new ScorePublishRequest();
+        req.checkpoints = List.of();
+        ScoreFormulaService.Result result = service.computeFrom(req);
+        assertEquals(0.0, result.scoreGiven());
+        assertEquals(0.0, result.scoreMaximum());
+        assertEquals("InProgress", result.activityProgress());
+        assertEquals("Pending", result.gradingProgress());
+    }
+
+    @Test
     void computeFrom_withMixedCheckpointStates_calculatesEarnedScoreWithLatePenalty() {
         ScorePublishRequest req = new ScorePublishRequest();
         req.lateMultiplier = 0.5; // apply 50% penalty
@@ -71,6 +82,47 @@ class ScoreFormulaServiceTest {
 
         assertEquals(3.0, result.scoreGiven());
         assertEquals(3.0, result.scoreMaximum());
+        assertEquals("Completed", result.activityProgress());
+        assertEquals("FullyGraded", result.gradingProgress());
+    }
+
+    @Test
+    void computeFrom_lateMultiplierClampedAndOptionalCheckpoint() {
+        ScorePublishRequest req = new ScorePublishRequest();
+        req.lateMultiplier = 2.0; // should clamp to 1
+        req.checkpoints = List.of(
+                checkpoint(CheckpointState.Passed, 1.0, false), // optional -> adds to earned but not max
+                checkpoint(CheckpointState.Passed, 0.0, true)    // weight defaults to 1
+        );
+
+        ScoreFormulaService.Result result = service.computeFrom(req);
+        assertEquals(1.0, result.scoreMaximum());
+        assertEquals(1.0, result.scoreGiven());
+    }
+
+    @Test
+    void computeFrom_clampsNegativeLateMultiplier() {
+        ScorePublishRequest req = new ScorePublishRequest();
+        req.lateMultiplier = -1.0; // clamps to 0
+        req.checkpoints = List.of(checkpoint(CheckpointState.Passed, null, true));
+
+        ScoreFormulaService.Result result = service.computeFrom(req);
+        assertEquals(0.0, result.scoreGiven());
+        assertEquals(1.0, result.scoreMaximum());
+    }
+
+    @Test
+    void computeFrom_skipsNullCheckpointsAndDefaultsRequired() {
+        ScorePublishRequest req = new ScorePublishRequest();
+        CheckpointDto withNullRequired = new CheckpointDto();
+        withNullRequired.state = CheckpointState.Passed;
+        withNullRequired.required = null; // defaults to required
+        withNullRequired.weight = null;   // defaults weight to 1
+        req.checkpoints = java.util.Arrays.asList(null, withNullRequired);
+
+        ScoreFormulaService.Result result = service.computeFrom(req);
+        assertEquals(1.0, result.scoreMaximum());
+        assertEquals(1.0, result.scoreGiven());
         assertEquals("Completed", result.activityProgress());
         assertEquals("FullyGraded", result.gradingProgress());
     }
